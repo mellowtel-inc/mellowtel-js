@@ -1,0 +1,27 @@
+{
+  "name": "mellowtel",
+  "version": "1.1.2",
+  "description": "",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "mellowtel-inc",
+  "devDependencies": {
+    "@types/chrome": "^0.0.256",
+    "prettier": "3.2.4",
+    "ts-node": "^10.9.2",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "isomorphic-ws": "^5.0.0",
+    "pdfjs-dist": "^4.0.379"
+  }
+}
