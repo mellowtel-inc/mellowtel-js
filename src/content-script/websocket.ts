@@ -12,8 +12,8 @@ import { Logger } from "../logger/logger";
 const ws_url: string =
   "wss://7joy2r59rf.execute-api.us-east-1.amazonaws.com/production/";
 
-export function startConnectionWs(identifier: string): WebSocket {
-  getSharedMemory("webSocketConnectedMellowtel").then((response) => {
+export async function startConnectionWs(identifier: string): WebSocket {
+  await getSharedMemory("webSocketConnectedMellowtel").then((response) => {
     if (!response) {
       const ws = new WebSocket(
         `${ws_url}?node_id=${identifier}&version=${MELLOWTEL_VERSION}`,

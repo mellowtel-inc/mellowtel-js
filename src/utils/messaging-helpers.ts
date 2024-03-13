@@ -3,7 +3,7 @@ export async function sendMessageToContentScript(
   message: any,
 ): Promise<any> {
   return new Promise((resolve) => {
-    // todo: POTENTIALLY could be breaking? Since tabs permission is new in this file context
+    message.target = "contentScriptMellowtel";
     chrome.tabs.sendMessage(tabId, message, function (response) {
       resolve(response);
     });
