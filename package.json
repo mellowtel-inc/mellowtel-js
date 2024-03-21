@@ -1,6 +1,6 @@
 {
   "name": "mellowtel",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -22,6 +22,6 @@
   },
   "dependencies": {
     "isomorphic-ws": "^5.0.0",
-    "pdfjs-dist": "^4.0.379"
+    "pdfjs-dist": "^3.8.162"
   }
 }

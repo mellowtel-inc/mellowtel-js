@@ -1,17 +1,8 @@
-let PDFJS: any;
-let PDFJSWorker: any;
-
-async function loadPdfJsLib() {
-  if (!PDFJS) {
-    PDFJS = await import('pdfjs-dist/build/pdf.mjs');
-    PDFJSWorker = await import('pdfjs-dist/build/pdf.worker.mjs');
-  }
-  return { PDFJS, PDFJSWorker };
-}
+import * as PDFJS from "pdfjs-dist/build/pdf.js";
+import * as PDFJSWorker from "pdfjs-dist/build/pdf.worker.js";
 import { Logger } from "../logger/logger";
 export function extractTextFromPDF(pdfUrl: string): Promise<string> {
   return new Promise(async (resolve, reject) => {
-    const { PDFJS, PDFJSWorker } = await loadPdfJsLib();
     PDFJS.GlobalWorkerOptions.workerSrc = PDFJSWorker;
     PDFJS.getDocument(pdfUrl)
         .promise.then(function (pdf: any) {
