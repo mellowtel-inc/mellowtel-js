@@ -12,55 +12,56 @@ import {
 } from "../content-script/shared-memory";
 import { startConnectionWs } from "../content-script/websocket";
 import { getIdentifier } from "./identity-helpers";
-import { resetTriggersDownload, seeIfTriggersDownload } from "./triggers-download-helpers";
+import {
+  resetTriggersDownload,
+  seeIfTriggersDownload,
+} from "./triggers-download-helpers";
 import { sendMessageToContentScript } from "./messaging-helpers";
 
 export async function setUpBackgroundListeners() {
-    chrome.runtime.onMessage.addListener(
-        function (request, sender, sendResponse) {
-            if (request.intent == "getLocalStorage") {
-                getLocalStorage(request.key).then(sendResponse);
-            }
-            if (request.intent == "setLocalStorage") {
-                setLocalStorage(request.key, request.value).then(sendResponse);
-            }
-            if (request.intent == "deleteLocalStorage") {
-                deleteLocalStorage(JSON.parse(request.keys)).then(sendResponse);
-            }
-            if (request.intent == "disableXFrameHeaders") {
-                disableXFrameHeaders(
-                    request.hostname,
-                    request.skipHeaders,
-                ).then(sendResponse);
-            }
-            if (request.intent == "enableXFrameHeaders") {
-                enableXFrameHeaders(request.hostname).then(sendResponse);
-            }
-            if (request.intent == "resetTriggersDownload") {
-                resetTriggersDownload().then(sendResponse);
-            }
-            if (request.intent === "setSharedMemoryBCK") {
-                setSharedMemoryBCK(request.key, sender.tab?.id!).then(sendResponse);
-            }
-            if (request.intent === "getSharedMemoryBCK") {
-                getSharedMemoryBCK(request.key).then(sendResponse);
-            }
-            if (request.intent === "seeIfTriggersDownload") {
-                seeIfTriggersDownload(
-                    request.url,
-                    request.triggersDownload,
-                ).then(sendResponse);
-            }
-            if (request.intent === "deleteIframeMellowtel") {
-                sendMessageToContentScript(sender.tab?.id!, {
-                    target: "contentScriptMellowtel",
-                    intent: "deleteIframeMellowtel",
-                    recordID: request.recordID,
-                }).then(sendResponse);
-            }
-            return true; // return true to indicate you want to send a response asynchronously
-        },
-    );
+  chrome.runtime.onMessage.addListener(
+    function (request, sender, sendResponse) {
+      if (request.intent == "getLocalStorage") {
+        getLocalStorage(request.key).then(sendResponse);
+      }
+      if (request.intent == "setLocalStorage") {
+        setLocalStorage(request.key, request.value).then(sendResponse);
+      }
+      if (request.intent == "deleteLocalStorage") {
+        deleteLocalStorage(JSON.parse(request.keys)).then(sendResponse);
+      }
+      if (request.intent == "disableXFrameHeaders") {
+        disableXFrameHeaders(request.hostname, request.skipHeaders).then(
+          sendResponse,
+        );
+      }
+      if (request.intent == "enableXFrameHeaders") {
+        enableXFrameHeaders(request.hostname).then(sendResponse);
+      }
+      if (request.intent == "resetTriggersDownload") {
+        resetTriggersDownload().then(sendResponse);
+      }
+      if (request.intent === "setSharedMemoryBCK") {
+        setSharedMemoryBCK(request.key, sender.tab?.id!).then(sendResponse);
+      }
+      if (request.intent === "getSharedMemoryBCK") {
+        getSharedMemoryBCK(request.key).then(sendResponse);
+      }
+      if (request.intent === "seeIfTriggersDownload") {
+        seeIfTriggersDownload(request.url, request.triggersDownload).then(
+          sendResponse,
+        );
+      }
+      if (request.intent === "deleteIframeMellowtel") {
+        sendMessageToContentScript(sender.tab?.id!, {
+          target: "contentScriptMellowtel",
+          intent: "deleteIframeMellowtel",
+          recordID: request.recordID,
+        }).then(sendResponse);
+      }
+      return true; // return true to indicate you want to send a response asynchronously
+    },
+  );
 }
 
 export async function setUpContentScriptListeners() {

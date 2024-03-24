@@ -27,13 +27,13 @@ export async function sendToBackgroundToSeeIfTriggersDownload(
   triggersDownload: boolean,
 ): Promise<boolean> {
   return new Promise(function (res) {
-      sendMessageToBackground({
-        intent: "seeIfTriggersDownload",
-        url: url,
-        triggersDownload: triggersDownload,
-      }).then((response) => {
-        res(response);
-      });
+    sendMessageToBackground({
+      intent: "seeIfTriggersDownload",
+      url: url,
+      triggersDownload: triggersDownload,
+    }).then((response) => {
+      res(response);
+    });
   });
 }
 
