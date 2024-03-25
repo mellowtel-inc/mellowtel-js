@@ -10,6 +10,7 @@ import {
   startMellowtelWebsocket,
 } from "./utils/start-stop-helpers";
 import { getOptInStatus } from "./utils/opt-in-out-helpers";
+import { checkRequiredPermissions } from "./utils/permission-helpers";
 import { Logger } from "./logger/logger";
 
 export default class Mellowtel {
@@ -20,7 +21,8 @@ export default class Mellowtel {
   constructor(publishableKey: string, options?: any) {
     this.publishableKey = publishableKey;
     this.options = options;
-    this.disableLogs = options?.disableLogs !== undefined ? options.disableLogs : true;
+    this.disableLogs =
+      options?.disableLogs !== undefined ? options.disableLogs : true;
     Logger.disableLogs = this.disableLogs;
   }
 
@@ -35,6 +37,7 @@ export default class Mellowtel {
     ) {
       throw new Error("publishableKey is undefined, null, or empty");
     }
+    await checkRequiredPermissions(false);
     await purgeOnStartup();
     await setUpOnTabRemoveListeners();
     await setUpBackgroundListeners();
@@ -93,11 +96,17 @@ export default class Mellowtel {
           "Node has not opted in to Mellowtel yet. Request a disclaimer to the end-user and then call the optIn() method if they agree to join the Mellowtel network.",
         );
       }
-      // note: in later version, metadata_id will be used to trace the #...
-      // ...of requests to this specific node, so you can give rewards, etc.
-      setLocalStorage("mellowtelStatus", "start").then(() => {
-        resolve(true);
-      });
+      try {
+        await checkRequiredPermissions(true);
+        // note: in later version, metadata_id will be used to trace the #...
+        // ...of requests to this specific node, so you can give rewards, etc.
+        setLocalStorage("mellowtelStatus", "start").then(() => {
+          resolve(true);
+        });
+      } catch (error) {
+        await this.optOut();
+        resolve(false);
+      }
     });
   }
 
