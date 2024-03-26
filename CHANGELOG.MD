@@ -9,3 +9,7 @@
 ## 1.1.8 - 2024-03-25
 
 - 🙋 Introduced optional_permissions so developers can release/send an update without requiring users to accept all permissions at installation/update
+
+## 1.1.9 - 2024-03-26
+
+- ⏹️ Introduced local rate limiting (in addition to the server load balancing) to give developers more control and transparency over the rate limiting of their extension

@@ -7,6 +7,7 @@ import {
   setSharedMemory,
 } from "./shared-memory";
 import { isMellowtelStarted } from "../utils/start-stop-helpers";
+import { RateLimiter } from "../local-rate-limiting/rate-limiter";
 import { Logger } from "../logger/logger";
 
 const ws_url: string =
@@ -35,7 +36,15 @@ export async function startConnectionWs(identifier: string): WebSocket {
 
       ws.onmessage = async function incoming(data: any) {
         if (await isMellowtelStarted()) {
-          await preProcessCrawl(JSON.parse(data.data));
+          data = JSON.parse(data.data);
+          if (
+            data.hasOwnProperty("type_event") &&
+            data.type_event === "heartbeat"
+          )
+            return;
+          if (await RateLimiter.checkRateLimit()) {
+            await preProcessCrawl(data);
+          }
         }
       };
 

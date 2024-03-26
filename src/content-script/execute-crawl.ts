@@ -8,10 +8,6 @@ import { sendToBackgroundToSeeIfTriggersDownload } from "../utils/triggers-downl
 import { Logger } from "../logger/logger";
 
 export async function preProcessCrawl(dataPacket: { [key: string]: any }) {
-  let type_event: string = dataPacket.hasOwnProperty("type_event")
-    ? dataPacket.type_event
-    : "crawl";
-  if (type_event === "heartbeat") return;
   Logger.log("📋 Data Packet 📋");
   Logger.log(dataPacket);
   Logger.log("📋 ----------- 📋");

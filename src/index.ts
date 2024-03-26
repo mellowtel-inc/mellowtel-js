@@ -11,18 +11,23 @@ import {
 } from "./utils/start-stop-helpers";
 import { getOptInStatus } from "./utils/opt-in-out-helpers";
 import { checkRequiredPermissions } from "./utils/permission-helpers";
+import { MAX_DAILY_RATE as DEFAULT_MAX_DAILY_RATE } from "./constants";
 import { Logger } from "./logger/logger";
+import { RateLimiter } from "./local-rate-limiting/rate-limiter";
 
 export default class Mellowtel {
   private publishableKey: string;
   private options?: any;
   private disableLogs: boolean = true;
+  private MAX_DAILY_RATE: number = DEFAULT_MAX_DAILY_RATE;
 
   constructor(publishableKey: string, options?: any) {
     this.publishableKey = publishableKey;
     this.options = options;
     this.disableLogs =
       options?.disableLogs !== undefined ? options.disableLogs : true;
+    this.MAX_DAILY_RATE = options?.MAX_DAILY_RATE || DEFAULT_MAX_DAILY_RATE;
+    RateLimiter.MAX_DAILY_RATE = this.MAX_DAILY_RATE;
     Logger.disableLogs = this.disableLogs;
   }
 
