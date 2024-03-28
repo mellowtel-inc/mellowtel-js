@@ -37,7 +37,7 @@ AI labs & startups need to scrape the web to train their models. They need a lot
 
 - **Easy to use**: Monetize your Chrome Extensions with a few lines of code.
 - **Open-source**: Transparency is at the core of Mellowtel. Our code is open-source and available for everyone.
-- **Consensual & Opt-out by default**: We believe in the power of informed consent. Your users are always in control. Only they decide if they want to support your extension through an explicit opt-in mechanism (not some small print in TOS. They can opt-out at any time.
+- **Consensual & Opt-out by default**: We believe in the power of informed consent. Your users are always in control. Only they decide if they want to support your extension through an explicit opt-in mechanism (not some small print in TOS). They can opt-out at any time.
 - **Non-intrusive & Private**: We do not collect, share, or sell personal information (not even anonymized data). Mellowtel doesn't negatively affect user experience.
 - **Highly regulated**: We keep communicating with Chrome Web Store regulators in order to guarantee a safe experience. Mellowtel provides CWS regulators with tools to monitor and enforce compliance (e.g. A custom dashboard for the Chrome Team to review every single URL that passes through the network)
 
@@ -53,7 +53,7 @@ See other "monetization solutions" below for examples of what can go wrong when 
 
 # What are the current "monetization solutions"? 🧐
 
-We have been developing Chrome Extensions and trying to monetize them for years. Also we received a hefty amount of the "monetization solutions" emails.
+We have been developing Chrome Extensions and trying to monetize them for years. We, too, received a hefty amount of the "monetization solutions" emails.
 
 Well, honestly, most attempts to monetize Chrome Extensions are just shady at best and total scams at worst. They either buy your extension or provide SDKs that collect and sell your users' personal data (credit card information, addresses), spoof their passwords, inject unwanted ads into your extension, inject affiliate links, etc.
 
