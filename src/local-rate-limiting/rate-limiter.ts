@@ -42,25 +42,54 @@ export class RateLimiter {
     return now - timestamp;
   }
 
-  static async resetRateLimitData(now: number): Promise<void> {
-    await this.setRateLimitData(now, 1);
+  static async resetRateLimitData(
+    now: number,
+    add_to_count: boolean = false,
+  ): Promise<void> {
+    await this.setRateLimitData(now, add_to_count ? 1 : 0);
   }
 
-  static async checkRateLimit(): Promise<boolean> {
+  static async getIfRateLimitReached(): Promise<boolean> {
+    let mllwtl_rate_limit_object = await getLocalStorage(
+      "mllwtl_rate_limit_reached",
+    );
+    if (
+      mllwtl_rate_limit_object === undefined ||
+      !mllwtl_rate_limit_object.hasOwnProperty("mllwtl_rate_limit_reached")
+    ) {
+      return false;
+    } else {
+      return (
+        mllwtl_rate_limit_object.mllwtl_rate_limit_reached.toString() === "true"
+      );
+    }
+  }
+
+  static async checkRateLimit(): Promise<{
+    shouldContinue: boolean;
+    isLastCount: boolean;
+  }> {
     const now = Date.now();
     let { timestamp, count } = await this.getRateLimitData();
 
     if (!timestamp) {
       Logger.log(`[🕒]: NO_TIMESTAMP, setting timestamp and count`);
       await this.setRateLimitData(now, 1);
-      return true;
+      return {
+        shouldContinue: true,
+        isLastCount: false,
+      };
     }
 
     const elapsedTime: number = this.calculateElapsedTime(now, timestamp);
     if (elapsedTime > REFRESH_INTERVAL) {
       Logger.log(`[🕒]: REFRESH_INTERVAL elapsed, resetting count`);
-      await this.resetRateLimitData(now);
-      return true;
+      await this.resetRateLimitData(now, true);
+      await setLocalStorage("mllwtl_rate_limit_reached", false);
+      return {
+        shouldContinue: true,
+        isLastCount: false,
+      };
     }
 
     count++;
@@ -68,6 +97,18 @@ export class RateLimiter {
     Logger.log(
       `[🕒]: SHOULD CONTINUE? IF COUNT (${count}) <= ${this.MAX_DAILY_RATE} : ${count <= this.MAX_DAILY_RATE}`,
     );
-    return count <= this.MAX_DAILY_RATE;
+    if (count <= this.MAX_DAILY_RATE) {
+      let isLastCount: boolean = count === this.MAX_DAILY_RATE;
+      return {
+        shouldContinue: true,
+        isLastCount,
+      };
+    } else {
+      Logger.log(`[🕒]: RATE LIMIT REACHED`);
+      return {
+        shouldContinue: false,
+        isLastCount: false,
+      };
+    }
   }
 }
