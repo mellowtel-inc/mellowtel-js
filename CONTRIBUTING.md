@@ -15,4 +15,3 @@ Please use the corresponding label when creating an issue.
 ### Getting Help
 
 Contact a maintainer of Mellowtel with any questions or help you might need.
-

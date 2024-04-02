@@ -25,6 +25,7 @@
 </div>
 
 ---
+
 # Introduction ℹ️
 
 With Mellowtel's Open-Source library, your users can share a fraction of their unused internet by using a transparent opt-in/out mechanism. Trusted partners — from startups to enterprises — access the internet through this network to train their AI models, and you get paid for it.
@@ -60,8 +61,8 @@ Well, honestly, most attempts to monetize Chrome Extensions are just shady at be
 A recommended read: [Temptations of an open-source browser extension developer](https://github.com/extesy/hoverzoom/discussions/670)
 
 And a highlight from the article 😰:
-> "...we provide several methods of monetizating- from the soft to the hard methods."
 
+> "...we provide several methods of monetizating- from the soft to the hard methods."
 
 # Getting started 🚀
 
@@ -76,6 +77,7 @@ npm install mellowtel
 ```
 
 ## 2. Set up your Manifest
+
 Mellowtel requires some permissions to work properly (`storage`, `tabs`, `declarativeNetRequest`).
 
 Depending on which permissions you have already requested and which you haven't, there are two ways to proceed with the integration.
@@ -86,13 +88,12 @@ If, when installing your extension, an alert window pops up asking for permissio
 
 ```json
 {
-  "permissions": [
-    "storage",
-    "tabs",
-    "declarativeNetRequest"
-  ]
+  "permissions": ["storage", "tabs", "declarativeNetRequest"],
+  "host_permissions": ["\u003Call_urls\u003E"]
 }
 ```
+
+`host_permissions` is used by declarativeNetRequest to allow the extension to intercept requests on all URLs. It won't trigger another permission alert window, but you need to justify it in the Web Store section.
 
 ### Option 2
 
@@ -102,35 +103,36 @@ If it's not already there, you also need to add the `storage` permission. This c
 
 ```json
 {
-  "optional_permissions": [
-    "tabs",
-    "declarativeNetRequestWithHostAccess"
-  ],
-  "optional_host_permissions": [
-    "https://*/*"
-  ],
-  "permissions": [
-    "storage"
-  ]
+  "optional_permissions": ["tabs", "declarativeNetRequestWithHostAccess"],
+  "optional_host_permissions": ["https://*/*"],
+  "permissions": ["storage"]
 }
 ```
-
 
 ### Web Store Justification
 
 The Web Store requires you to justify the permissions you are requesting. Here is a template you can use (it explains how Mellowtel uses the permissions):
 
 **Tabs**:
+
 ```txt
 The tabs permission is required to access the URL of the current page in the service worker. It also facilitates messaging between the contentScript and the service worker.
 ```
 
 **DeclarativeNetRequest**:
+
 ```txt
 The declarativeNetRequest permission is required to strip certain headers (e.g. X-Frame headers) from some responses on the sub_frame level. This allows displaying websites in an iframe without running into issues related to cross-origin resource sharing (CORS). These headers are immediately restored after the response is processed.
 ```
 
+**Host Permissions**:
+
+```txt
+The host permissions on all_urls are required to let declarativeNetRequest modify response headers on all URLs. This is necessary to strip certain headers (e.g. X-Frame headers) from some responses on the sub_frame level. This allows displaying websites in an iframe without running into issues related to cross-origin resource sharing (CORS). These headers are immediately restored after the response is processed.
+```
+
 ## 3. Set up your background script
+
 In your `background.js` file, you need to import the `mellowtel` package.
 
 ```javascript
@@ -161,17 +163,18 @@ const hasOptedIn = await mellowtel.getOptInStatus();
 Once the user has read the disclaimer and agreed to join the network, call these methods:
 
 ```javascript
-await mellowtel.optIn()
-await mellowtel.start()
+await mellowtel.optIn();
+await mellowtel.start();
 ```
 
 If the user decides to opt out, you can call the `optOut` method. Mellowtel won't activate for this user anymore until the user opts in again.
 
 ```javascript
-await mellowtel.optOut()
+await mellowtel.optOut();
 ```
 
 ## 4. Set up your content script
+
 You have to import the `mellowtel` package in your content script as well.
 
 ```javascript
@@ -206,7 +209,6 @@ This content script should run in `all_frames` and `<all_urls>` at the `document
 ```
 
 If, for some reason, you can't have your content script running with these settings, just create a new content script that runs with these settings and import the `mellowtel` package in it.
-
 
 # Quickstart
 

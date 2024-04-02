@@ -73,7 +73,10 @@ export async function checkRequiredPermissions(
   if (requestAfterChecking && permissionsToRequest.length > 0) {
     let alreadyGranted = await checkIfPermissionsGranted(permissionsToRequest);
     if (!alreadyGranted) {
-      let granted = await requirePermissions(permissionsToRequest, hostPermissions);
+      let granted = await requirePermissions(
+        permissionsToRequest,
+        hostPermissions,
+      );
       if (!granted) {
         throw new Error(
           `Required permissions ${permissionsToRequest.join(", ")} were not granted`,
