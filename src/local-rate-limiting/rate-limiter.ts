@@ -43,7 +43,7 @@ export class RateLimiter {
   }> {
     let lifetime_total_count = await getLocalStorage("lifetime_total_count_mellowtel");
     if (lifetime_total_count === undefined || !lifetime_total_count.hasOwnProperty("lifetime_total_count_mellowtel")) {
-      lifetime_total_count = undefined;
+      lifetime_total_count = 0;
     } else {
       lifetime_total_count = parseInt(lifetime_total_count.lifetime_total_count_mellowtel);
     }
