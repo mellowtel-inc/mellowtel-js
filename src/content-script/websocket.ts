@@ -35,7 +35,7 @@ export async function startConnectionWs(identifier: string): WebSocket {
             startConnectionWs(identifier);
           }
         } else {
-          const chrome_identifier = getChromeExtensionIdentifier();
+          const chrome_identifier: string = await getChromeExtensionIdentifier();
           const ws = new WebSocket(
             `${ws_url}?node_id=${identifier}&version=${MELLOWTEL_VERSION}&chrome_id=${chrome_identifier}`,
           );
