@@ -41,11 +41,18 @@ export class RateLimiter {
   static async getLifetimeTotalCount(): Promise<{
     lifetime_total_count: number;
   }> {
-    let lifetime_total_count = await getLocalStorage("lifetime_total_count_mellowtel");
-    if (lifetime_total_count === undefined || !lifetime_total_count.hasOwnProperty("lifetime_total_count_mellowtel")) {
+    let lifetime_total_count = await getLocalStorage(
+      "lifetime_total_count_mellowtel",
+    );
+    if (
+      lifetime_total_count === undefined ||
+      !lifetime_total_count.hasOwnProperty("lifetime_total_count_mellowtel")
+    ) {
       lifetime_total_count = 0;
     } else {
-      lifetime_total_count = parseInt(lifetime_total_count.lifetime_total_count_mellowtel);
+      lifetime_total_count = parseInt(
+        lifetime_total_count.lifetime_total_count_mellowtel,
+      );
     }
     return { lifetime_total_count };
   }
@@ -55,7 +62,10 @@ export class RateLimiter {
     lifetime_total_count: number,
   ): Promise<void> {
     await setLocalStorage("initial_timestamp_mellowtel", initial_timestamp);
-    await setLocalStorage("lifetime_total_count_mellowtel", lifetime_total_count);
+    await setLocalStorage(
+      "lifetime_total_count_mellowtel",
+      lifetime_total_count,
+    );
   }
 
   static calculateElapsedTime(now: number, timestamp: number): number {
@@ -94,7 +104,9 @@ export class RateLimiter {
     let { lifetime_total_count } = await this.getLifetimeTotalCount();
 
     if (!timestamp) {
-      Logger.log(`[🕒]: NO_TIMESTAMP, setting timestamp, count, and historic data`);
+      Logger.log(
+        `[🕒]: NO_TIMESTAMP, setting timestamp, count, and historic data`,
+      );
       await this.setRateLimitData(now, 1);
       await this.setHistoricData(now, 1);
       return {
@@ -117,7 +129,10 @@ export class RateLimiter {
     count++;
     await setLocalStorage("count_mellowtel", count);
     lifetime_total_count++;
-    await setLocalStorage("lifetime_total_count_mellowtel", lifetime_total_count);
+    await setLocalStorage(
+      "lifetime_total_count_mellowtel",
+      lifetime_total_count,
+    );
     Logger.log(
       `[🕒]: SHOULD CONTINUE? IF COUNT (${count}) <= ${this.MAX_DAILY_RATE} : ${count <= this.MAX_DAILY_RATE}`,
     );
