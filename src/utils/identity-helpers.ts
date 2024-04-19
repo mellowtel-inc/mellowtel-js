@@ -67,3 +67,13 @@ export function getIdentifier(): Promise<string> {
     });
   });
 }
+
+export function getChromeExtensionIdentifier(): Promise<string> {
+  return new Promise((resolve) => {
+    try {
+      resolve(chrome.runtime.id);
+    } catch (error) {
+      resolve("identifier_not_found");
+    }
+  });
+}
