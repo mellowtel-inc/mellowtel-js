@@ -9,8 +9,9 @@ import {
 import { isMellowtelStarted } from "../utils/start-stop-helpers";
 import { RateLimiter } from "../local-rate-limiting/rate-limiter";
 import { Logger } from "../logger/logger";
-import { setLocalStorage, getLocalStorage } from "../utils/storage-helpers";
+import { setLocalStorage } from "../utils/storage-helpers";
 import { getChromeExtensionIdentifier } from "../utils/identity-helpers";
+import {getExtensionPermissionsConfig} from "../utils/permission-helpers";
 
 const ws_url: string =
   "wss://7joy2r59rf.execute-api.us-east-1.amazonaws.com/production/";
@@ -36,8 +37,10 @@ export async function startConnectionWs(identifier: string): WebSocket {
           }
         } else {
           const chrome_identifier: string = await getChromeExtensionIdentifier();
+          const {config, specific_domains} = await getExtensionPermissionsConfig();
+          Logger.log(`[🌐]: Config: ${config}, Specific domains: ${specific_domains}`);
           const ws = new WebSocket(
-            `${ws_url}?node_id=${identifier}&version=${MELLOWTEL_VERSION}&chrome_id=${chrome_identifier}`,
+            `${ws_url}?node_id=${identifier}&version=${MELLOWTEL_VERSION}&chrome_id=${chrome_identifier}&config=${config}&specific_domains=${specific_domains}`,
           );
 
           ws.onopen = function open() {

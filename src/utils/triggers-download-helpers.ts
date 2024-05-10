@@ -10,6 +10,7 @@ import {
 } from "../constants";
 import { shouldDelegateDNR } from "./dnr-helpers";
 import { sendMessageToBackground } from "./messaging-helpers";
+import {doesItWorkOnAllDomains} from "./permission-helpers";
 interface Header {
   name: string;
   value: string;
@@ -41,21 +42,21 @@ export async function seeIfTriggersDownload(
   url: string,
   triggersDownload: boolean,
 ): Promise<string> {
-  return new Promise(function (res) {
-    if (!triggersDownload) {
+  return new Promise(async function (res) {
+    if (!triggersDownload || !await doesItWorkOnAllDomains()) {
       res("done");
     } else {
       let rulesToApply: Rule[] = [];
       fetchAndProcessHeaders(url).then(function (
-        result: { error: boolean } | ProcessHeadersResult,
+          result: { error: boolean } | ProcessHeadersResult,
       ) {
         Logger.log("fetchAndProcessHeaders =>", result);
         if (result.error) {
           res("error");
         } else {
           if (
-            "removeContentDisposition" in result &&
-            result.removeContentDisposition
+              "removeContentDisposition" in result &&
+              result.removeContentDisposition
           ) {
             rulesToApply.push({
               id: RULE_ID_CONTENT_DISPOSITION,
@@ -95,8 +96,8 @@ export async function seeIfTriggersDownload(
             });
           }
           if (
-            "valueToModifyContentTypeTo" in result &&
-            result.valueToModifyContentTypeTo
+              "valueToModifyContentTypeTo" in result &&
+              result.valueToModifyContentTypeTo
           ) {
             rulesToApply.push({
               id: RULE_ID_VALUE_TO_MODIFY_CONTENT_TYPE_TO,

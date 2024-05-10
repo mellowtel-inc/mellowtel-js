@@ -3,13 +3,14 @@ import RuleActionType = chrome.declarativeNetRequest.RuleActionType;
 import ResourceType = chrome.declarativeNetRequest.ResourceType;
 import { sendMessageToBackground } from "./messaging-helpers";
 import { RULE_ID_XFRAME } from "../constants";
+import {doesItWorkOnAllDomains} from "./permission-helpers";
 
 export function disableXFrameHeaders(
   hostname: string,
   skipHeaders: boolean,
 ): Promise<boolean> {
-  return new Promise(function (res) {
-    if (skipHeaders) {
+  return new Promise(async function (res) {
+    if (skipHeaders || !await doesItWorkOnAllDomains()) {
       res(false);
     } else {
       let ruleId = getRuleIdFromHostname(hostname);
