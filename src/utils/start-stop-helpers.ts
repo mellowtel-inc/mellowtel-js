@@ -19,7 +19,6 @@ export function startMellowtelWebsocket() {
 }
 
 export function stopMellowtelConnection() {
-  // todo: send message to background, and remove all iframes
   let iframes: NodeListOf<Element> = document.querySelectorAll(
     `[data-id="${DATA_ID_IFRAME}"]`,
   );

@@ -10,7 +10,7 @@ import {
   startMellowtelWebsocket,
 } from "./utils/start-stop-helpers";
 import { getOptInStatus } from "./utils/opt-in-out-helpers";
-import { checkRequiredPermissions } from "./utils/permission-helpers";
+import {checkRequiredPermissions, doesItWorkOnAllDomains} from "./utils/permission-helpers";
 import { MAX_DAILY_RATE as DEFAULT_MAX_DAILY_RATE } from "./constants";
 import { Logger } from "./logger/logger";
 import { RateLimiter } from "./local-rate-limiting/rate-limiter";
@@ -44,7 +44,11 @@ export default class Mellowtel {
     }
     await checkRequiredPermissions(false);
     await purgeOnStartup();
-    await setUpOnTabRemoveListeners();
+
+    if(await doesItWorkOnAllDomains()) {
+      await setUpOnTabRemoveListeners();
+    }
+
     await setUpBackgroundListeners();
     await getOrGenerateIdentifier(this.publishableKey);
     if (auto_start_if_opted_in === undefined || auto_start_if_opted_in) {
