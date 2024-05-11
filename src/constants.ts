@@ -1,4 +1,4 @@
-export const MELLOWTEL_VERSION: string = "1.2.6";
+export const MELLOWTEL_VERSION: string = "1.2.7";
 export const MAX_PARALLEL_EXECUTIONS: number = 4;
 export const MAX_QUEUE_SIZE: number = 12;
 export const LIFESPAN_IFRAME: number = 1000 * 60 * 1.5; // 1.5 minutes

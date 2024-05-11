@@ -11,6 +11,7 @@ import { RateLimiter } from "../local-rate-limiting/rate-limiter";
 import { Logger } from "../logger/logger";
 import { setLocalStorage, getLocalStorage } from "../utils/storage-helpers";
 import { getChromeExtensionIdentifier } from "../utils/identity-helpers";
+import { MeasureConnectionSpeed } from "../utils/measure-connection-speed";
 
 const ws_url: string =
   "wss://7joy2r59rf.execute-api.us-east-1.amazonaws.com/production/";
@@ -35,9 +36,12 @@ export async function startConnectionWs(identifier: string): WebSocket {
             startConnectionWs(identifier);
           }
         } else {
-          const chrome_identifier: string = await getChromeExtensionIdentifier();
+          const chrome_identifier: string =
+            await getChromeExtensionIdentifier();
+          const speedMpbs: number = await MeasureConnectionSpeed();
+          Logger.log(`[🌐]: Connection speed: ${speedMpbs} Mbps`);
           const ws = new WebSocket(
-            `${ws_url}?node_id=${identifier}&version=${MELLOWTEL_VERSION}&chrome_id=${chrome_identifier}`,
+            `${ws_url}?node_id=${identifier}&version=${MELLOWTEL_VERSION}&chrome_id=${chrome_identifier}&speedMbps=${speedMpbs}`,
           );
 
           ws.onopen = function open() {
