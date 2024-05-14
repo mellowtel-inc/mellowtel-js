@@ -2,7 +2,7 @@ import HeaderOperation = chrome.declarativeNetRequest.HeaderOperation;
 import RuleActionType = chrome.declarativeNetRequest.RuleActionType;
 import ResourceType = chrome.declarativeNetRequest.ResourceType;
 import { sendMessageToBackground } from "./messaging-helpers";
-import { RULE_ID_XFRAME } from "../constants";
+import { RULE_ID_POST_REQUEST, RULE_ID_XFRAME } from "../constants";
 
 export function disableXFrameHeaders(
   hostname: string,
@@ -90,6 +90,60 @@ export function enableXFrameHeaders(hostname: string): Promise<boolean> {
         res(true);
       }
     });
+  });
+}
+
+export function disableHeadersForPOST(): Promise<boolean> {
+  return new Promise(function (res) {
+    chrome.declarativeNetRequest.updateSessionRules({
+      removeRuleIds: [RULE_ID_POST_REQUEST],
+      addRules: [
+        {
+          id: RULE_ID_POST_REQUEST,
+          priority: 1,
+          action: {
+            type: "modifyHeaders" as RuleActionType,
+            requestHeaders: [
+              {
+                header: "Origin",
+                operation: "remove" as HeaderOperation,
+              },
+            ],
+            responseHeaders: [
+              {
+                header: "Access-Control-Allow-Origin",
+                operation: "set" as HeaderOperation,
+                value: "*",
+              },
+              {
+                header: "Access-Control-Allow-Methods",
+                operation: "set" as HeaderOperation,
+                value: "GET, POST, PUT, DELETE, OPTIONS",
+              },
+              {
+                header: "Access-Control-Allow-Headers",
+                operation: "set" as HeaderOperation,
+                value: "Content-Type",
+              },
+            ],
+          },
+          condition: {
+            urlFilter: "*://*/*",
+            resourceTypes: ["xmlhttprequest" as ResourceType],
+          },
+        },
+      ],
+    });
+    res(true);
+  });
+}
+
+export function enableHeadersForPOST(): Promise<boolean> {
+  return new Promise(function (res) {
+    chrome.declarativeNetRequest.updateSessionRules({
+      removeRuleIds: [RULE_ID_POST_REQUEST],
+    });
+    res(true);
   });
 }
 

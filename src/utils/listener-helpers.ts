@@ -17,6 +17,7 @@ import {
   seeIfTriggersDownload,
 } from "./triggers-download-helpers";
 import { sendMessageToContentScript } from "./messaging-helpers";
+import { handlePostRequest } from "../post-requests/post-helpers";
 
 export async function setUpBackgroundListeners() {
   chrome.runtime.onMessage.addListener(
@@ -58,6 +59,16 @@ export async function setUpBackgroundListeners() {
           intent: "deleteIframeMellowtel",
           recordID: request.recordID,
         }).then(sendResponse);
+      }
+      if (request.intent === "handlePOSTRequest") {
+        handlePostRequest(
+          request.method_endpoint,
+          request.method_payload,
+          request.method_headers,
+          request.fastLane,
+          request.orgId,
+          request.recordID,
+        ).then(sendResponse);
       }
       return true; // return true to indicate you want to send a response asynchronously
     },

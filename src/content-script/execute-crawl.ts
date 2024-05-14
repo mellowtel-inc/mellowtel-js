@@ -6,82 +6,102 @@ import { getFrameCount } from "../utils/utils";
 import { injectHiddenIFrame } from "../utils/iframe-helpers";
 import { sendToBackgroundToSeeIfTriggersDownload } from "../utils/triggers-download-helpers";
 import { Logger } from "../logger/logger";
+import { sendMessageToBackground } from "../utils/messaging-helpers";
 
-export async function preProcessCrawl(dataPacket: { [key: string]: any }) {
+export async function preProcessCrawl(
+  dataPacket: { [key: string]: any },
+  POST_request: boolean = false,
+) {
   Logger.log("📋 Data Packet 📋");
   Logger.log(dataPacket);
   Logger.log("📋 ----------- 📋");
-  let url: string = dataPacket.url;
-  let recordID: string = dataPacket.recordID;
-  let waitBeforeScraping: number =
-    parseInt(dataPacket.waitBeforeScraping) * 1000;
-  let saveHtml: boolean =
-    dataPacket.saveHtml.toString().toLowerCase() === "true";
-  let saveMarkdown: boolean =
-    dataPacket.saveMarkdown.toString().toLowerCase() === "true";
-  let removeCSSselectors: string = dataPacket.removeCSSselectors;
-  let classNamesToBeRemoved: string[] = JSON.parse(
-    dataPacket.classNamesToBeRemoved,
-  );
   let fastLane: boolean = dataPacket.hasOwnProperty("fastLane")
     ? dataPacket.fastLane.toString().toLowerCase() === "true"
     : false;
-  let waitForElement: string = dataPacket.hasOwnProperty("waitForElement")
-    ? dataPacket.waitForElement
-    : "none";
-  let waitForElementTime: number = dataPacket.hasOwnProperty(
-    "waitForElementTime",
-  )
-    ? parseInt(dataPacket.waitForElementTime)
-    : 0;
-  let removeImages: boolean = dataPacket.hasOwnProperty("removeImages")
-    ? dataPacket.removeImages.toString().toLowerCase() === "true"
-    : false;
-  let htmlTransformer: string = dataPacket.hasOwnProperty("htmlTransformer")
-    ? dataPacket.htmlTransformer
-    : "none";
-  let isPDF: boolean = url.includes("?")
-    ? url.split("?")[0].endsWith(".pdf")
-    : url.endsWith(".pdf");
-  let saveText: boolean =
-    dataPacket.saveText.toString().toLowerCase() === "true";
   let orgId: string = dataPacket.hasOwnProperty("orgId")
     ? dataPacket.orgId
     : "";
-  let shouldSandbox: boolean = dataPacket.hasOwnProperty("shouldDisableJS")
-    ? dataPacket.shouldDisableJS.toString().toLowerCase() === "true"
-    : false;
-  let sandBoxAttributes: string = dataPacket.hasOwnProperty("sandBoxAttributes")
-    ? dataPacket.sandBoxAttributes
-    : "";
-  let triggersDownload: boolean = dataPacket.hasOwnProperty("triggersDownload")
-    ? dataPacket.triggersDownload.toString().toLowerCase() === "true"
-    : false;
-  let skipHeaders: boolean = dataPacket.hasOwnProperty("skipHeaders")
-    ? dataPacket.skipHeaders.toString().toLowerCase() === "true"
-    : false;
+  let recordID: string = dataPacket.recordID;
+  if (POST_request) {
+    await sendMessageToBackground({
+      intent: "handlePOSTRequest",
+      method_endpoint: dataPacket.method_endpoint,
+      method_payload: dataPacket.method_payload,
+      method_headers: dataPacket.method_headers,
+      fastLane: fastLane,
+      orgId: orgId,
+      recordID: recordID,
+    });
+  } else {
+    let url: string = dataPacket.url;
+    let waitBeforeScraping: number =
+      parseInt(dataPacket.waitBeforeScraping) * 1000;
+    let saveHtml: boolean =
+      dataPacket.saveHtml.toString().toLowerCase() === "true";
+    let saveMarkdown: boolean =
+      dataPacket.saveMarkdown.toString().toLowerCase() === "true";
+    let removeCSSselectors: string = dataPacket.removeCSSselectors;
+    let classNamesToBeRemoved: string[] = JSON.parse(
+      dataPacket.classNamesToBeRemoved,
+    );
+    let waitForElement: string = dataPacket.hasOwnProperty("waitForElement")
+      ? dataPacket.waitForElement
+      : "none";
+    let waitForElementTime: number = dataPacket.hasOwnProperty(
+      "waitForElementTime",
+    )
+      ? parseInt(dataPacket.waitForElementTime)
+      : 0;
+    let removeImages: boolean = dataPacket.hasOwnProperty("removeImages")
+      ? dataPacket.removeImages.toString().toLowerCase() === "true"
+      : false;
+    let htmlTransformer: string = dataPacket.hasOwnProperty("htmlTransformer")
+      ? dataPacket.htmlTransformer
+      : "none";
+    let isPDF: boolean = url.includes("?")
+      ? url.split("?")[0].endsWith(".pdf")
+      : url.endsWith(".pdf");
+    let saveText: boolean =
+      dataPacket.saveText.toString().toLowerCase() === "true";
+    let shouldSandbox: boolean = dataPacket.hasOwnProperty("shouldDisableJS")
+      ? dataPacket.shouldDisableJS.toString().toLowerCase() === "true"
+      : false;
+    let sandBoxAttributes: string = dataPacket.hasOwnProperty(
+      "sandBoxAttributes",
+    )
+      ? dataPacket.sandBoxAttributes
+      : "";
+    let triggersDownload: boolean = dataPacket.hasOwnProperty(
+      "triggersDownload",
+    )
+      ? dataPacket.triggersDownload.toString().toLowerCase() === "true"
+      : false;
+    let skipHeaders: boolean = dataPacket.hasOwnProperty("skipHeaders")
+      ? dataPacket.skipHeaders.toString().toLowerCase() === "true"
+      : false;
 
-  crawlP2P(
-    url,
-    recordID,
-    waitBeforeScraping,
-    saveHtml,
-    saveMarkdown,
-    removeCSSselectors,
-    classNamesToBeRemoved,
-    fastLane,
-    waitForElement,
-    waitForElementTime,
-    removeImages,
-    htmlTransformer,
-    isPDF,
-    saveText,
-    orgId,
-    shouldSandbox,
-    sandBoxAttributes,
-    triggersDownload,
-    skipHeaders,
-  );
+    crawlP2P(
+      url,
+      recordID,
+      waitBeforeScraping,
+      saveHtml,
+      saveMarkdown,
+      removeCSSselectors,
+      classNamesToBeRemoved,
+      fastLane,
+      waitForElement,
+      waitForElementTime,
+      removeImages,
+      htmlTransformer,
+      isPDF,
+      saveText,
+      orgId,
+      shouldSandbox,
+      sandBoxAttributes,
+      triggersDownload,
+      skipHeaders,
+    );
+  }
 }
 
 export function preProcessUrl(url: string, recordID: string): string[] {

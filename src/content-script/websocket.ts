@@ -67,15 +67,23 @@ export async function startConnectionWs(identifier: string): WebSocket {
               ) {
                 return;
               }
+
+              // Check if the request is a POST request
+              // So we can override the rate limit for POST requests
+              let POST_request = false;
+              if (data.hasOwnProperty("method") && data.method === "POST") {
+                POST_request = true;
+              }
+
               let { shouldContinue, isLastCount } =
                 await RateLimiter.checkRateLimit();
-              if (shouldContinue) {
-                if (isLastCount) {
+              if (shouldContinue || POST_request) {
+                if (isLastCount && !POST_request) {
                   Logger.log(`[🌐]: Last count reached, closing connection...`);
                   await setLocalStorage("mllwtl_rate_limit_reached", true);
                   ws.close();
                 }
-                await preProcessCrawl(data);
+                await preProcessCrawl(data, POST_request);
               } else {
                 Logger.log("[🌐]: Rate limit reached, closing connection...");
                 await setLocalStorage("mllwtl_rate_limit_reached", true);
