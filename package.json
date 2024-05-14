@@ -13,6 +13,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "mellowtel-inc",
+  "license": "LGPL-3.0",
   "devDependencies": {
     "@types/chrome": "^0.0.256",
     "prettier": "3.2.4",
