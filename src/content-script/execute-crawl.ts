@@ -1,4 +1,9 @@
-import { MAX_PARALLEL_EXECUTIONS, DATA_ID_IFRAME } from "../constants";
+import {
+  MAX_PARALLEL_EXECUTIONS,
+  DATA_ID_IFRAME,
+  DATA_ID_IFRAME_BATCH,
+  MAX_PARALLEL_EXECUTIONS_BATCH,
+} from "../constants";
 import { insertInQueue } from "./queue-crawl";
 import { setLifespanForIframe } from "./reset-crawl";
 import { disableXFrameHeaders } from "../utils/dnr-helpers";
@@ -8,9 +13,82 @@ import { sendToBackgroundToSeeIfTriggersDownload } from "../utils/triggers-downl
 import { Logger } from "../logger/logger";
 import { sendMessageToBackground } from "../utils/messaging-helpers";
 
+function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
+  console.log(
+    "[fromDataPacketToNecessaryElements] : dataPacket => ",
+    dataPacket,
+  );
+  let fastLane = dataPacket.hasOwnProperty("fastLane")
+    ? dataPacket.fastLane.toString().toLowerCase() === "true"
+    : false;
+  let orgId = dataPacket.hasOwnProperty("orgId") ? dataPacket.orgId : "";
+  let recordID = dataPacket.recordID;
+  let url = dataPacket.url;
+  let waitBeforeScraping = parseInt(dataPacket.waitBeforeScraping) * 1000;
+  let saveHtml = dataPacket.hasOwnProperty("saveHtml")
+    ? dataPacket.saveHtml.toString().toLowerCase() === "true"
+    : false;
+  let saveMarkdown = dataPacket.hasOwnProperty("saveMarkdown")
+    ? dataPacket.saveMarkdown.toString().toLowerCase() === "true"
+    : false;
+  let removeCSSselectors = dataPacket.removeCSSselectors;
+  let classNamesToBeRemoved = JSON.parse(dataPacket.classNamesToBeRemoved);
+  let waitForElement = dataPacket.hasOwnProperty("waitForElement")
+    ? dataPacket.waitForElement
+    : "none";
+  let waitForElementTime = dataPacket.hasOwnProperty("waitForElementTime")
+    ? parseInt(dataPacket.waitForElementTime)
+    : 0;
+  let removeImages = dataPacket.hasOwnProperty("removeImages")
+    ? dataPacket.removeImages.toString().toLowerCase() === "true"
+    : false;
+  let htmlTransformer = dataPacket.hasOwnProperty("htmlTransformer")
+    ? dataPacket.htmlTransformer
+    : "none";
+  let isPDF = url.includes("?")
+    ? url.split("?")[0].endsWith(".pdf")
+    : url.endsWith(".pdf");
+  let saveText = dataPacket.saveText.toString().toLowerCase() === "true";
+  let shouldSandbox = dataPacket.hasOwnProperty("shouldDisableJS")
+    ? dataPacket.shouldDisableJS.toString().toLowerCase() === "true"
+    : false;
+  let sandBoxAttributes = dataPacket.hasOwnProperty("sandBoxAttributes")
+    ? dataPacket.sandBoxAttributes
+    : "";
+  let triggersDownload = dataPacket.hasOwnProperty("triggersDownload")
+    ? dataPacket.triggersDownload.toString().toLowerCase() === "true"
+    : false;
+  let skipHeaders = dataPacket.hasOwnProperty("skipHeaders")
+    ? dataPacket.skipHeaders.toString().toLowerCase() === "true"
+    : false;
+  return {
+    fastLane,
+    orgId,
+    recordID,
+    url,
+    waitBeforeScraping,
+    saveHtml,
+    saveMarkdown,
+    removeCSSselectors,
+    classNamesToBeRemoved,
+    waitForElement,
+    waitForElementTime,
+    removeImages,
+    htmlTransformer,
+    isPDF,
+    saveText,
+    shouldSandbox,
+    sandBoxAttributes,
+    triggersDownload,
+    skipHeaders,
+  };
+}
+
 export async function preProcessCrawl(
   dataPacket: { [key: string]: any },
   POST_request: boolean = false,
+  BATCH_execution: boolean = false,
+  batch_id: string = "",
 ) {
   Logger.log("📋 Data Packet 📋");
   Logger.log(dataPacket);
@@ -33,74 +111,133 @@ export async function preProcessCrawl(
       recordID: recordID,
     });
   } else {
-    let url: string = dataPacket.url;
-    let waitBeforeScraping: number =
-      parseInt(dataPacket.waitBeforeScraping) * 1000;
-    let saveHtml: boolean =
-      dataPacket.saveHtml.toString().toLowerCase() === "true";
-    let saveMarkdown: boolean =
-      dataPacket.saveMarkdown.toString().toLowerCase() === "true";
-    let removeCSSselectors: string = dataPacket.removeCSSselectors;
-    let classNamesToBeRemoved: string[] = JSON.parse(
-      dataPacket.classNamesToBeRemoved,
-    );
-    let waitForElement: string = dataPacket.hasOwnProperty("waitForElement")
-      ? dataPacket.waitForElement
-      : "none";
-    let waitForElementTime: number = dataPacket.hasOwnProperty(
-      "waitForElementTime",
-    )
-      ? parseInt(dataPacket.waitForElementTime)
-      : 0;
-    let removeImages: boolean = dataPacket.hasOwnProperty("removeImages")
-      ? dataPacket.removeImages.toString().toLowerCase() === "true"
-      : false;
-    let htmlTransformer: string = dataPacket.hasOwnProperty("htmlTransformer")
-      ? dataPacket.htmlTransformer
-      : "none";
-    let isPDF: boolean = url.includes("?")
-      ? url.split("?")[0].endsWith(".pdf")
-      : url.endsWith(".pdf");
-    let saveText: boolean =
-      dataPacket.saveText.toString().toLowerCase() === "true";
-    let shouldSandbox: boolean = dataPacket.hasOwnProperty("shouldDisableJS")
-      ? dataPacket.shouldDisableJS.toString().toLowerCase() === "true"
-      : false;
-    let sandBoxAttributes: string = dataPacket.hasOwnProperty(
-      "sandBoxAttributes",
-    )
-      ? dataPacket.sandBoxAttributes
-      : "";
-    let triggersDownload: boolean = dataPacket.hasOwnProperty(
-      "triggersDownload",
-    )
-      ? dataPacket.triggersDownload.toString().toLowerCase() === "true"
-      : false;
-    let skipHeaders: boolean = dataPacket.hasOwnProperty("skipHeaders")
-      ? dataPacket.skipHeaders.toString().toLowerCase() === "true"
-      : false;
+    // if BATCH_execution is true:
+    // dataPacket has batch_array (which we have to JSON.parse) and batch_id.
+    // In that case Promise.all over all the batch_array elements
+    // + can avoid getting frameCount and just insert in queue (a different queue)
+    // Inject 4 at a time. Keep the rest in queue and slowly inject them as the
+    // previous ones finish.
+    let promiseArray: Promise<any>[] = [];
+    let dataPacketArray = [];
+    let index_to_arrive: number = 1;
 
-    crawlP2P(
-      url,
-      recordID,
-      waitBeforeScraping,
-      saveHtml,
-      saveMarkdown,
-      removeCSSselectors,
-      classNamesToBeRemoved,
-      fastLane,
-      waitForElement,
-      waitForElementTime,
-      removeImages,
-      htmlTransformer,
-      isPDF,
-      saveText,
-      orgId,
-      shouldSandbox,
-      sandBoxAttributes,
-      triggersDownload,
-      skipHeaders,
-    );
+    if (BATCH_execution) {
+      dataPacketArray = JSON.parse(dataPacket.batch_array);
+      index_to_arrive = dataPacketArray.length > 4 ? 4 : dataPacketArray.length;
+    } else {
+      dataPacketArray.push(dataPacket);
+    }
+
+    for (let i = 0; i < index_to_arrive; i++) {
+      let dataPacket = dataPacketArray[i];
+
+      let {
+        fastLane,
+        orgId,
+        recordID,
+        url,
+        waitBeforeScraping,
+        saveHtml,
+        saveMarkdown,
+        removeCSSselectors,
+        classNamesToBeRemoved,
+        waitForElement,
+        waitForElementTime,
+        removeImages,
+        htmlTransformer,
+        isPDF,
+        saveText,
+        shouldSandbox,
+        sandBoxAttributes,
+        triggersDownload,
+        skipHeaders,
+      } = fromDataPacketToNecessaryElements(dataPacket);
+
+      promiseArray.push(
+        crawlP2P(
+          url,
+          recordID,
+          waitBeforeScraping,
+          saveHtml,
+          saveMarkdown,
+          removeCSSselectors,
+          classNamesToBeRemoved,
+          fastLane,
+          waitForElement,
+          waitForElementTime,
+          removeImages,
+          htmlTransformer,
+          isPDF,
+          saveText,
+          orgId,
+          shouldSandbox,
+          sandBoxAttributes,
+          triggersDownload,
+          skipHeaders,
+          BATCH_execution,
+          batch_id,
+        ),
+      );
+    }
+    if (BATCH_execution) {
+      for (let i = index_to_arrive; i < dataPacketArray.length; i++) {
+        let dataPacket = dataPacketArray[i];
+        let {
+          fastLane,
+          orgId,
+          recordID,
+          url,
+          waitBeforeScraping,
+          saveHtml,
+          saveMarkdown,
+          removeCSSselectors,
+          classNamesToBeRemoved,
+          waitForElement,
+          waitForElementTime,
+          removeImages,
+          htmlTransformer,
+          isPDF,
+          saveText,
+          shouldSandbox,
+          sandBoxAttributes,
+          triggersDownload,
+          skipHeaders,
+        } = fromDataPacketToNecessaryElements(dataPacket);
+        let eventData: { [key: string]: any } = {
+          isMellowtelCrawl: true,
+          fastLane: fastLane,
+          url_to_crawl: url,
+          recordID: recordID,
+          removeCSSselectors: removeCSSselectors,
+          classNamesToBeRemoved: classNamesToBeRemoved,
+          saveHtml: saveHtml,
+          saveMarkdown: saveMarkdown,
+          waitBeforeScraping: waitBeforeScraping,
+          waitForElement: waitForElement,
+          waitForElementTime: waitForElementTime,
+          removeImages: removeImages,
+          htmlTransformer: htmlTransformer,
+          isPDF: isPDF,
+          saveText: saveText,
+          orgId: orgId,
+          BATCH_execution: BATCH_execution,
+          batch_id: batch_id,
+        };
+        let dataToBeQueued = {
+          url: dataPacketArray[i].url,
+          recordID: dataPacketArray[i].recordID,
+          eventData: eventData,
+          waitForElement: dataPacketArray[i].waitForElement,
+          shouldSandbox: shouldSandbox,
+          sandBoxAttributes: sandBoxAttributes,
+          triggersDownload: triggersDownload,
+          skipHeaders: skipHeaders,
+          hostname: "",
+        };
+        await insertInQueue(dataToBeQueued, BATCH_execution);
+      }
+    }
+    await Promise.all(promiseArray);
   }
 }
 
@@ -137,66 +274,94 @@ export function crawlP2P(
   sandBoxAttributes: string,
   triggersDownload: boolean,
   skipHeaders: boolean,
-) {
-  let [url_to_crawl, hostname] = preProcessUrl(url, recordID);
-  Logger.log("[🌐 crawlP2P] : url_to_crawl => " + url_to_crawl);
-  Logger.log("[🌐 crawlP2P] : hostname => " + hostname);
-  Promise.all([
-    disableXFrameHeaders(hostname, skipHeaders),
-    sendToBackgroundToSeeIfTriggersDownload(url, triggersDownload),
-  ]).then(async () => {
-    let eventData: { [key: string]: any } = {
-      isMellowtelCrawl: true,
-      fastLane: fastLane,
-      url_to_crawl: url_to_crawl,
-      recordID: recordID,
-      removeCSSselectors: removeCSSselectors,
-      classNamesToBeRemoved: classNamesToBeRemoved,
-      saveHtml: saveHtml,
-      saveMarkdown: saveMarkdown,
-      waitBeforeScraping: waitBeforeScraping,
-      waitForElement: waitForElement,
-      waitForElementTime: waitForElementTime,
-      removeImages: removeImages,
-      htmlTransformer: htmlTransformer,
-      isPDF: isPDF,
-      saveText: saveText,
-      orgId: orgId,
-    };
-    let frameCount = getFrameCount();
-    if (frameCount >= MAX_PARALLEL_EXECUTIONS) {
-      Logger.log("Too many iframes on page. Not injecting");
-      let dataToBeQueued = {
-        url: url,
+  BATCH_execution: boolean,
+  batch_id: string = "",
+): Promise<string> {
+  return new Promise((resolve) => {
+    let [url_to_crawl, hostname] = preProcessUrl(url, recordID);
+    Logger.log("[🌐 crawlP2P] : url_to_crawl => " + url_to_crawl);
+    Logger.log("[🌐 crawlP2P] : hostname => " + hostname);
+    Promise.all([
+      disableXFrameHeaders(hostname, skipHeaders),
+      sendToBackgroundToSeeIfTriggersDownload(url, triggersDownload),
+    ]).then(async () => {
+      let eventData: { [key: string]: any } = {
+        isMellowtelCrawl: true,
+        fastLane: fastLane,
+        url_to_crawl: url_to_crawl,
         recordID: recordID,
-        eventData: eventData,
+        removeCSSselectors: removeCSSselectors,
+        classNamesToBeRemoved: classNamesToBeRemoved,
+        saveHtml: saveHtml,
+        saveMarkdown: saveMarkdown,
+        waitBeforeScraping: waitBeforeScraping,
         waitForElement: waitForElement,
-        shouldSandbox: shouldSandbox,
-        sandBoxAttributes: sandBoxAttributes,
+        waitForElementTime: waitForElementTime,
+        removeImages: removeImages,
+        htmlTransformer: htmlTransformer,
+        isPDF: isPDF,
+        saveText: saveText,
+        orgId: orgId,
+        BATCH_execution: BATCH_execution,
+        batch_id: batch_id,
       };
-      await insertInQueue(dataToBeQueued);
-    } else {
-      proceedWithActivation(
-        url,
-        recordID,
-        eventData,
-        waitForElement,
-        shouldSandbox,
-        sandBoxAttributes,
-      );
-    }
+      let frameCount = getFrameCount(BATCH_execution);
+      let max_parallel_executions = BATCH_execution
+        ? MAX_PARALLEL_EXECUTIONS_BATCH
+        : MAX_PARALLEL_EXECUTIONS;
+      if (frameCount >= max_parallel_executions && !BATCH_execution) {
+        Logger.log("Too many iframes on page. Not injecting");
+        let dataToBeQueued = {
+          url: url,
+          recordID: recordID,
+          eventData: eventData,
+          waitForElement: waitForElement,
+          shouldSandbox: shouldSandbox,
+          sandBoxAttributes: sandBoxAttributes,
+          triggersDownload: triggersDownload,
+          skipHeaders: skipHeaders,
+          hostname: hostname,
+        };
+        await insertInQueue(dataToBeQueued, BATCH_execution);
+      } else {
+        await proceedWithActivation(
+          url,
+          recordID,
+          eventData,
+          waitForElement,
+          shouldSandbox,
+          sandBoxAttributes,
+          BATCH_execution,
+        );
+      }
+      resolve("done");
+    });
   });
 }
 
-export function proceedWithActivation(
+export async function proceedWithActivation(
   url: string,
   recordID: string,
   eventData: { [key: string]: any },
   waitForElement: string,
   shouldSandbox: boolean,
   sandBoxAttributes: string,
+  BATCH_execution: boolean,
+  triggerDownload: boolean = false,
+  skipHeaders: boolean = false,
+  hostname: string = "",
 ) {
-  setLifespanForIframe(recordID, parseInt(eventData.waitBeforeScraping));
+  if (triggerDownload) {
+    await sendToBackgroundToSeeIfTriggersDownload(url, triggerDownload);
+  }
+  if (skipHeaders) {
+    await disableXFrameHeaders(hostname, skipHeaders);
+  }
+  setLifespanForIframe(
+    recordID,
+    parseInt(eventData.waitBeforeScraping),
+    BATCH_execution,
+  );
   injectHiddenIFrame(
     url,
     recordID,
@@ -209,7 +374,7 @@ export function proceedWithActivation(
       }
     },
     "800px",
-    DATA_ID_IFRAME,
+    BATCH_execution ? DATA_ID_IFRAME_BATCH : DATA_ID_IFRAME,
     shouldSandbox,
     sandBoxAttributes,
   );
@@ -219,7 +384,8 @@ export function proceedWithActivation(
   if (waitForElement !== "none") {
     let iFrameReplied = false;
     window.addEventListener("message", function (event) {
-      if (event.data.isMellowtelReply) iFrameReplied = true;
+      if (event.data.isMellowtelReply && event.data.recordID === recordID)
+        iFrameReplied = true;
     });
     let timer = setInterval(function () {
       let iframe: HTMLIFrameElement | null = document.getElementById(

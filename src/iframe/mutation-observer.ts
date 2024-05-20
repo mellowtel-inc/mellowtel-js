@@ -29,7 +29,10 @@ function initIframeListeners() {
 async function initialEventListener(event: MessageEvent) {
   let isMellowtelCrawl = event.data.isMellowtelCrawl;
   if (isMellowtelCrawl && !alreadyReplied) {
-    window.parent.postMessage({ isMellowtelReply: true }, "*");
+    window.parent.postMessage(
+      { isMellowtelReply: true, recordID: event.data.recordID },
+      "*",
+    );
     alreadyReplied = true;
     let waitForElement = event.data.hasOwnProperty("waitForElement")
       ? event.data.waitForElement

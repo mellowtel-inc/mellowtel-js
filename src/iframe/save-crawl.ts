@@ -11,6 +11,8 @@ export function saveCrawl(
   htmlTransformer: string,
   orgId: string,
   saveText: string,
+  BATCH_execution: boolean,
+  batch_id: string,
 ) {
   Logger.log("📋 Saving Crawl 📋");
   Logger.log("RecordID:", recordID);
@@ -29,6 +31,8 @@ export function saveCrawl(
       orgId: orgId,
       saveText: saveText,
       node_identifier: node_identifier,
+      BATCH_execution: BATCH_execution,
+      batch_id: batch_id,
     };
 
     const requestOptions = {
@@ -48,11 +52,11 @@ export function saveCrawl(
       })
       .then((data) => {
         Logger.log("Response from server:", data);
-        return tellToDeleteIframe(recordID);
+        return tellToDeleteIframe(recordID, BATCH_execution);
       })
       .catch((error) => {
         Logger.error("Error:", error);
-        return tellToDeleteIframe(recordID);
+        return tellToDeleteIframe(recordID, BATCH_execution);
       });
   });
 }

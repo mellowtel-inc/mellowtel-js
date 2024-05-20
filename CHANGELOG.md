@@ -13,3 +13,7 @@
 ## 1.1.9 - 2024-03-26
 
 - ⏹️ Introduced local rate limiting (in addition to the server load balancing) to give developers more control and transparency over the rate limiting of their extension
+
+## 1.3.0 - 2024-05-20
+
+- Batch Executions support

@@ -2,19 +2,20 @@ import { getLocalStorage, setLocalStorage } from "../utils/storage-helpers";
 import { Logger } from "../logger/logger";
 import { MAX_QUEUE_SIZE } from "../constants";
 
-export async function insertInQueue(dataPacket: any) {
+export async function insertInQueue(dataPacket: any, BATCH_execution: boolean) {
   return new Promise((resolve) => {
-    getLocalStorage("queue").then((result) => {
-      if (result === undefined || !result.hasOwnProperty("queue"))
-        result = { queue: [] };
-      let queue = result.queue;
+    let queueKey = BATCH_execution ? "queue_batch" : "queue";
+    getLocalStorage(queueKey).then((result) => {
+      if (result === undefined || !result.hasOwnProperty(queueKey))
+        result = { [queueKey]: [] };
+      let queue = result[queueKey];
       if (queue.length > MAX_QUEUE_SIZE) {
         // ignore this packet
         Logger.log("[🌐] : queue is full. Ignoring this packet");
         resolve(false);
       } else {
         queue.push(dataPacket);
-        setLocalStorage("queue", queue).then(() => {
+        setLocalStorage(queueKey, queue).then(() => {
           resolve(true);
         });
       }
@@ -23,19 +24,23 @@ export async function insertInQueue(dataPacket: any) {
 }
 
 // Get last from queue (by shifting. Not optimized, but it's kind of ok because n is small)
-export async function getLastFromQueue(): Promise<{
+export async function getLastFromQueue(BATCH_execution: boolean): Promise<{
   url: string;
   recordID: string;
   eventData: any;
   waitForElement: string;
   shouldSandbox: boolean;
   sandBoxAttributes: string;
+  triggerDownload: boolean;
+  skipHeaders: boolean;
+  hostname: string;
 }> {
   return new Promise((resolve) => {
-    getLocalStorage("queue").then((result) => {
-      if (result === undefined || !result.hasOwnProperty("queue"))
-        result = { queue: [] };
-      let queue = result.queue;
+    let queueKey = BATCH_execution ? "queue_batch" : "queue";
+    getLocalStorage(queueKey).then((result) => {
+      if (result === undefined || !result.hasOwnProperty(queueKey))
+        result = { [queueKey]: [] };
+      let queue = result[queueKey];
       if (queue.length === 0)
         return resolve({
           url: "",
@@ -44,9 +49,12 @@ export async function getLastFromQueue(): Promise<{
           waitForElement: "none",
           shouldSandbox: false,
           sandBoxAttributes: "",
+          triggerDownload: false,
+          skipHeaders: false,
+          hostname: "",
         });
       let last = queue.shift();
-      setLocalStorage("queue", queue).then(() => {
+      setLocalStorage(queueKey, queue).then(() => {
         resolve(last);
       });
     });

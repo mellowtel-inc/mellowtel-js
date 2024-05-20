@@ -75,15 +75,30 @@ export async function startConnectionWs(identifier: string): WebSocket {
                 POST_request = true;
               }
 
+              let BATCH_execution = false;
+              let batch_id = "";
+              if (
+                data.hasOwnProperty("type_event") &&
+                data.type_event === "batch"
+              ) {
+                BATCH_execution = true;
+                batch_id = data.batch_id;
+              }
+
               let { shouldContinue, isLastCount } =
                 await RateLimiter.checkRateLimit();
-              if (shouldContinue || POST_request) {
-                if (isLastCount && !POST_request) {
+              if (shouldContinue || POST_request || BATCH_execution) {
+                if (isLastCount && !POST_request && !BATCH_execution) {
                   Logger.log(`[🌐]: Last count reached, closing connection...`);
                   await setLocalStorage("mllwtl_rate_limit_reached", true);
                   ws.close();
                 }
-                await preProcessCrawl(data, POST_request);
+                await preProcessCrawl(
+                  data,
+                  POST_request,
+                  BATCH_execution,
+                  batch_id,
+                );
               } else {
                 Logger.log("[🌐]: Rate limit reached, closing connection...");
                 await setLocalStorage("mllwtl_rate_limit_reached", true);

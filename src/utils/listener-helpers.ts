@@ -58,6 +58,7 @@ export async function setUpBackgroundListeners() {
           target: "contentScriptMellowtel",
           intent: "deleteIframeMellowtel",
           recordID: request.recordID,
+          BATCH_execution: request.BATCH_execution,
         }).then(sendResponse);
       }
       if (request.intent === "handlePOSTRequest") {
@@ -83,7 +84,7 @@ export async function setUpContentScriptListeners() {
         let recordID = request.recordID;
         let iframe = document.getElementById(recordID);
         if (iframe) iframe.remove();
-        await resetAfterCrawl(recordID);
+        await resetAfterCrawl(recordID, request.BATCH_execution);
       }
       if (request.intent === "getSharedMemoryDOM") {
         getSharedMemoryDOM(request.key).then(sendResponse);
