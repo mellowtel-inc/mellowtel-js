@@ -59,6 +59,7 @@ export async function getSharedMemoryBCK(key: string) {
       let numTabsChecked: number = 0;
       let mllwtlFramePresent: boolean = false;
       for (let i = 0; i < numTabs; i++) {
+        if (tabs[i]?.url?.includes("chrome://")) return false;
         sendMessageToContentScript(tabs[i].id!, {
           intent: "getSharedMemoryDOM",
           key: key,
