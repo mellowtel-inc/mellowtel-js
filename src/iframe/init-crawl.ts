@@ -77,8 +77,19 @@ function initCrawlHelper(event: MessageEvent, numTries: number) {
         document_to_use = parser.parseFromString(html, "text/html");
       }
 
-      if (removeCSSselectors === "default")
-        removeSelectorsFromDocument(document_to_use);
+      if (removeCSSselectors === "default") {
+        removeSelectorsFromDocument(document_to_use, []);
+      } else if (removeCSSselectors !== "" && removeCSSselectors !== "none") {
+        try {
+          let selectors = JSON.parse(removeCSSselectors);
+          removeSelectorsFromDocument(document_to_use, selectors);
+        } catch (e) {
+          Logger.error(
+            "[initCrawl 🌐] : Error parsing removeCSSselectors =>",
+            e,
+          );
+        }
+      }
       if (classNamesToBeRemoved.length > 0)
         removeElementsByClassNames(classNamesToBeRemoved);
       if (removeImages) removeImagesDOM(document_to_use);

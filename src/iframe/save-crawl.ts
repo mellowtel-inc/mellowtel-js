@@ -33,6 +33,7 @@ export function saveCrawl(
       node_identifier: node_identifier,
       BATCH_execution: BATCH_execution,
       batch_id: batch_id,
+      final_url: window.location.href,
     };
 
     const requestOptions = {

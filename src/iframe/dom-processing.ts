@@ -1,18 +1,24 @@
-export function removeSelectorsFromDocument(document: Document) {
-  const selectorsToRemove = [
-    "nav",
-    "footer",
-    "script",
-    "style",
-    "noscript",
-    "svg",
-    '[role="alert"]',
-    '[role="banner"]',
-    '[role="dialog"]',
-    '[role="alertdialog"]',
-    '[role="region"][aria-label*="skip" i]',
-    '[aria-modal="true"]',
-  ];
+const defaultSelectorsToRemove = [
+  "nav",
+  "footer",
+  "script",
+  "style",
+  "noscript",
+  "svg",
+  '[role="alert"]',
+  '[role="banner"]',
+  '[role="dialog"]',
+  '[role="alertdialog"]',
+  '[role="region"][aria-label*="skip" i]',
+  '[aria-modal="true"]',
+];
+
+export function removeSelectorsFromDocument(
+  document: Document,
+  selectorsToRemove: string[],
+) {
+  if (selectorsToRemove.length === 0)
+    selectorsToRemove = defaultSelectorsToRemove;
   selectorsToRemove.forEach((selector) => {
     const elements = document.querySelectorAll(selector);
     elements.forEach((element) => element.remove());
