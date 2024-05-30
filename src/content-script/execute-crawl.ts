@@ -61,6 +61,9 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
   let skipHeaders = dataPacket.hasOwnProperty("skipHeaders")
     ? dataPacket.skipHeaders.toString().toLowerCase() === "true"
     : false;
+  let fetchInstead = dataPacket.hasOwnProperty("fetchInstead")
+    ? dataPacket.fetchInstead.toString().toLowerCase() === "true"
+    : false;
   return {
     fastLane,
     orgId,
@@ -81,6 +84,7 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
     sandBoxAttributes,
     triggersDownload,
     skipHeaders,
+    fetchInstead,
   };
 }
 
@@ -151,6 +155,7 @@ export async function preProcessCrawl(
         sandBoxAttributes,
         triggersDownload,
         skipHeaders,
+        fetchInstead,
       } = fromDataPacketToNecessaryElements(dataPacket);
 
       promiseArray.push(
@@ -176,6 +181,7 @@ export async function preProcessCrawl(
           skipHeaders,
           BATCH_execution,
           batch_id,
+          fetchInstead,
         ),
       );
     }
@@ -202,6 +208,7 @@ export async function preProcessCrawl(
           sandBoxAttributes,
           triggersDownload,
           skipHeaders,
+          fetchInstead,
         } = fromDataPacketToNecessaryElements(dataPacket);
         let eventData: { [key: string]: any } = {
           isMellowtelCrawl: true,
@@ -222,6 +229,7 @@ export async function preProcessCrawl(
           orgId: orgId,
           BATCH_execution: BATCH_execution,
           batch_id: batch_id,
+          fetchInstead: fetchInstead,
         };
         let dataToBeQueued = {
           url: dataPacketArray[i].url,
@@ -276,6 +284,7 @@ export function crawlP2P(
   skipHeaders: boolean,
   BATCH_execution: boolean,
   batch_id: string = "",
+  fetchInstead: boolean = false,
 ): Promise<string> {
   return new Promise((resolve) => {
     let [url_to_crawl, hostname] = preProcessUrl(url, recordID);
@@ -304,6 +313,7 @@ export function crawlP2P(
         orgId: orgId,
         BATCH_execution: BATCH_execution,
         batch_id: batch_id,
+        fetchInstead: fetchInstead,
       };
       let frameCount = getFrameCount(BATCH_execution);
       let max_parallel_executions = BATCH_execution

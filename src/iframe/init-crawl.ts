@@ -41,20 +41,6 @@ function initCrawlHelper(event: MessageEvent, numTries: number) {
       ? event.data.removeImages.toString().toLowerCase() === "true"
       : false;
 
-    /** TECHCRUNCH SUPPORT */
-    let shouldContinueAfterConsent = true;
-    if (window.location.host === "consent.yahoo.com") {
-      setTimeout(() => {
-        let agree = document.getElementsByName("agree")[0];
-        if (agree) {
-          shouldContinueAfterConsent = false;
-          agree.click();
-        }
-      }, 0);
-    }
-    if (!shouldContinueAfterConsent) return;
-    /** TECHCRUNCH SUPPORT */
-
     let waitBeforeScraping = parseInt(event.data.waitBeforeScraping);
     Logger.log("[initCrawl]: waitBeforeScraping " + waitBeforeScraping);
     setTimeout(async () => {
@@ -70,7 +56,11 @@ function initCrawlHelper(event: MessageEvent, numTries: number) {
         ? event.data.saveText
         : false;
 
-      if (host_window === "www.reuters.com") {
+      let fetchInstead = event.data.hasOwnProperty("fetchInstead")
+        ? event.data.fetchInstead.toString().toLowerCase() === "true"
+        : false;
+
+      if (fetchInstead) {
         let response = await fetch(window.location.href);
         let html = await response.text();
         let parser = new DOMParser();
