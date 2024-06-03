@@ -9,11 +9,13 @@ import {
   isMellowtelStarted,
   startMellowtelWebsocket,
 } from "./utils/start-stop-helpers";
-import { getOptInStatus } from "./utils/opt-in-out-helpers";
+import { getOptInStatus, optIn, optOut } from "./utils/opt-in-out-helpers";
 import { checkRequiredPermissions } from "./utils/permission-helpers";
 import { MAX_DAILY_RATE as DEFAULT_MAX_DAILY_RATE } from "./constants";
 import { Logger } from "./logger/logger";
 import { RateLimiter } from "./local-rate-limiting/rate-limiter";
+import { checkWebPlatformMessaging } from "./mellowtel-elements/web-platform-check";
+import { setUpExternalMessageListeners } from "./mellowtel-elements/message-web-platform";
 
 export default class Mellowtel {
   private publishableKey: string;
@@ -47,6 +49,10 @@ export default class Mellowtel {
     await setUpOnTabRemoveListeners();
     await setUpBackgroundListeners();
     await getOrGenerateIdentifier(this.publishableKey);
+    let isWebMessagingEnabled = await checkWebPlatformMessaging();
+    if (isWebMessagingEnabled) {
+      await setUpExternalMessageListeners();
+    }
     if (auto_start_if_opted_in === undefined || auto_start_if_opted_in) {
       let optInStatus = await getOptInStatus();
       if (optInStatus) {
@@ -73,20 +79,11 @@ export default class Mellowtel {
   }
 
   public async optIn(): Promise<boolean> {
-    return new Promise((resolve) => {
-      setLocalStorage("mellowtelOptIn", "true").then(() => {
-        resolve(true);
-      });
-    });
+    return optIn();
   }
 
   public async optOut(): Promise<boolean> {
-    return new Promise((resolve) => {
-      setLocalStorage("mellowtelOptIn", "false").then(() => {
-        this.stop();
-        resolve(true);
-      });
-    });
+    return optOut();
   }
 
   public async getOptInStatus(): Promise<boolean> {
