@@ -1,4 +1,7 @@
-import { getOrGenerateIdentifier } from "./utils/identity-helpers";
+import {
+  getChromeExtensionIdentifier,
+  getOrGenerateIdentifier,
+} from "./utils/identity-helpers";
 import { setUpOnTabRemoveListeners } from "./background-script/tab-remove-listeners";
 import { setUpBackgroundListeners } from "./utils/listener-helpers";
 import { inIframe } from "./utils/iframe-helpers";
@@ -11,11 +14,18 @@ import {
 } from "./utils/start-stop-helpers";
 import { getOptInStatus, optIn, optOut } from "./utils/opt-in-out-helpers";
 import { checkRequiredPermissions } from "./utils/permission-helpers";
-import { MAX_DAILY_RATE as DEFAULT_MAX_DAILY_RATE } from "./constants";
+import {
+  MAX_DAILY_RATE as DEFAULT_MAX_DAILY_RATE,
+  MELLOWTEL_VERSION,
+} from "./constants";
 import { Logger } from "./logger/logger";
 import { RateLimiter } from "./local-rate-limiting/rate-limiter";
 import { checkWebPlatformMessaging } from "./mellowtel-elements/web-platform-check";
 import { setUpExternalMessageListeners } from "./mellowtel-elements/message-web-platform";
+import {
+  generateOptInLink,
+  generateSettingsLink,
+} from "./mellowtel-elements/generate-links";
 
 export default class Mellowtel {
   private publishableKey: string;
@@ -88,6 +98,26 @@ export default class Mellowtel {
 
   public async getOptInStatus(): Promise<boolean> {
     return getOptInStatus();
+  }
+
+  public async generateOptInLink(): Promise<string> {
+    return generateOptInLink();
+  }
+
+  public async generateSettingsLink(): Promise<string> {
+    return generateSettingsLink();
+  }
+
+  public async getNodeId(): Promise<string> {
+    return getOrGenerateIdentifier(this.publishableKey);
+  }
+
+  public async getMellowtelVersion(): Promise<string> {
+    return MELLOWTEL_VERSION;
+  }
+
+  public async getChromeExtensionIdentifier(): Promise<string> {
+    return getChromeExtensionIdentifier();
   }
 
   public async start(metadata_id?: string | undefined): Promise<boolean> {
