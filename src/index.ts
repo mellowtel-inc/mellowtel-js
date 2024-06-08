@@ -25,6 +25,7 @@ import { setUpExternalMessageListeners } from "./mellowtel-elements/message-web-
 import {
   generateOptInLink,
   generateSettingsLink,
+  generateAndOpenOptInLink,
 } from "./mellowtel-elements/generate-links";
 
 export default class Mellowtel {
@@ -102,6 +103,10 @@ export default class Mellowtel {
 
   public async generateOptInLink(): Promise<string> {
     return generateOptInLink();
+  }
+
+  public async generateAndOpenOptInLink(): Promise<string> {
+    return generateAndOpenOptInLink();
   }
 
   public async generateSettingsLink(): Promise<string> {

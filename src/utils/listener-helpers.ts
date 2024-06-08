@@ -18,6 +18,7 @@ import {
 } from "./triggers-download-helpers";
 import { sendMessageToContentScript } from "./messaging-helpers";
 import { handlePostRequest } from "../post-requests/post-helpers";
+import { generateAndOpenOptInLink } from "../mellowtel-elements/generate-links";
 
 export async function setUpBackgroundListeners() {
   chrome.runtime.onMessage.addListener(
@@ -70,6 +71,11 @@ export async function setUpBackgroundListeners() {
           request.orgId,
           request.recordID,
         ).then(sendResponse);
+      }
+      if (request.intent === "openOptInLink") {
+        generateAndOpenOptInLink().then((link) => {
+          sendResponse(link);
+        });
       }
       return true; // return true to indicate you want to send a response asynchronously
     },

@@ -1,7 +1,7 @@
 import { Logger } from "../logger/logger";
 
 const imageAddr: string =
-  "https://upload.wikimedia.org/wikipedia/commons/3/3a/Bloemen_van_adderwortel_%28Persicaria_bistorta%2C_synoniem%2C_Polygonum_bistorta%29_06-06-2021._%28d.j.b%29.jpg";
+  "https://mellowtel.s3.amazonaws.com/Bloemen_van_adderwortel_(Persicaria_bistorta%2C_synoniem%2C_Polygonum_bistorta)_06-06-2021._(d.j.b).jpg";
 const downloadSize: number = 7300000; //bytes
 
 export function MeasureConnectionSpeed(): Promise<number> {
