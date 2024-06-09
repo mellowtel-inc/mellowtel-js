@@ -67,7 +67,7 @@ export function generateOptInLink(): Promise<string> {
     getIdentifier().then((nodeId) => {
       let configuration_key = nodeId.split("_")[1];
       resolve(
-        `${BASE_LINK_OPT_IN}$?extension_id=${extension_id}&configuration_key=${configuration_key}`,
+        `${BASE_LINK_OPT_IN}?extension_id=${extension_id}&configuration_key=${configuration_key}`,
       );
     });
   });
@@ -79,7 +79,7 @@ export function generateSettingsLink(): Promise<string> {
     getIdentifier().then((nodeId) => {
       let configuration_key = nodeId.split("_")[1];
       resolve(
-        `${BASE_LINK_SETTING}$?extension_id=${extension_id}&configuration_key=${configuration_key}`,
+        `${BASE_LINK_SETTING}?extension_id=${extension_id}&configuration_key=${configuration_key}`,
       );
     });
   });

@@ -15,7 +15,7 @@ export async function checkWebPlatformMessaging() {
       is_external_connectable = true;
     } else {
       console.error(
-        "Mellowtel: Web platform messaging permission not present for all domains",
+        "[Mellowtel Important] : Web platform messaging permission not present for all domains",
       );
     }
     resolve(is_external_connectable);

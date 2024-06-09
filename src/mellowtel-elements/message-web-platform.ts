@@ -8,22 +8,22 @@ export async function setUpExternalMessageListeners() {
     (request, sender, sendResponse) => {
       if (request.action === "optIn") {
         optIn().then(() => {
-          sendResponse({ message: "opted in" });
+          sendResponse({ message: "opted-in" });
         });
       }
       if (request.action === "optOut") {
         optOut().then(() => {
-          sendResponse({ message: "opted out" });
+          sendResponse({ message: "opted-out" });
         });
       }
       if (request.action === "getOptInStatus") {
         getOptInStatus().then((status) => {
-          sendResponse({ message: "opt in status", status: status });
+          sendResponse({ message: "opt-in-status", status: status });
         });
       }
       if (request.action === "getNodeId") {
         getIdentifier().then((nodeId) => {
-          sendResponse({ message: "node id", nodeId: nodeId });
+          sendResponse({ message: "node-id", nodeId: nodeId });
         });
       }
       if (request.action === "getMellowtelVersion") {
@@ -35,7 +35,7 @@ export async function setUpExternalMessageListeners() {
       if (request.action === "getRequestsHandled") {
         RateLimiter.getLifetimeTotalCount().then((requestsHandled) => {
           sendResponse({
-            message: "requests handled",
+            message: "requests-handled",
             requestsHandled: requestsHandled,
           });
         });
@@ -43,7 +43,7 @@ export async function setUpExternalMessageListeners() {
       if (request.action === "getRateLimitData") {
         RateLimiter.getRateLimitData().then((rateLimitData) => {
           sendResponse({
-            message: "rate limit data",
+            message: "rate-limit-data",
             timestamp: rateLimitData.timestamp,
             count: rateLimitData.count,
           });

@@ -23,7 +23,9 @@ export async function optIn(): Promise<boolean> {
 export async function optOut(): Promise<boolean> {
   return new Promise((resolve) => {
     setLocalStorage("mellowtelOptIn", "false").then(() => {
-      resolve(true);
+      setLocalStorage("mellowtelStatus", "stop").then(() => {
+        resolve(true);
+      });
     });
   });
 }

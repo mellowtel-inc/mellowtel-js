@@ -80,7 +80,7 @@ export default class Mellowtel {
         );
         mutationObserverModule.attachMutationObserver();
       } else {
-        if (await isMellowtelStarted()) {
+        if ((await isMellowtelStarted()) && (await getOptInStatus())) {
           startMellowtelWebsocket();
         } else {
           await setUpStorageChangeListeners();
