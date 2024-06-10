@@ -10,7 +10,9 @@ import { setUpStorageChangeListeners } from "./content-script/storage-change-lis
 import { setLocalStorage } from "./utils/storage-helpers";
 import {
   isMellowtelStarted,
+  start,
   startMellowtelWebsocket,
+  stop,
 } from "./utils/start-stop-helpers";
 import { getOptInStatus, optIn, optOut } from "./utils/opt-in-out-helpers";
 import { checkRequiredPermissions } from "./utils/permission-helpers";
@@ -126,32 +128,10 @@ export default class Mellowtel {
   }
 
   public async start(metadata_id?: string | undefined): Promise<boolean> {
-    return new Promise(async (resolve) => {
-      let optInStatus = await getOptInStatus();
-      if (!optInStatus) {
-        throw new Error(
-          "Node has not opted in to Mellowtel yet. Request a disclaimer to the end-user and then call the optIn() method if they agree to join the Mellowtel network.",
-        );
-      }
-      try {
-        await checkRequiredPermissions(true);
-        // note: in later version, metadata_id will be used to trace the #...
-        // ...of requests to this specific node, so you can give rewards, etc.
-        setLocalStorage("mellowtelStatus", "start").then(() => {
-          resolve(true);
-        });
-      } catch (error) {
-        await this.optOut();
-        resolve(false);
-      }
-    });
+    return start(metadata_id);
   }
 
   public async stop(): Promise<boolean> {
-    return new Promise((resolve) => {
-      setLocalStorage("mellowtelStatus", "stop").then(() => {
-        resolve(true);
-      });
-    });
+    return stop();
   }
 }

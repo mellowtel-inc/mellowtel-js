@@ -27,10 +27,15 @@ async function setAlreadyOpened() {
 async function getAlreadyOpened(): Promise<boolean> {
   return new Promise((resolve) => {
     getLocalStorage("mellowtelOptInOpened").then((result) => {
-      if (result !== undefined && result === "true") {
-        resolve(true);
-      } else {
+      if (
+        result === undefined ||
+        !result.hasOwnProperty("mellowtelOptInOpened")
+      ) {
         resolve(false);
+      } else {
+        let opened =
+          result["mellowtelOptInOpened"].toString().toLowerCase() === "true";
+        resolve(opened);
       }
     });
   });
@@ -47,13 +52,12 @@ export function generateAndOpenOptInLink(): Promise<string> {
     let alreadyOpened = await getAlreadyOpened();
     if (!alreadyOpened) {
       let extension_id = await getChromeExtensionIdentifier();
-      getIdentifier().then((nodeId) => {
+      getIdentifier().then(async (nodeId) => {
         let configuration_key = nodeId.split("_")[1];
-        let link = `${BASE_LINK_OPT_IN}$?extension_id=${extension_id}&configuration_key=${configuration_key}`;
-        setAlreadyOpened().then(() => {
-          chrome.tabs.create({ url: link });
-          resolve(link);
-        });
+        let link = `${BASE_LINK_OPT_IN}?extension_id=${extension_id}&configuration_key=${configuration_key}`;
+        await setAlreadyOpened();
+        chrome.tabs.create({ url: link });
+        resolve(link);
       });
     } else {
       resolve("");

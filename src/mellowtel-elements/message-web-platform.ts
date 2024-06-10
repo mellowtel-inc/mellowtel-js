@@ -2,6 +2,8 @@ import { getOptInStatus, optOut, optIn } from "../utils/opt-in-out-helpers";
 import { getIdentifier } from "../utils/identity-helpers";
 import { MELLOWTEL_VERSION } from "../constants";
 import { RateLimiter } from "../local-rate-limiting/rate-limiter";
+import { Logger } from "../logger/logger";
+import { start, stop } from "../utils/start-stop-helpers";
 
 export async function setUpExternalMessageListeners() {
   chrome.runtime.onMessageExternal.addListener(
@@ -14,6 +16,16 @@ export async function setUpExternalMessageListeners() {
       if (request.action === "optOut") {
         optOut().then(() => {
           sendResponse({ message: "opted-out" });
+        });
+      }
+      if (request.action === "startMellowtel") {
+        start().then(() => {
+          sendResponse({ message: "mellowtel-started" });
+        });
+      }
+      if (request.action === "stopMellowtel") {
+        stop().then(() => {
+          sendResponse({ message: "mellowtel-stopped" });
         });
       }
       if (request.action === "getOptInStatus") {
@@ -48,6 +60,26 @@ export async function setUpExternalMessageListeners() {
             count: rateLimitData.count,
           });
         });
+      }
+      if (request.action === "closePage") {
+        if (
+          sender.tab &&
+          sender.tab.id !== undefined &&
+          sender.tab.url !== undefined
+        ) {
+          // remove the page which is sending the message only if url includes mellowtel.it or mellow.tel
+          if (
+            sender.tab.url.includes("mellowtel.it") ||
+            sender.tab.url.includes("mellow.tel")
+          ) {
+            chrome.tabs.remove(sender.tab.id);
+            sendResponse({ message: "page-closed" });
+          } else {
+            sendResponse({ message: "page-not-closed" });
+          }
+        } else {
+          Logger.log("sender.tab or sender.tab.id is undefined");
+        }
       }
       return true;
     },
