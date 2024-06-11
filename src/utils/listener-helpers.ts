@@ -77,6 +77,13 @@ export async function setUpBackgroundListeners() {
           sendResponse(link);
         });
       }
+      if (request.intent === "removeCurrentTab") {
+        let tabId = sender.tab?.id;
+        if (tabId !== null && tabId !== undefined) {
+          chrome.tabs.remove(tabId);
+        }
+        sendResponse(sender.tab?.id);
+      }
       return true; // return true to indicate you want to send a response asynchronously
     },
   );

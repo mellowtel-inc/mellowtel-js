@@ -22,7 +22,6 @@ import {
 } from "./constants";
 import { Logger } from "./logger/logger";
 import { RateLimiter } from "./local-rate-limiting/rate-limiter";
-import { checkWebPlatformMessaging } from "./mellowtel-elements/web-platform-check";
 import { setUpExternalMessageListeners } from "./mellowtel-elements/message-web-platform";
 import {
   generateOptInLink,
@@ -62,10 +61,6 @@ export default class Mellowtel {
     await setUpOnTabRemoveListeners();
     await setUpBackgroundListeners();
     await getOrGenerateIdentifier(this.publishableKey);
-    let isWebMessagingEnabled = await checkWebPlatformMessaging();
-    if (isWebMessagingEnabled) {
-      await setUpExternalMessageListeners();
-    }
     if (auto_start_if_opted_in === undefined || auto_start_if_opted_in) {
       let optInStatus = await getOptInStatus();
       if (optInStatus) {
@@ -76,6 +71,7 @@ export default class Mellowtel {
 
   public async initContentScript(): Promise<void> {
     if (typeof window !== "undefined") {
+      await setUpExternalMessageListeners();
       if (inIframe()) {
         const mutationObserverModule = await import(
           "./iframe/mutation-observer"
