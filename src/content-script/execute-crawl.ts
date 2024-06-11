@@ -14,7 +14,7 @@ import { Logger } from "../logger/logger";
 import { sendMessageToBackground } from "../utils/messaging-helpers";
 
 function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
-  console.log(
+  Logger.log(
     "[fromDataPacketToNecessaryElements] : dataPacket => ",
     dataPacket,
   );

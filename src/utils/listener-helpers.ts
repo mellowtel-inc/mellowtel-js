@@ -18,6 +18,7 @@ import {
 } from "./triggers-download-helpers";
 import { sendMessageToContentScript } from "./messaging-helpers";
 import { handlePostRequest } from "../post-requests/post-helpers";
+import { generateAndOpenOptInLink } from "../mellowtel-elements/generate-links";
 
 export async function setUpBackgroundListeners() {
   chrome.runtime.onMessage.addListener(
@@ -70,6 +71,18 @@ export async function setUpBackgroundListeners() {
           request.orgId,
           request.recordID,
         ).then(sendResponse);
+      }
+      if (request.intent === "openOptInLink") {
+        generateAndOpenOptInLink().then((link) => {
+          sendResponse(link);
+        });
+      }
+      if (request.intent === "removeCurrentTab") {
+        let tabId = sender.tab?.id;
+        if (tabId !== null && tabId !== undefined) {
+          chrome.tabs.remove(tabId);
+        }
+        sendResponse(sender.tab?.id);
       }
       return true; // return true to indicate you want to send a response asynchronously
     },

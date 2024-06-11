@@ -1,4 +1,7 @@
-import { getOrGenerateIdentifier } from "./utils/identity-helpers";
+import {
+  getChromeExtensionIdentifier,
+  getOrGenerateIdentifier,
+} from "./utils/identity-helpers";
 import { setUpOnTabRemoveListeners } from "./background-script/tab-remove-listeners";
 import { setUpBackgroundListeners } from "./utils/listener-helpers";
 import { inIframe } from "./utils/iframe-helpers";
@@ -7,13 +10,24 @@ import { setUpStorageChangeListeners } from "./content-script/storage-change-lis
 import { setLocalStorage } from "./utils/storage-helpers";
 import {
   isMellowtelStarted,
+  start,
   startMellowtelWebsocket,
+  stop,
 } from "./utils/start-stop-helpers";
-import { getOptInStatus } from "./utils/opt-in-out-helpers";
+import { getOptInStatus, optIn, optOut } from "./utils/opt-in-out-helpers";
 import { checkRequiredPermissions } from "./utils/permission-helpers";
-import { MAX_DAILY_RATE as DEFAULT_MAX_DAILY_RATE } from "./constants";
+import {
+  MAX_DAILY_RATE as DEFAULT_MAX_DAILY_RATE,
+  MELLOWTEL_VERSION,
+} from "./constants";
 import { Logger } from "./logger/logger";
 import { RateLimiter } from "./local-rate-limiting/rate-limiter";
+import { setUpExternalMessageListeners } from "./mellowtel-elements/message-web-platform";
+import {
+  generateOptInLink,
+  generateSettingsLink,
+  generateAndOpenOptInLink,
+} from "./mellowtel-elements/generate-links";
 
 export default class Mellowtel {
   private publishableKey: string;
@@ -57,13 +71,14 @@ export default class Mellowtel {
 
   public async initContentScript(): Promise<void> {
     if (typeof window !== "undefined") {
+      await setUpExternalMessageListeners();
       if (inIframe()) {
         const mutationObserverModule = await import(
           "./iframe/mutation-observer"
         );
         mutationObserverModule.attachMutationObserver();
       } else {
-        if (await isMellowtelStarted()) {
+        if ((await isMellowtelStarted()) && (await getOptInStatus())) {
           startMellowtelWebsocket();
         } else {
           await setUpStorageChangeListeners();
@@ -73,53 +88,46 @@ export default class Mellowtel {
   }
 
   public async optIn(): Promise<boolean> {
-    return new Promise((resolve) => {
-      setLocalStorage("mellowtelOptIn", "true").then(() => {
-        resolve(true);
-      });
-    });
+    return optIn();
   }
 
   public async optOut(): Promise<boolean> {
-    return new Promise((resolve) => {
-      setLocalStorage("mellowtelOptIn", "false").then(() => {
-        this.stop();
-        resolve(true);
-      });
-    });
+    return optOut();
   }
 
   public async getOptInStatus(): Promise<boolean> {
     return getOptInStatus();
   }
 
+  public async generateOptInLink(): Promise<string> {
+    return generateOptInLink();
+  }
+
+  public async generateAndOpenOptInLink(): Promise<string> {
+    return generateAndOpenOptInLink();
+  }
+
+  public async generateSettingsLink(): Promise<string> {
+    return generateSettingsLink();
+  }
+
+  public async getNodeId(): Promise<string> {
+    return getOrGenerateIdentifier(this.publishableKey);
+  }
+
+  public async getMellowtelVersion(): Promise<string> {
+    return MELLOWTEL_VERSION;
+  }
+
+  public async getChromeExtensionIdentifier(): Promise<string> {
+    return getChromeExtensionIdentifier();
+  }
+
   public async start(metadata_id?: string | undefined): Promise<boolean> {
-    return new Promise(async (resolve) => {
-      let optInStatus = await getOptInStatus();
-      if (!optInStatus) {
-        throw new Error(
-          "Node has not opted in to Mellowtel yet. Request a disclaimer to the end-user and then call the optIn() method if they agree to join the Mellowtel network.",
-        );
-      }
-      try {
-        await checkRequiredPermissions(true);
-        // note: in later version, metadata_id will be used to trace the #...
-        // ...of requests to this specific node, so you can give rewards, etc.
-        setLocalStorage("mellowtelStatus", "start").then(() => {
-          resolve(true);
-        });
-      } catch (error) {
-        await this.optOut();
-        resolve(false);
-      }
-    });
+    return start(metadata_id);
   }
 
   public async stop(): Promise<boolean> {
-    return new Promise((resolve) => {
-      setLocalStorage("mellowtelStatus", "stop").then(() => {
-        resolve(true);
-      });
-    });
+    return stop();
   }
 }
