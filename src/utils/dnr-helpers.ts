@@ -3,6 +3,7 @@ import RuleActionType = chrome.declarativeNetRequest.RuleActionType;
 import ResourceType = chrome.declarativeNetRequest.ResourceType;
 import { sendMessageToBackground } from "./messaging-helpers";
 import { RULE_ID_POST_REQUEST, RULE_ID_XFRAME } from "../constants";
+import { Logger } from "../logger/logger";
 
 export function disableXFrameHeaders(
   hostname: string,
@@ -90,6 +91,70 @@ export function enableXFrameHeaders(hostname: string): Promise<boolean> {
         res(true);
       }
     });
+  });
+}
+
+export function fixImageRenderHTMLVisualizer(): Promise<boolean> {
+  return new Promise(function (res) {
+    const rule = {
+      id: 195,
+      priority: 1,
+      action: {
+        type: "modifyHeaders",
+        requestHeaders: [
+          {
+            header: "Origin",
+            operation: "remove",
+          },
+        ],
+        responseHeaders: [
+          {
+            header: "Access-Control-Allow-Origin",
+            operation: "set",
+            value: "*",
+          },
+          {
+            header: "Access-Control-Allow-Methods",
+            operation: "set",
+            value: "GET, POST, PUT, DELETE, OPTIONS",
+          },
+          {
+            header: "Access-Control-Allow-Headers",
+            operation: "set",
+            value: "Content-Type",
+          },
+        ],
+      },
+      condition: {
+        urlFilter: "*://*/*",
+        resourceTypes: ["image"],
+      },
+    };
+    // Add the dynamic rule
+    chrome.declarativeNetRequest.updateSessionRules(
+      {
+        removeRuleIds: [195], // Clear any existing rules with the same ID to avoid duplicates
+        addRules: [rule as any],
+      },
+      () => {
+        if (chrome.runtime.lastError) {
+          Logger.log("Error adding rule:", chrome.runtime.lastError);
+          res(false);
+        } else {
+          Logger.log("Rule added successfully");
+          res(true);
+        }
+      },
+    );
+  });
+}
+
+export function resetImageRenderHTMLVisualizer(): Promise<boolean> {
+  return new Promise(function (res) {
+    chrome.declarativeNetRequest.updateSessionRules({
+      removeRuleIds: [195],
+    });
+    res(true);
   });
 }
 

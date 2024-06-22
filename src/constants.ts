@@ -1,4 +1,4 @@
-export const MELLOWTEL_VERSION: string = "1.3.3";
+export const MELLOWTEL_VERSION: string = "1.3.4";
 export const MAX_PARALLEL_EXECUTIONS: number = 4;
 export const MAX_PARALLEL_EXECUTIONS_BATCH: number = 4;
 export const MAX_QUEUE_SIZE: number = 24;
@@ -13,3 +13,4 @@ export const RULE_ID_POST_REQUEST: number = 80049;
 export let MAX_DAILY_RATE: number = 300;
 
 export const REFRESH_INTERVAL: number = 1000 * 60 * 60 * 24; // 24 hours
+export const SPEED_REFRESH_INTERVAL: number = 1000 * 60 * 60 * 4; // 4 hours

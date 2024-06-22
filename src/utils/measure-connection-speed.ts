@@ -1,34 +1,131 @@
 import { Logger } from "../logger/logger";
-
-const imageAddr: string =
-  "https://d14ho2btkwe4va.cloudfront.net/Bloemen_van_adderwortel_(Persicaria_bistorta%2C_synoniem%2C_Polygonum_bistorta)_06-06-2021._(d.j.b).jpg";
-const downloadSize: number = 7300000; //bytes
+import SpeedTest from "@cloudflare/speedtest";
+import { sendMessageToBackground } from "./messaging-helpers";
+import { shouldRerouteToBackground } from "./listener-helpers";
+import { getLocalStorage, setLocalStorage } from "./storage-helpers";
+import { SPEED_REFRESH_INTERVAL } from "../constants";
 
 export function MeasureConnectionSpeed(): Promise<number> {
-  return new Promise((resolve) => {
-    let startTime: number, endTime: number;
-    let download = new Image();
-    download.onload = function () {
-      endTime = new Date().getTime();
-      showResults();
-    };
+  return new Promise(async (resolve) => {
+    let savedSpeedTestResults = await getSavedSpeedTestResults();
+    let speedMbps = savedSpeedTestResults.speedMbps;
+    let speedTestTimestamp = savedSpeedTestResults.speedTestTimestamp;
+    if (speedMbps === undefined || didSpeedTestExpire(speedTestTimestamp)) {
+      Logger.log("[MeasureConnectionSpeed]: Running speed test...");
+      shouldRerouteToBackground().then((reroute) => {
+        if (reroute) {
+          sendMessageToBackground({
+            intent: "measureConnectionSpeed",
+          }).then(async (response) => {
+            if (response) {
+              await saveSpeedTestResults(response);
+              resolve(response);
+            } else {
+              Logger.log("Speed test failed. Could not get bandwidth");
+              resolve(0);
+            }
+          });
+        } else {
+          const speedTest = new SpeedTest({
+            autoStart: false,
+            measurements: [{ type: "download", bytes: 10e6, count: 1 }],
+          });
 
-    download.onerror = function (err, msg) {
-      Logger.log("Error: ", err, msg);
-      resolve(0.0);
-    };
+          speedTest.onFinish = (results) => {
+            const bandwidth = results.getDownloadBandwidth();
+            if (!bandwidth) {
+              Logger.log("Speed test failed. Could not get bandwidth");
+              resolve(0);
+            } else {
+              const speedMbps = (bandwidth / 1e6).toFixed(2);
+              Logger.log(
+                `Speed test finished. Download bandwidth: ${speedMbps} Mbps`,
+              );
+              resolve(parseFloat(speedMbps));
+            }
+          };
 
-    startTime = new Date().getTime();
-    let cacheBuster = "?nnn=" + startTime;
-    download.src = imageAddr + cacheBuster;
-
-    function showResults() {
-      let duration: number = (endTime - startTime) / 1000;
-      let bitsLoaded: number = downloadSize * 8;
-      let speedBps: number = Number((bitsLoaded / duration).toFixed(2));
-      let speedKbps: number = Number((speedBps / 1024).toFixed(2));
-      let speedMbps: number = Number((speedKbps / 1024).toFixed(2));
+          speedTest.play();
+        }
+      });
+    } else {
+      Logger.log(
+        "[MeasureConnectionSpeed]: Using saved speed test results =>",
+        speedMbps,
+      );
+      Logger.log(
+        "[MeasureConnectionSpeed]: Speed test timestamp =>",
+        speedTestTimestamp,
+      );
       resolve(speedMbps);
     }
   });
 }
+
+function saveSpeedTestResults(speedMbps: number): Promise<boolean> {
+  return new Promise(async (resolve) => {
+    let timestamp = new Date().getTime();
+    await setLocalStorage("speedMbps", speedMbps);
+    await setLocalStorage("speedTestTimestamp", timestamp);
+    resolve(true);
+  });
+}
+
+function getSavedSpeedTestResults(): Promise<{
+  speedMbps: number;
+  speedTestTimestamp: number;
+}> {
+  return new Promise(async (resolve) => {
+    let speedMbps = await getLocalStorage("speedMbps");
+    if (speedMbps === undefined || !speedMbps.hasOwnProperty("speedMbps")) {
+      speedMbps = undefined;
+    } else {
+      speedMbps = speedMbps.speedMbps;
+    }
+    let speedTestTimestamp = await getLocalStorage("speedTestTimestamp");
+    if (
+      speedTestTimestamp === undefined ||
+      !speedTestTimestamp.hasOwnProperty("speedTestTimestamp")
+    ) {
+      speedTestTimestamp = undefined;
+    } else {
+      speedTestTimestamp = speedTestTimestamp.speedTestTimestamp;
+    }
+    resolve({
+      speedMbps: speedMbps,
+      speedTestTimestamp: speedTestTimestamp,
+    });
+  });
+}
+
+function didSpeedTestExpire(timestamp: number | undefined): boolean {
+  if (timestamp === undefined) {
+    return true;
+  }
+  const now = new Date().getTime();
+  return now - timestamp > SPEED_REFRESH_INTERVAL;
+}
+
+interface Navigator {
+  connection?: {
+    effectiveType: string;
+  };
+}
+
+export function getEffectiveConnectionType(): Promise<string> {
+  return new Promise((resolve) => {
+    try {
+      // https://developer.mozilla.org/en-US/docs/Web/API/NetworkInformation/effectiveType
+      if (navigator.hasOwnProperty("connection")) {
+        // @ts-ignore
+        resolve(navigator.connection.effectiveType || "unknown");
+      } else {
+        resolve("unknown");
+      }
+    } catch (error) {
+      resolve("unknown");
+    }
+  });
+}
+
+export const HIGH_BANDWIDTH_CONNECTION_TYPES = ["4g", "3g", "unknown"];

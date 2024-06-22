@@ -35,6 +35,7 @@ export async function resetAfterCrawl(
         dataPacket.triggerDownload,
         dataPacket.skipHeaders,
         dataPacket.hostname,
+        dataPacket.htmlVisualizer,
       );
     }
   } else {

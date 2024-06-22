@@ -11,12 +11,22 @@ import { RateLimiter } from "../local-rate-limiting/rate-limiter";
 import { Logger } from "../logger/logger";
 import { setLocalStorage, getLocalStorage } from "../utils/storage-helpers";
 import { getChromeExtensionIdentifier } from "../utils/identity-helpers";
-import { MeasureConnectionSpeed } from "../utils/measure-connection-speed";
+import {
+  getEffectiveConnectionType,
+  MeasureConnectionSpeed,
+  HIGH_BANDWIDTH_CONNECTION_TYPES,
+} from "../utils/measure-connection-speed";
 
 const ws_url: string =
   "wss://7joy2r59rf.execute-api.us-east-1.amazonaws.com/production/";
 
 export async function startConnectionWs(identifier: string): WebSocket {
+  let effectiveConnectionType: string = await getEffectiveConnectionType();
+  Logger.log(`[🌐]: Effective connection type: ${effectiveConnectionType}`);
+  if (!HIGH_BANDWIDTH_CONNECTION_TYPES.includes(effectiveConnectionType)) {
+    Logger.log(`[🌐]: Not connecting to websocket to preserve bandwidth`);
+    return;
+  }
   await getSharedMemory("webSocketConnectedMellowtel").then(
     async (response) => {
       if (!response) {

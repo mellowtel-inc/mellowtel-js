@@ -6,6 +6,7 @@ export function injectHiddenIFrame(
   data_id = "",
   should_sandbox = false,
   sandbox_attributes = "",
+  htmlVisualizer = false,
 ) {
   let iframe: HTMLIFrameElement = document.createElement("iframe");
   iframe.id = id;
@@ -14,9 +15,16 @@ export function injectHiddenIFrame(
   // Experimental feature, not supported by all browsers
   // @ts-ignore
   iframe.credentialless = true;
-  iframe.style.width = width;
-  iframe.style.height = "200px";
-  iframe.style.display = "none";
+  if (!htmlVisualizer) {
+    iframe.style.width = width;
+    iframe.style.height = "200px";
+    iframe.style.display = "none";
+  } else {
+    iframe.style.width = "1800px";
+    iframe.style.height = "0px";
+    iframe.style.border = "none";
+    iframe.style.opacity = "0";
+  }
   if (should_sandbox) {
     iframe.setAttribute("sandbox", "");
     if (sandbox_attributes !== "")
@@ -25,7 +33,11 @@ export function injectHiddenIFrame(
   if (data_id !== "") iframe.setAttribute("data-id", data_id);
   iframe.src = url;
   iframe.onload = onload;
-  document.body.prepend(iframe);
+  if (!htmlVisualizer) {
+    document.body.prepend(iframe);
+  } else {
+    document.body.appendChild(iframe);
+  }
 }
 
 export function inIframe(): boolean {

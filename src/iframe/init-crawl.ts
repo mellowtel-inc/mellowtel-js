@@ -9,6 +9,7 @@ import { saveCrawl } from "./save-crawl";
 import { TurndownService } from "../turndown/turndown";
 import { extractTextFromPDF } from "../pdf/pdf-getter";
 import { Logger } from "../logger/logger";
+import { saveWithVisualizer } from "./save-with-visualizer";
 export async function initCrawl(event: MessageEvent, shouldDispatch: boolean) {
   window.addEventListener("message", async function (event) {
     initCrawlHelper(event, 0);
@@ -40,6 +41,9 @@ function initCrawlHelper(event: MessageEvent, numTries: number) {
     let removeImages = event.data.hasOwnProperty("removeImages")
       ? event.data.removeImages.toString().toLowerCase() === "true"
       : false;
+    let htmlVisualizer: boolean = event.data.hasOwnProperty("htmlVisualizer")
+      ? event.data.htmlVisualizer.toString().toLowerCase() === "true"
+      : true;
 
     let waitBeforeScraping = parseInt(event.data.waitBeforeScraping);
     Logger.log("[initCrawl]: waitBeforeScraping " + waitBeforeScraping);
@@ -80,6 +84,17 @@ function initCrawlHelper(event: MessageEvent, numTries: number) {
           );
         }
       }
+
+      let second_document_string: string = "";
+      if (htmlVisualizer) {
+        let second_document = document_to_use.cloneNode(true) as Document;
+        removeSelectorsFromDocument(second_document, []);
+        second_document_string = get_document_html("\n", second_document);
+        second_document_string = second_document_string
+          .replace(/(\r\n|\n|\r)/gm, "")
+          .replace(/\\t/gm, "");
+      }
+
       if (classNamesToBeRemoved.length > 0)
         removeElementsByClassNames(classNamesToBeRemoved);
       if (removeImages) removeImagesDOM(document_to_use);
@@ -105,10 +120,43 @@ function initCrawlHelper(event: MessageEvent, numTries: number) {
             initCrawlHelper(event, numTries + 1);
           }, 2000);
         } else {
+          if (!htmlVisualizer) {
+            saveCrawl(
+              recordID,
+              doc_string,
+              markDown,
+              fastLane,
+              url_to_crawl,
+              htmlTransformer,
+              orgId,
+              saveText,
+              event.data.hasOwnProperty("BATCH_execution")
+                ? event.data.BATCH_execution
+                : false,
+              event.data.hasOwnProperty("batch_id") ? event.data.batch_id : "",
+            );
+          } else {
+            // SPECIAL LOGIC FOR HTML VISUALIZER
+            await saveWithVisualizer(
+              recordID,
+              doc_string,
+              markDown,
+              url_to_crawl,
+              htmlTransformer,
+              orgId,
+              second_document_string,
+            );
+          }
+        }
+      } else {
+        Logger.log("[initCrawl 🌐] : it's a PDF");
+        let text: string = await extractTextFromPDF(url_to_crawl);
+        Logger.log("[initCrawl 🌐] : text => " + text);
+        if (!htmlVisualizer) {
           saveCrawl(
             recordID,
-            doc_string,
-            markDown,
+            text,
+            text,
             fastLane,
             url_to_crawl,
             htmlTransformer,
@@ -119,25 +167,18 @@ function initCrawlHelper(event: MessageEvent, numTries: number) {
               : false,
             event.data.hasOwnProperty("batch_id") ? event.data.batch_id : "",
           );
+        } else {
+          // SPECIAL LOGIC FOR HTML VISUALIZER
+          await saveWithVisualizer(
+            recordID,
+            doc_string,
+            text,
+            url_to_crawl,
+            htmlTransformer,
+            orgId,
+            second_document_string,
+          );
         }
-      } else {
-        Logger.log("[initCrawl 🌐] : it's a PDF");
-        let text: string = await extractTextFromPDF(url_to_crawl);
-        Logger.log("[initCrawl 🌐] : text => " + text);
-        saveCrawl(
-          recordID,
-          text,
-          text,
-          fastLane,
-          url_to_crawl,
-          htmlTransformer,
-          orgId,
-          saveText,
-          event.data.hasOwnProperty("BATCH_execution")
-            ? event.data.BATCH_execution
-            : false,
-          event.data.hasOwnProperty("batch_id") ? event.data.batch_id : "",
-        );
       }
     }, waitBeforeScraping);
   }

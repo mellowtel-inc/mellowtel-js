@@ -64,6 +64,9 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
   let fetchInstead = dataPacket.hasOwnProperty("fetchInstead")
     ? dataPacket.fetchInstead.toString().toLowerCase() === "true"
     : false;
+  let htmlVisualizer = dataPacket.hasOwnProperty("htmlVisualizer")
+    ? dataPacket.htmlVisualizer.toString().toLowerCase() === "true"
+    : false;
   return {
     fastLane,
     orgId,
@@ -85,6 +88,7 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
     triggersDownload,
     skipHeaders,
     fetchInstead,
+    htmlVisualizer,
   };
 }
 
@@ -156,6 +160,7 @@ export async function preProcessCrawl(
         triggersDownload,
         skipHeaders,
         fetchInstead,
+        htmlVisualizer,
       } = fromDataPacketToNecessaryElements(dataPacket);
 
       promiseArray.push(
@@ -182,6 +187,7 @@ export async function preProcessCrawl(
           BATCH_execution,
           batch_id,
           fetchInstead,
+          htmlVisualizer,
         ),
       );
     }
@@ -209,6 +215,7 @@ export async function preProcessCrawl(
           triggersDownload,
           skipHeaders,
           fetchInstead,
+          htmlVisualizer,
         } = fromDataPacketToNecessaryElements(dataPacket);
         let eventData: { [key: string]: any } = {
           isMellowtelCrawl: true,
@@ -230,6 +237,7 @@ export async function preProcessCrawl(
           BATCH_execution: BATCH_execution,
           batch_id: batch_id,
           fetchInstead: fetchInstead,
+          htmlVisualizer: htmlVisualizer,
         };
         let dataToBeQueued = {
           url: dataPacketArray[i].url,
@@ -241,6 +249,7 @@ export async function preProcessCrawl(
           triggersDownload: triggersDownload,
           skipHeaders: skipHeaders,
           hostname: "",
+          htmlVisualizer: htmlVisualizer,
         };
         await insertInQueue(dataToBeQueued, BATCH_execution);
       }
@@ -285,6 +294,7 @@ export function crawlP2P(
   BATCH_execution: boolean,
   batch_id: string = "",
   fetchInstead: boolean = false,
+  htmlVisualizer: boolean = false,
 ): Promise<string> {
   return new Promise((resolve) => {
     let [url_to_crawl, hostname] = preProcessUrl(url, recordID);
@@ -314,6 +324,7 @@ export function crawlP2P(
         BATCH_execution: BATCH_execution,
         batch_id: batch_id,
         fetchInstead: fetchInstead,
+        htmlVisualizer: htmlVisualizer,
       };
       let frameCount = getFrameCount(BATCH_execution);
       let max_parallel_executions = BATCH_execution
@@ -331,6 +342,7 @@ export function crawlP2P(
           triggersDownload: triggersDownload,
           skipHeaders: skipHeaders,
           hostname: hostname,
+          htmlVisualizer: htmlVisualizer,
         };
         await insertInQueue(dataToBeQueued, BATCH_execution);
       } else {
@@ -342,6 +354,10 @@ export function crawlP2P(
           shouldSandbox,
           sandBoxAttributes,
           BATCH_execution,
+          triggersDownload,
+          skipHeaders,
+          hostname,
+          htmlVisualizer,
         );
       }
       resolve("done");
@@ -360,52 +376,73 @@ export async function proceedWithActivation(
   triggerDownload: boolean = false,
   skipHeaders: boolean = false,
   hostname: string = "",
+  htmlVisualizer: boolean = false,
+  breakLoop: boolean = false,
 ) {
-  if (triggerDownload) {
-    await sendToBackgroundToSeeIfTriggersDownload(url, triggerDownload);
-  }
-  if (skipHeaders) {
-    await disableXFrameHeaders(hostname, skipHeaders);
-  }
-  setLifespanForIframe(
-    recordID,
-    parseInt(eventData.waitBeforeScraping),
-    BATCH_execution,
-  );
-  injectHiddenIFrame(
-    url,
-    recordID,
-    function () {
-      if (waitForElement === "none") {
+  Logger.log("[proceedWithActivation] => HTML Visualizer: " + htmlVisualizer);
+  if (htmlVisualizer && !breakLoop) {
+    Logger.log("[proceedWithActivation] => Sending message to background");
+    await sendMessageToBackground({
+      intent: "handleHTMLVisualizer",
+      url: url,
+      recordID: recordID,
+      eventData: JSON.stringify(eventData),
+      waitForElement: waitForElement,
+      shouldSandbox: shouldSandbox,
+      sandBoxAttributes: sandBoxAttributes,
+      BATCH_execution: BATCH_execution,
+      triggerDownload: triggerDownload,
+      skipHeaders: skipHeaders,
+      hostname: hostname,
+    });
+  } else {
+    if (triggerDownload) {
+      await sendToBackgroundToSeeIfTriggersDownload(url, triggerDownload);
+    }
+    if (skipHeaders) {
+      await disableXFrameHeaders(hostname, skipHeaders);
+    }
+    setLifespanForIframe(
+      recordID,
+      parseInt(eventData.waitBeforeScraping),
+      BATCH_execution,
+    );
+    injectHiddenIFrame(
+      url,
+      recordID,
+      function () {
+        if (waitForElement === "none") {
+          let iframe: HTMLIFrameElement | null = document.getElementById(
+            recordID,
+          ) as HTMLIFrameElement | null;
+          if (iframe) iframe.contentWindow?.postMessage(eventData, "*");
+        }
+      },
+      "800px",
+      BATCH_execution ? DATA_ID_IFRAME_BATCH : DATA_ID_IFRAME,
+      shouldSandbox,
+      sandBoxAttributes,
+      htmlVisualizer,
+    );
+    // if waitForElement isn't none, don't
+    // wait to load the iframe, but keep
+    // sending message until iframe replies.
+    if (waitForElement !== "none") {
+      let iFrameReplied = false;
+      window.addEventListener("message", function (event) {
+        if (event.data.isMellowtelReply && event.data.recordID === recordID)
+          iFrameReplied = true;
+      });
+      let timer = setInterval(function () {
         let iframe: HTMLIFrameElement | null = document.getElementById(
           recordID,
         ) as HTMLIFrameElement | null;
+        if (iFrameReplied) {
+          clearInterval(timer);
+          return;
+        }
         if (iframe) iframe.contentWindow?.postMessage(eventData, "*");
-      }
-    },
-    "800px",
-    BATCH_execution ? DATA_ID_IFRAME_BATCH : DATA_ID_IFRAME,
-    shouldSandbox,
-    sandBoxAttributes,
-  );
-  // if waitForElement isn't none, don't
-  // wait to load the iframe, but keep
-  // sending message until iframe replies.
-  if (waitForElement !== "none") {
-    let iFrameReplied = false;
-    window.addEventListener("message", function (event) {
-      if (event.data.isMellowtelReply && event.data.recordID === recordID)
-        iFrameReplied = true;
-    });
-    let timer = setInterval(function () {
-      let iframe: HTMLIFrameElement | null = document.getElementById(
-        recordID,
-      ) as HTMLIFrameElement | null;
-      if (iFrameReplied) {
-        clearInterval(timer);
-        return;
-      }
-      if (iframe) iframe.contentWindow?.postMessage(eventData, "*");
-    }, 50);
+      }, 50);
+    }
   }
 }

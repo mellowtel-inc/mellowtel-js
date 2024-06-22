@@ -4,7 +4,12 @@ import {
   setLocalStorage,
 } from "./storage-helpers";
 import { resetAfterCrawl } from "../content-script/reset-crawl";
-import { disableXFrameHeaders, enableXFrameHeaders } from "./dnr-helpers";
+import {
+  disableXFrameHeaders,
+  enableXFrameHeaders,
+  fixImageRenderHTMLVisualizer,
+  resetImageRenderHTMLVisualizer,
+} from "./dnr-helpers";
 import {
   getSharedMemoryBCK,
   getSharedMemoryDOM,
@@ -19,7 +24,13 @@ import {
 import { sendMessageToContentScript } from "./messaging-helpers";
 import { handlePostRequest } from "../post-requests/post-helpers";
 import { generateAndOpenOptInLink } from "../mellowtel-elements/generate-links";
-
+import { MeasureConnectionSpeed } from "./measure-connection-speed";
+import { proceedWithActivation } from "../content-script/execute-crawl";
+import {
+  putHTMLToSigned,
+  putMarkdownToSigned,
+  putHTMLVisualizerToSigned,
+} from "./put-to-signed";
 export async function setUpBackgroundListeners() {
   chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
@@ -84,6 +95,60 @@ export async function setUpBackgroundListeners() {
         }
         sendResponse(sender.tab?.id);
       }
+      if (request.intent === "measureConnectionSpeed") {
+        MeasureConnectionSpeed().then((speedMbps) => {
+          sendResponse(speedMbps);
+        });
+      }
+      if (request.intent === "handleHTMLVisualizer") {
+        chrome.tabs.query(
+          { active: true, currentWindow: true },
+          function (tabs) {
+            if (tabs.length > 0) {
+              sendMessageToContentScript(tabs[0].id!, {
+                intent: "handleHTMLVisualizer",
+                url: request.url,
+                recordID: request.recordID,
+                eventData: request.eventData,
+                waitForElement: request.waitForElement,
+                shouldSandbox: request.shouldSandbox,
+                sandBoxAttributes: request.sandBoxAttributes,
+                BATCH_execution: request.BATCH_execution,
+                triggerDownload: request.triggerDownload,
+                skipHeaders: request.skipHeaders,
+                hostname: request.hostname,
+              });
+            }
+          },
+        );
+      }
+      // putHTMLToSigned
+      if (request.intent === "putHTMLToSigned") {
+        putHTMLToSigned(request.htmlURL_signed, request.content).then(
+          sendResponse,
+        );
+      }
+      // putMarkdownToSigned
+      if (request.intent === "putMarkdownToSigned") {
+        putMarkdownToSigned(request.markdownURL_signed, request.markDown).then(
+          sendResponse,
+        );
+      }
+      // putHTMLVisualizerToSigned
+      if (request.intent === "putHTMLVisualizerToSigned") {
+        putHTMLVisualizerToSigned(
+          request.htmlVisualizerURL_signed,
+          request.base64image,
+        ).then(sendResponse);
+      }
+      // fixImageRenderHTMLVisualizer
+      if (request.intent === "fixImageRenderHTMLVisualizer") {
+        fixImageRenderHTMLVisualizer().then(sendResponse);
+      }
+      // resetImageRenderHTMLVisualizer
+      if (request.intent === "resetImageRenderHTMLVisualizer") {
+        resetImageRenderHTMLVisualizer().then(sendResponse);
+      }
       return true; // return true to indicate you want to send a response asynchronously
     },
   );
@@ -107,7 +172,39 @@ export async function setUpContentScriptListeners() {
           startConnectionWs(identifier);
         });
       }
+      if (request.intent === "handleHTMLVisualizer") {
+        await proceedWithActivation(
+          request.url,
+          request.recordID,
+          JSON.parse(request.eventData),
+          request.waitForElement,
+          request.shouldSandbox,
+          request.sandBoxAttributes,
+          request.BATCH_execution,
+          request.triggerDownload,
+          request.skipHeaders,
+          request.hostname,
+          true,
+          true, // to break the loop
+        );
+      }
       return true; // return true to indicate you want to send a response asynchronously
     },
   );
+}
+
+export function shouldRerouteToBackground(): Promise<boolean> {
+  return new Promise((resolve) => {
+    try {
+      chrome.declarativeNetRequest.getDynamicRules((rules) => {
+        if (chrome.runtime.lastError) {
+          resolve(true);
+        } else {
+          resolve(false);
+        }
+      });
+    } catch (error) {
+      resolve(true);
+    }
+  });
 }

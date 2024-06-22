@@ -7,7 +7,6 @@ import { setUpBackgroundListeners } from "./utils/listener-helpers";
 import { inIframe } from "./utils/iframe-helpers";
 import { purgeOnStartup } from "./background-script/purge-on-startup";
 import { setUpStorageChangeListeners } from "./content-script/storage-change-listeners";
-import { setLocalStorage } from "./utils/storage-helpers";
 import {
   isMellowtelStarted,
   start,
