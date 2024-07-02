@@ -1,4 +1,4 @@
-export const MELLOWTEL_VERSION: string = "1.3.4";
+export const MELLOWTEL_VERSION: string = "1.3.5";
 export const MAX_PARALLEL_EXECUTIONS: number = 4;
 export const MAX_PARALLEL_EXECUTIONS_BATCH: number = 4;
 export const MAX_QUEUE_SIZE: number = 24;

@@ -41,7 +41,7 @@ export function disableXFrameHeaders(
                       header: "content-security-policy",
                       operation: "remove" as HeaderOperation,
                     },
-                    {
+                    /*{
                       header: "X-Frame-Options",
                       operation: "remove" as HeaderOperation,
                     },
@@ -52,12 +52,28 @@ export function disableXFrameHeaders(
                     {
                       header: "Frame-Options",
                       operation: "remove" as HeaderOperation,
+                    },*/
+                    {
+                      header: "cross-origin-embedder-policy",
+                      operation: "remove" as HeaderOperation,
+                    },
+                    {
+                      header: "cross-origin-opener-policy",
+                      operation: "remove" as HeaderOperation,
+                    },
+                    {
+                      header: "cross-origin-resource-policy",
+                      operation: "remove" as HeaderOperation,
+                    },
+                    {
+                      header: "content-security-policy-report-only",
+                      operation: "remove" as HeaderOperation,
                     },
                   ],
                 },
                 condition: {
-                  resourceTypes: ["sub_frame" as ResourceType],
-                  urlFilter: "*://*/*",
+                  // resourceTypes: ["sub_frame" as ResourceType],
+                  urlFilter: "*", //"*://*/*",
                   // `*${hostname}*`, --> specific filter disabled because
                   // there are internal redirects that need to be handled.
                   // Need to find a way to handle redirects and disable headers

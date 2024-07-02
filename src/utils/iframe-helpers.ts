@@ -7,6 +7,7 @@ export function injectHiddenIFrame(
   should_sandbox = false,
   sandbox_attributes = "",
   htmlVisualizer = false,
+  htmlContained = false,
 ) {
   let iframe: HTMLIFrameElement = document.createElement("iframe");
   iframe.id = id;
@@ -15,16 +16,7 @@ export function injectHiddenIFrame(
   // Experimental feature, not supported by all browsers
   // @ts-ignore
   iframe.credentialless = true;
-  if (!htmlVisualizer) {
-    iframe.style.width = width;
-    iframe.style.height = "200px";
-    iframe.style.display = "none";
-  } else {
-    iframe.style.width = "1800px";
-    iframe.style.height = "0px";
-    iframe.style.border = "none";
-    iframe.style.opacity = "0";
-  }
+
   if (should_sandbox) {
     iframe.setAttribute("sandbox", "");
     if (sandbox_attributes !== "")
@@ -33,10 +25,32 @@ export function injectHiddenIFrame(
   if (data_id !== "") iframe.setAttribute("data-id", data_id);
   iframe.src = url;
   iframe.onload = onload;
-  if (!htmlVisualizer) {
-    document.body.prepend(iframe);
-  } else {
+
+  if (htmlVisualizer) {
+    iframe.style.width = "1800px";
+    iframe.style.height = "0px";
+    iframe.style.border = "none";
+    iframe.style.opacity = "0";
     document.body.appendChild(iframe);
+  } else if (htmlContained) {
+    iframe.style.width = "100vw";
+    iframe.style.height = "600px";
+    iframe.style.border = "none";
+    iframe.style.opacity = "0";
+    const div: HTMLDivElement = document.createElement("div");
+    div.style.overflow = "hidden";
+    div.appendChild(iframe);
+    div.style.position = "fixed"; // "absolute";
+    div.style.top = "0";
+    div.style.left = "0";
+    div.style.zIndex = "-9999";
+    div.id = "div-" + id;
+    document.body.prepend(div);
+  } else {
+    iframe.style.width = width;
+    iframe.style.height = "200px";
+    iframe.style.display = "none";
+    document.body.prepend(iframe);
   }
 }
 

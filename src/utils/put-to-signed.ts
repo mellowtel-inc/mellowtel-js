@@ -83,3 +83,31 @@ export function putHTMLVisualizerToSigned(
       });
   });
 }
+
+export function putHTMLContainedToSigned(
+  htmlContainedURL_signed: string,
+  htmlContainedString: string,
+) {
+  return new Promise((resolve) => {
+    fetch(htmlContainedURL_signed, {
+      method: "PUT",
+      body: htmlContainedString,
+      headers: {
+        "Content-Type": "text/html",
+        "x-amz-acl": "public-read",
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(
+            "[putHTMLContainedToSigned]: Network response was not ok",
+          );
+        }
+        return response;
+      })
+      .then((data) => {
+        Logger.log("[putHTMLContainedToSigned]: Response from server:", data);
+        resolve(data);
+      });
+  });
+}
