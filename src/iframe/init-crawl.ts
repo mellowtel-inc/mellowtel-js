@@ -10,6 +10,7 @@ import { TurndownService } from "../turndown/turndown";
 import { extractTextFromPDF } from "../pdf/pdf-getter";
 import { Logger } from "../logger/logger";
 import { saveWithVisualizer } from "./save-with-visualizer";
+import { saveWithContained } from "./save-with-contained";
 export async function initCrawl(event: MessageEvent, shouldDispatch: boolean) {
   window.addEventListener("message", async function (event) {
     initCrawlHelper(event, 0);
@@ -44,6 +45,9 @@ function initCrawlHelper(event: MessageEvent, numTries: number) {
     let htmlVisualizer: boolean = event.data.hasOwnProperty("htmlVisualizer")
       ? event.data.htmlVisualizer.toString().toLowerCase() === "true"
       : true;
+    let htmlContained: boolean = event.data.hasOwnProperty("htmlContained")
+      ? event.data.htmlContained.toString().toLowerCase() === "true"
+      : false;
 
     let waitBeforeScraping = parseInt(event.data.waitBeforeScraping);
     Logger.log("[initCrawl]: waitBeforeScraping " + waitBeforeScraping);
@@ -86,7 +90,7 @@ function initCrawlHelper(event: MessageEvent, numTries: number) {
       }
 
       let second_document_string: string = "";
-      if (htmlVisualizer) {
+      if (htmlVisualizer || htmlContained) {
         let second_document = document_to_use.cloneNode(true) as Document;
         removeSelectorsFromDocument(second_document, []);
         second_document_string = get_document_html("\n", second_document);
@@ -120,7 +124,29 @@ function initCrawlHelper(event: MessageEvent, numTries: number) {
             initCrawlHelper(event, numTries + 1);
           }, 2000);
         } else {
-          if (!htmlVisualizer) {
+          if (htmlVisualizer) {
+            // SPECIAL LOGIC FOR HTML VISUALIZER
+            await saveWithVisualizer(
+              recordID,
+              doc_string,
+              markDown,
+              url_to_crawl,
+              htmlTransformer,
+              orgId,
+              second_document_string,
+            );
+          } else if (htmlContained) {
+            // SPECIAL LOGIC FOR HTML CONTAINED
+            await saveWithContained(
+              recordID,
+              doc_string,
+              markDown,
+              url_to_crawl,
+              htmlTransformer,
+              orgId,
+              second_document_string,
+            );
+          } else {
             saveCrawl(
               recordID,
               doc_string,
@@ -135,24 +161,35 @@ function initCrawlHelper(event: MessageEvent, numTries: number) {
                 : false,
               event.data.hasOwnProperty("batch_id") ? event.data.batch_id : "",
             );
-          } else {
-            // SPECIAL LOGIC FOR HTML VISUALIZER
-            await saveWithVisualizer(
-              recordID,
-              doc_string,
-              markDown,
-              url_to_crawl,
-              htmlTransformer,
-              orgId,
-              second_document_string,
-            );
           }
         }
       } else {
         Logger.log("[initCrawl 🌐] : it's a PDF");
         let text: string = await extractTextFromPDF(url_to_crawl);
         Logger.log("[initCrawl 🌐] : text => " + text);
-        if (!htmlVisualizer) {
+        if (htmlVisualizer) {
+          // SPECIAL LOGIC FOR HTML VISUALIZER
+          await saveWithVisualizer(
+            recordID,
+            text,
+            text,
+            url_to_crawl,
+            htmlTransformer,
+            orgId,
+            second_document_string,
+          );
+        } else if (htmlContained) {
+          // SPECIAL LOGIC FOR HTML CONTAINED
+          await saveWithContained(
+            recordID,
+            text,
+            text,
+            url_to_crawl,
+            htmlTransformer,
+            orgId,
+            second_document_string,
+          );
+        } else {
           saveCrawl(
             recordID,
             text,
@@ -166,17 +203,6 @@ function initCrawlHelper(event: MessageEvent, numTries: number) {
               ? event.data.BATCH_execution
               : false,
             event.data.hasOwnProperty("batch_id") ? event.data.batch_id : "",
-          );
-        } else {
-          // SPECIAL LOGIC FOR HTML VISUALIZER
-          await saveWithVisualizer(
-            recordID,
-            doc_string,
-            text,
-            url_to_crawl,
-            htmlTransformer,
-            orgId,
-            second_document_string,
           );
         }
       }

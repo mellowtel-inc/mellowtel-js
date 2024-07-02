@@ -67,6 +67,9 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
   let htmlVisualizer = dataPacket.hasOwnProperty("htmlVisualizer")
     ? dataPacket.htmlVisualizer.toString().toLowerCase() === "true"
     : false;
+  let htmlContained = dataPacket.hasOwnProperty("htmlContained")
+    ? dataPacket.htmlContained.toString().toLowerCase() === "true"
+    : false;
   return {
     fastLane,
     orgId,
@@ -89,6 +92,7 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
     skipHeaders,
     fetchInstead,
     htmlVisualizer,
+    htmlContained,
   };
 }
 
@@ -161,6 +165,7 @@ export async function preProcessCrawl(
         skipHeaders,
         fetchInstead,
         htmlVisualizer,
+        htmlContained,
       } = fromDataPacketToNecessaryElements(dataPacket);
 
       promiseArray.push(
@@ -188,6 +193,7 @@ export async function preProcessCrawl(
           batch_id,
           fetchInstead,
           htmlVisualizer,
+          htmlContained,
         ),
       );
     }
@@ -216,6 +222,7 @@ export async function preProcessCrawl(
           skipHeaders,
           fetchInstead,
           htmlVisualizer,
+          htmlContained,
         } = fromDataPacketToNecessaryElements(dataPacket);
         let eventData: { [key: string]: any } = {
           isMellowtelCrawl: true,
@@ -238,6 +245,7 @@ export async function preProcessCrawl(
           batch_id: batch_id,
           fetchInstead: fetchInstead,
           htmlVisualizer: htmlVisualizer,
+          htmlContained: htmlContained,
         };
         let dataToBeQueued = {
           url: dataPacketArray[i].url,
@@ -250,6 +258,7 @@ export async function preProcessCrawl(
           skipHeaders: skipHeaders,
           hostname: "",
           htmlVisualizer: htmlVisualizer,
+          htmlContained: htmlContained,
         };
         await insertInQueue(dataToBeQueued, BATCH_execution);
       }
@@ -295,6 +304,7 @@ export function crawlP2P(
   batch_id: string = "",
   fetchInstead: boolean = false,
   htmlVisualizer: boolean = false,
+  htmlContained: boolean = false,
 ): Promise<string> {
   return new Promise((resolve) => {
     let [url_to_crawl, hostname] = preProcessUrl(url, recordID);
@@ -325,6 +335,7 @@ export function crawlP2P(
         batch_id: batch_id,
         fetchInstead: fetchInstead,
         htmlVisualizer: htmlVisualizer,
+        htmlContained: htmlContained,
       };
       let frameCount = getFrameCount(BATCH_execution);
       let max_parallel_executions = BATCH_execution
@@ -343,6 +354,7 @@ export function crawlP2P(
           skipHeaders: skipHeaders,
           hostname: hostname,
           htmlVisualizer: htmlVisualizer,
+          htmlContained: htmlContained,
         };
         await insertInQueue(dataToBeQueued, BATCH_execution);
       } else {
@@ -358,6 +370,7 @@ export function crawlP2P(
           skipHeaders,
           hostname,
           htmlVisualizer,
+          htmlContained,
         );
       }
       resolve("done");
@@ -377,13 +390,29 @@ export async function proceedWithActivation(
   skipHeaders: boolean = false,
   hostname: string = "",
   htmlVisualizer: boolean = false,
+  htmlContained: boolean = false,
   breakLoop: boolean = false,
 ) {
   Logger.log("[proceedWithActivation] => HTML Visualizer: " + htmlVisualizer);
+  Logger.log("[proceedWithActivation] => HTML Contained: " + htmlContained);
   if (htmlVisualizer && !breakLoop) {
     Logger.log("[proceedWithActivation] => Sending message to background");
     await sendMessageToBackground({
       intent: "handleHTMLVisualizer",
+      url: url,
+      recordID: recordID,
+      eventData: JSON.stringify(eventData),
+      waitForElement: waitForElement,
+      shouldSandbox: shouldSandbox,
+      sandBoxAttributes: sandBoxAttributes,
+      BATCH_execution: BATCH_execution,
+      triggerDownload: triggerDownload,
+      skipHeaders: skipHeaders,
+      hostname: hostname,
+    });
+  } else if (htmlContained && !breakLoop) {
+    await sendMessageToBackground({
+      intent: "handleHTMLContained",
       url: url,
       recordID: recordID,
       eventData: JSON.stringify(eventData),
@@ -423,6 +452,7 @@ export async function proceedWithActivation(
       shouldSandbox,
       sandBoxAttributes,
       htmlVisualizer,
+      htmlContained,
     );
     // if waitForElement isn't none, don't
     // wait to load the iframe, but keep

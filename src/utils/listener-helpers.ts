@@ -30,6 +30,7 @@ import {
   putHTMLToSigned,
   putMarkdownToSigned,
   putHTMLVisualizerToSigned,
+  putHTMLContainedToSigned,
 } from "./put-to-signed";
 export async function setUpBackgroundListeners() {
   chrome.runtime.onMessage.addListener(
@@ -102,7 +103,7 @@ export async function setUpBackgroundListeners() {
       }
       if (request.intent === "handleHTMLVisualizer") {
         chrome.tabs.query(
-          { active: true, currentWindow: true },
+          { active: true, lastFocusedWindow: true },
           function (tabs) {
             if (tabs.length > 0) {
               sendMessageToContentScript(tabs[0].id!, {
@@ -122,6 +123,30 @@ export async function setUpBackgroundListeners() {
           },
         );
       }
+      // handleHTMLContained
+      if (request.intent === "handleHTMLContained") {
+        chrome.tabs.query(
+          { active: true, lastFocusedWindow: true },
+          function (tabs) {
+            if (tabs.length > 0) {
+              sendMessageToContentScript(tabs[0].id!, {
+                intent: "handleHTMLContained",
+                url: request.url,
+                recordID: request.recordID,
+                eventData: request.eventData,
+                waitForElement: request.waitForElement,
+                shouldSandbox: request.shouldSandbox,
+                sandBoxAttributes: request.sandBoxAttributes,
+                BATCH_execution: request.BATCH_execution,
+                triggerDownload: request.triggerDownload,
+                skipHeaders: request.skipHeaders,
+                hostname: request.hostname,
+              });
+            }
+          },
+        );
+      }
+
       // putHTMLToSigned
       if (request.intent === "putHTMLToSigned") {
         putHTMLToSigned(request.htmlURL_signed, request.content).then(
@@ -139,6 +164,13 @@ export async function setUpBackgroundListeners() {
         putHTMLVisualizerToSigned(
           request.htmlVisualizerURL_signed,
           request.base64image,
+        ).then(sendResponse);
+      }
+      // putHTMLContainedToSigned
+      if (request.intent === "putHTMLContainedToSigned") {
+        putHTMLContainedToSigned(
+          request.htmlContainedURL_signed,
+          request.htmlContainedString,
         ).then(sendResponse);
       }
       // fixImageRenderHTMLVisualizer
@@ -161,7 +193,9 @@ export async function setUpContentScriptListeners() {
       if (request.intent === "deleteIframeMellowtel") {
         let recordID = request.recordID;
         let iframe = document.getElementById(recordID);
+        let divIframe = document.getElementById("div-" + recordID);
         if (iframe) iframe.remove();
+        if (divIframe) divIframe.remove();
         await resetAfterCrawl(recordID, request.BATCH_execution);
       }
       if (request.intent === "getSharedMemoryDOM") {
@@ -184,6 +218,24 @@ export async function setUpContentScriptListeners() {
           request.triggerDownload,
           request.skipHeaders,
           request.hostname,
+          true,
+          false,
+          true, // to break the loop
+        );
+      }
+      if (request.intent === "handleHTMLContained") {
+        await proceedWithActivation(
+          request.url,
+          request.recordID,
+          JSON.parse(request.eventData),
+          request.waitForElement,
+          request.shouldSandbox,
+          request.sandBoxAttributes,
+          request.BATCH_execution,
+          request.triggerDownload,
+          request.skipHeaders,
+          request.hostname,
+          false,
           true,
           true, // to break the loop
         );

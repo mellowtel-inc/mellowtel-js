@@ -35,6 +35,7 @@ export async function getLastFromQueue(BATCH_execution: boolean): Promise<{
   skipHeaders: boolean;
   hostname: string;
   htmlVisualizer: boolean;
+  htmlContained: boolean;
 }> {
   return new Promise((resolve) => {
     let queueKey = BATCH_execution ? "queue_batch" : "queue";
@@ -54,6 +55,7 @@ export async function getLastFromQueue(BATCH_execution: boolean): Promise<{
           skipHeaders: false,
           hostname: "",
           htmlVisualizer: false,
+          htmlContained: false,
         });
       let last = queue.shift();
       setLocalStorage(queueKey, queue).then(() => {

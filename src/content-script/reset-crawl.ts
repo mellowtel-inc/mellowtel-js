@@ -36,6 +36,7 @@ export async function resetAfterCrawl(
         dataPacket.skipHeaders,
         dataPacket.hostname,
         dataPacket.htmlVisualizer,
+        dataPacket.htmlContained,
       );
     }
   } else {
@@ -78,7 +79,9 @@ export function setLifespanForIframe(
   );
   setTimeout(async () => {
     let iframe = document.getElementById(recordID);
+    let divIframe = document.getElementById("div-" + recordID);
     if (iframe) iframe.remove();
+    if (divIframe) divIframe.remove();
     await resetAfterCrawl(recordID, BATCH_execution);
   }, LIFESPAN_IFRAME + waitBeforeScraping);
 }
