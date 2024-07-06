@@ -1,5 +1,5 @@
 import {
-  getChromeExtensionIdentifier,
+  getExtensionIdentifier,
   getOrGenerateIdentifier,
 } from "./utils/identity-helpers";
 import { setUpOnTabRemoveListeners } from "./background-script/tab-remove-listeners";
@@ -25,6 +25,7 @@ import { setUpExternalMessageListeners } from "./mellowtel-elements/message-web-
 import {
   generateOptInLink,
   generateSettingsLink,
+  openUserSettingsInPopupWindow,
   generateAndOpenOptInLink,
 } from "./mellowtel-elements/generate-links";
 
@@ -110,6 +111,10 @@ export default class Mellowtel {
     return generateSettingsLink();
   }
 
+  public async openUserSettingsInPopupWindow(): Promise<boolean> {
+    return openUserSettingsInPopupWindow();
+  }
+
   public async getNodeId(): Promise<string> {
     return getOrGenerateIdentifier(this.publishableKey);
   }
@@ -118,8 +123,8 @@ export default class Mellowtel {
     return MELLOWTEL_VERSION;
   }
 
-  public async getChromeExtensionIdentifier(): Promise<string> {
-    return getChromeExtensionIdentifier();
+  public async getExtensionIdentifier(): Promise<string> {
+    return getExtensionIdentifier();
   }
 
   public async start(metadata_id?: string | undefined): Promise<boolean> {

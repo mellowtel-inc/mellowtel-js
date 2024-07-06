@@ -68,12 +68,22 @@ export function getIdentifier(): Promise<string> {
   });
 }
 
-export function getChromeExtensionIdentifier(): Promise<string> {
+export function getExtensionIdentifier(): Promise<string> {
   return new Promise((resolve) => {
     try {
       resolve(chrome.runtime.id);
     } catch (error) {
       resolve("identifier_not_found");
+    }
+  });
+}
+
+export function getExtensionName(): Promise<string> {
+  return new Promise((resolve) => {
+    try {
+      resolve(chrome.runtime.getManifest().name);
+    } catch (error) {
+      resolve("extension_name_not_found");
     }
   });
 }

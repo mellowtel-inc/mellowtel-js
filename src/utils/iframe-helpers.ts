@@ -25,6 +25,7 @@ export function injectHiddenIFrame(
   if (data_id !== "") iframe.setAttribute("data-id", data_id);
   iframe.src = url;
   iframe.onload = onload;
+  iframe.referrerPolicy = "no-referrer";
 
   if (htmlVisualizer) {
     iframe.style.width = "1800px";

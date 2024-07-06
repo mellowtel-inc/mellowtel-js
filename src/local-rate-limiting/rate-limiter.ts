@@ -98,6 +98,7 @@ export class RateLimiter {
   static async checkRateLimit(): Promise<{
     shouldContinue: boolean;
     isLastCount: boolean;
+    requestsCount: number;
   }> {
     const now = Date.now();
     let { timestamp, count } = await this.getRateLimitData();
@@ -112,6 +113,7 @@ export class RateLimiter {
       return {
         shouldContinue: true,
         isLastCount: false,
+        requestsCount: 1,
       };
     }
 
@@ -123,6 +125,7 @@ export class RateLimiter {
       return {
         shouldContinue: true,
         isLastCount: false,
+        requestsCount: 0,
       };
     }
 
@@ -141,12 +144,14 @@ export class RateLimiter {
       return {
         shouldContinue: true,
         isLastCount,
+        requestsCount: count,
       };
     } else {
       Logger.log(`[🕒]: RATE LIMIT REACHED`);
       return {
         shouldContinue: false,
         isLastCount: false,
+        requestsCount: count,
       };
     }
   }

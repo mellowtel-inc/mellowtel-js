@@ -32,6 +32,10 @@ import {
   putHTMLVisualizerToSigned,
   putHTMLContainedToSigned,
 } from "./put-to-signed";
+import {
+  getIfCurrentlyActiveBCK,
+  getIfCurrentlyActiveDOM,
+} from "../mellowtel-elements/mellowtel-elements-utils";
 export async function setUpBackgroundListeners() {
   chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
@@ -123,7 +127,6 @@ export async function setUpBackgroundListeners() {
           },
         );
       }
-      // handleHTMLContained
       if (request.intent === "handleHTMLContained") {
         chrome.tabs.query(
           { active: true, lastFocusedWindow: true },
@@ -146,40 +149,36 @@ export async function setUpBackgroundListeners() {
           },
         );
       }
-
-      // putHTMLToSigned
       if (request.intent === "putHTMLToSigned") {
         putHTMLToSigned(request.htmlURL_signed, request.content).then(
           sendResponse,
         );
       }
-      // putMarkdownToSigned
       if (request.intent === "putMarkdownToSigned") {
         putMarkdownToSigned(request.markdownURL_signed, request.markDown).then(
           sendResponse,
         );
       }
-      // putHTMLVisualizerToSigned
       if (request.intent === "putHTMLVisualizerToSigned") {
         putHTMLVisualizerToSigned(
           request.htmlVisualizerURL_signed,
           request.base64image,
         ).then(sendResponse);
       }
-      // putHTMLContainedToSigned
       if (request.intent === "putHTMLContainedToSigned") {
         putHTMLContainedToSigned(
           request.htmlContainedURL_signed,
           request.htmlContainedString,
         ).then(sendResponse);
       }
-      // fixImageRenderHTMLVisualizer
       if (request.intent === "fixImageRenderHTMLVisualizer") {
         fixImageRenderHTMLVisualizer().then(sendResponse);
       }
-      // resetImageRenderHTMLVisualizer
       if (request.intent === "resetImageRenderHTMLVisualizer") {
         resetImageRenderHTMLVisualizer().then(sendResponse);
+      }
+      if (request.intent === "getIfCurrentlyActiveBCK") {
+        getIfCurrentlyActiveBCK().then(sendResponse);
       }
       return true; // return true to indicate you want to send a response asynchronously
     },
@@ -200,6 +199,9 @@ export async function setUpContentScriptListeners() {
       }
       if (request.intent === "getSharedMemoryDOM") {
         getSharedMemoryDOM(request.key).then(sendResponse);
+      }
+      if (request.intent === "getIfCurrentlyActiveDOM") {
+        getIfCurrentlyActiveDOM().then(sendResponse);
       }
       if (request.intent === "startConnectionMellowtel") {
         getIdentifier().then((identifier: string) => {
