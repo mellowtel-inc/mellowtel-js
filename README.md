@@ -220,9 +220,7 @@ Mellowtel is an open-source project, and contributions are welcome. If you want 
 
 To see how to contribute, visit [Contribution guidelines](https://github.com/mellowtel-inc/mellowtel-js/blob/main/CONTRIBUTING.md)
 
-# Authors 🧑‍💻
-
-- Arslan A. ([LinkedIn](https://www.linkedin.com/in/arslan-ali-00957b249/))
+# Support
 
 You can reach out to us on [Discord](https://discord.gg/GC8vwpDWC9) if you have any questions or need help.
 

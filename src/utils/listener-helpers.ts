@@ -36,6 +36,7 @@ import {
   getIfCurrentlyActiveBCK,
   getIfCurrentlyActiveDOM,
 } from "../mellowtel-elements/mellowtel-elements-utils";
+import { hideBadgeIfShould } from "../transparency/badge-settings";
 export async function setUpBackgroundListeners() {
   chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
@@ -196,6 +197,7 @@ export async function setUpContentScriptListeners() {
         if (iframe) iframe.remove();
         if (divIframe) divIframe.remove();
         await resetAfterCrawl(recordID, request.BATCH_execution);
+        await hideBadgeIfShould();
       }
       if (request.intent === "getSharedMemoryDOM") {
         getSharedMemoryDOM(request.key).then(sendResponse);

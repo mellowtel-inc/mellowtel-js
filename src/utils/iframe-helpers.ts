@@ -1,3 +1,5 @@
+import { showBadgeIfShould } from "../transparency/badge-settings";
+
 export function injectHiddenIFrame(
   url: string,
   id: string,
@@ -53,6 +55,7 @@ export function injectHiddenIFrame(
     iframe.style.display = "none";
     document.body.prepend(iframe);
   }
+  showBadgeIfShould().then();
 }
 
 export function inIframe(): boolean {

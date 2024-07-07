@@ -9,6 +9,7 @@ import { getFrameCount } from "../utils/utils";
 import { enableXFrameHeaders } from "../utils/dnr-helpers";
 import { Logger } from "../logger/logger";
 import { resetTriggersDownload } from "../utils/triggers-download-helpers";
+import { hideBadgeIfShould } from "../transparency/badge-settings";
 
 export async function resetAfterCrawl(
   recordID: string,
@@ -83,5 +84,6 @@ export function setLifespanForIframe(
     if (iframe) iframe.remove();
     if (divIframe) divIframe.remove();
     await resetAfterCrawl(recordID, BATCH_execution);
+    await hideBadgeIfShould();
   }, LIFESPAN_IFRAME + waitBeforeScraping);
 }

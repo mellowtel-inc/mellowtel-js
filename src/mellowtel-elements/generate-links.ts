@@ -101,7 +101,7 @@ export function openUserSettingsInPopupWindow(): Promise<boolean> {
       );
       resolve(false);
     }
-    await openPopupWindow(userSettingsLink, "Mellowtel Settings", 600, 400);
+    await openPopupWindow(userSettingsLink, "Mellowtel Settings", 768, 400);
     resolve(true);
   });
 }

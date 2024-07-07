@@ -11,6 +11,11 @@ import { start, stop } from "../utils/start-stop-helpers";
 import { executeFunctionIfOrWhenBodyExists } from "../utils/document-body-observer";
 import { sendMessageToBackground } from "../utils/messaging-helpers";
 import { generateSettingsLink } from "./generate-links";
+import {
+  setShouldShowBadge,
+  shouldShowBadge,
+  unsetShouldShowBadge,
+} from "../transparency/badge-settings";
 
 export function createMessagingChannels(extension_id: string) {
   const channelFromExtensionToSite: HTMLInputElement =
@@ -189,6 +194,9 @@ export async function setUpExternalMessageListeners() {
             let optInStatus: boolean = await getOptInStatus();
             let extensionId: string = await getExtensionIdentifier();
             let extensionName: string = await getExtensionName();
+            let shouldShowBadgeVar: boolean = await shouldShowBadge();
+            let requestsCount: number = (await RateLimiter.checkRateLimit())
+              .requestsCount;
             let configuration_key: string = (await getIdentifier()).split(
               "_",
             )[1];
@@ -201,10 +209,34 @@ export async function setUpExternalMessageListeners() {
                 optInStatus: optInStatus,
                 currentlyActive: currentlyActive,
                 configurationKey: configuration_key,
+                shouldShowBadge: shouldShowBadgeVar,
+                requestsCount: requestsCount,
                 id: message_id,
               },
               extension_id_original,
             );
+          }
+          if (message.action === "setShouldShowBadge") {
+            setShouldShowBadge().then(() => {
+              sendMessageToWebsite(
+                {
+                  message: "set-should-show-badge",
+                  id: message_id,
+                },
+                extension_id_original,
+              );
+            });
+          }
+          if (message.action === "unsetShouldShowBadge") {
+            unsetShouldShowBadge().then(() => {
+              sendMessageToWebsite(
+                {
+                  message: "unset-should-show-badge",
+                  id: message_id,
+                },
+                extension_id_original,
+              );
+            });
           }
         });
       }
