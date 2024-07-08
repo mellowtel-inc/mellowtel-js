@@ -36,7 +36,7 @@ import {
   getIfCurrentlyActiveBCK,
   getIfCurrentlyActiveDOM,
 } from "../mellowtel-elements/mellowtel-elements-utils";
-import { hideBadgeIfShould } from "../transparency/badge-settings";
+import {hideBadge, hideBadgeIfShould, showBadge} from "../transparency/badge-settings";
 export async function setUpBackgroundListeners() {
   chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
@@ -180,6 +180,12 @@ export async function setUpBackgroundListeners() {
       }
       if (request.intent === "getIfCurrentlyActiveBCK") {
         getIfCurrentlyActiveBCK().then(sendResponse);
+      }
+      if (request.intent === "showBadge") {
+          showBadge().then(sendResponse);
+      }
+      if (request.intent === "hideBadge") {
+          hideBadge().then(sendResponse);
       }
       return true; // return true to indicate you want to send a response asynchronously
     },

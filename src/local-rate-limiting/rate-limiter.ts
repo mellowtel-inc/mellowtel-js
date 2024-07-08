@@ -95,7 +95,7 @@ export class RateLimiter {
     }
   }
 
-  static async checkRateLimit(): Promise<{
+  static async checkRateLimit(increase_count: boolean = true): Promise<{
     shouldContinue: boolean;
     isLastCount: boolean;
     requestsCount: number;
@@ -113,7 +113,7 @@ export class RateLimiter {
       return {
         shouldContinue: true,
         isLastCount: false,
-        requestsCount: 1,
+        requestsCount: 0,
       };
     }
 
@@ -129,13 +129,15 @@ export class RateLimiter {
       };
     }
 
-    count++;
-    await setLocalStorage("count_mellowtel", count);
-    lifetime_total_count++;
-    await setLocalStorage(
-      "lifetime_total_count_mellowtel",
-      lifetime_total_count,
-    );
+    if(increase_count) {
+      count++;
+      await setLocalStorage("count_mellowtel", count);
+      lifetime_total_count++;
+      await setLocalStorage(
+          "lifetime_total_count_mellowtel",
+          lifetime_total_count,
+      );
+    }
     Logger.log(
       `[🕒]: SHOULD CONTINUE? IF COUNT (${count}) <= ${this.MAX_DAILY_RATE} : ${count <= this.MAX_DAILY_RATE}`,
     );

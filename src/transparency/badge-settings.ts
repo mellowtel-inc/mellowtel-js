@@ -1,10 +1,19 @@
 import { getLocalStorage, setLocalStorage } from "../utils/storage-helpers";
 import { Logger } from "../logger/logger";
 import { BADGE_COLOR } from "../constants";
+import {sendMessageToBackground} from "../utils/messaging-helpers";
 
 export function showBadge(): Promise<boolean> {
   return new Promise((resolve) => {
     try {
+      // if chrome action not defined, send message to background
+      if (!chrome.action) {
+        sendMessageToBackground({
+          intent: "showBadge",
+        }).then((response) => {
+          resolve(response);
+        });
+      }
       chrome.action.setBadgeTextColor({ color: BADGE_COLOR });
       chrome.action.setBadgeText({ text: "." });
       chrome.action.setBadgeBackgroundColor({ color: BADGE_COLOR });
@@ -19,6 +28,14 @@ export function showBadge(): Promise<boolean> {
 export function hideBadge(): Promise<boolean> {
   return new Promise((resolve) => {
     try {
+      // if chrome action not defined, send message to background
+      if (!chrome.action) {
+        sendMessageToBackground({
+          intent: "hideBadge",
+        }).then((response) => {
+          resolve(response);
+        });
+      }
       chrome.action.setBadgeText({ text: "" });
       resolve(true);
     } catch (error) {
@@ -69,7 +86,7 @@ export function showBadgeIfShould(): Promise<boolean> {
 export function hideBadgeIfShould(): Promise<boolean> {
   return new Promise((resolve) => {
     shouldShowBadge().then((result) => {
-      if (!result) {
+      if (result) {
         hideBadge().then(() => {
           resolve(true);
         });
