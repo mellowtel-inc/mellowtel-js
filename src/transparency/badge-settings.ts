@@ -3,8 +3,31 @@ import { Logger } from "../logger/logger";
 import { BADGE_COLOR } from "../constants";
 import {sendMessageToBackground} from "../utils/messaging-helpers";
 
-export function showBadge(): Promise<boolean> {
+function getBadgeProperties(): Promise<{
+    text: string;
+    textColor: chrome.action.ColorArray;
+    backgroundColor: chrome.action.ColorArray;
+}> {
   return new Promise((resolve) => {
+    if(!chrome.action) {
+      sendMessageToBackground({
+        intent: "getBadgeProperties"
+      }).then((response) => {
+          resolve(response);
+      })
+    }
+    chrome.action.getBadgeText({}, (text) => {
+      chrome.action.getBadgeTextColor({}, (textColor) => {
+        chrome.action.getBadgeBackgroundColor({}, (backgroundColor) => {
+          resolve({ text, textColor, backgroundColor });
+        });
+      });
+    });
+  });
+}
+
+export function showBadge(): Promise<boolean> {
+  return new Promise(async(resolve) => {
     try {
       // if chrome action not defined, send message to background
       if (!chrome.action) {
@@ -14,6 +37,15 @@ export function showBadge(): Promise<boolean> {
           resolve(response);
         });
       }
+
+      // Get current badge properties
+      const { text, textColor, backgroundColor } = await getBadgeProperties();
+
+      // Save current badge properties in local storage
+      await setLocalStorage('badgeText', text);
+      await setLocalStorage('badgeTextColor', JSON.stringify(textColor));
+      await setLocalStorage('badgeBackgroundColor', JSON.stringify(backgroundColor));
+
       chrome.action.setBadgeTextColor({ color: BADGE_COLOR });
       chrome.action.setBadgeText({ text: "." });
       chrome.action.setBadgeBackgroundColor({ color: BADGE_COLOR });
@@ -37,6 +69,18 @@ export function hideBadge(): Promise<boolean> {
         });
       }
       chrome.action.setBadgeText({ text: "" });
+
+      // try to restore badge properties from local storage
+      getLocalStorage('badgeText', true).then((text) => {
+        getLocalStorage('badgeTextColor', true).then((textColor) => {
+          getLocalStorage('badgeBackgroundColor', true).then((backgroundColor) => {
+            chrome.action.setBadgeText({ text: text });
+            chrome.action.setBadgeTextColor({ color: JSON.parse(textColor) });
+            chrome.action.setBadgeBackgroundColor({ color: JSON.parse(backgroundColor) });
+          });
+        });
+      });
+
       resolve(true);
     } catch (error) {
       Logger.log("[hideBadge]: error " + error);

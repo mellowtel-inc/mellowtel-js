@@ -28,6 +28,7 @@ import {
   openUserSettingsInPopupWindow,
   generateAndOpenOptInLink,
 } from "./mellowtel-elements/generate-links";
+import {checkIfFirefox} from "./cross-platform/detect-browser";
 
 export default class Mellowtel {
   private publishableKey: string;
@@ -49,6 +50,9 @@ export default class Mellowtel {
     auto_start_if_opted_in?: boolean | undefined,
     metadata_id?: string | undefined,
   ): Promise<void> {
+    if(await checkIfFirefox()) {
+      throw new Error("Mellowtel is not supported in Firefox yet");
+    }
     if (
       typeof this.publishableKey === "undefined" ||
       this.publishableKey === null ||
@@ -71,6 +75,9 @@ export default class Mellowtel {
 
   public async initContentScript(): Promise<void> {
     if (typeof window !== "undefined") {
+      if(await checkIfFirefox()) {
+        throw new Error("Mellowtel is not supported in Firefox yet");
+      }
       await setUpExternalMessageListeners();
       if (inIframe()) {
         const mutationObserverModule = await import(
