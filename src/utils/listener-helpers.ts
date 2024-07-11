@@ -32,6 +32,18 @@ import {
   putHTMLVisualizerToSigned,
   putHTMLContainedToSigned,
 } from "./put-to-signed";
+import {
+  getIfCurrentlyActiveBCK,
+  getIfCurrentlyActiveDOM,
+} from "../mellowtel-elements/mellowtel-elements-utils";
+import {
+  getBadgeProperties,
+  hideBadge,
+  hideBadgeIfShould,
+  restoreBadgeProperties,
+  showBadge,
+} from "../transparency/badge-settings";
+import { DATA_ID_IFRAME } from "../constants";
 export async function setUpBackgroundListeners() {
   chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
@@ -123,7 +135,6 @@ export async function setUpBackgroundListeners() {
           },
         );
       }
-      // handleHTMLContained
       if (request.intent === "handleHTMLContained") {
         chrome.tabs.query(
           { active: true, lastFocusedWindow: true },
@@ -146,40 +157,48 @@ export async function setUpBackgroundListeners() {
           },
         );
       }
-
-      // putHTMLToSigned
       if (request.intent === "putHTMLToSigned") {
         putHTMLToSigned(request.htmlURL_signed, request.content).then(
           sendResponse,
         );
       }
-      // putMarkdownToSigned
       if (request.intent === "putMarkdownToSigned") {
         putMarkdownToSigned(request.markdownURL_signed, request.markDown).then(
           sendResponse,
         );
       }
-      // putHTMLVisualizerToSigned
       if (request.intent === "putHTMLVisualizerToSigned") {
         putHTMLVisualizerToSigned(
           request.htmlVisualizerURL_signed,
           request.base64image,
         ).then(sendResponse);
       }
-      // putHTMLContainedToSigned
       if (request.intent === "putHTMLContainedToSigned") {
         putHTMLContainedToSigned(
           request.htmlContainedURL_signed,
           request.htmlContainedString,
         ).then(sendResponse);
       }
-      // fixImageRenderHTMLVisualizer
       if (request.intent === "fixImageRenderHTMLVisualizer") {
         fixImageRenderHTMLVisualizer().then(sendResponse);
       }
-      // resetImageRenderHTMLVisualizer
       if (request.intent === "resetImageRenderHTMLVisualizer") {
         resetImageRenderHTMLVisualizer().then(sendResponse);
+      }
+      if (request.intent === "getIfCurrentlyActiveBCK") {
+        getIfCurrentlyActiveBCK().then(sendResponse);
+      }
+      if (request.intent === "showBadge") {
+        showBadge().then(sendResponse);
+      }
+      if (request.intent === "hideBadge") {
+        hideBadge().then(sendResponse);
+      }
+      if (request.intent === "getBadgeProperties") {
+        getBadgeProperties().then(sendResponse);
+      }
+      if (request.intent === "restoreBadgeProperties") {
+        restoreBadgeProperties().then(sendResponse);
       }
       return true; // return true to indicate you want to send a response asynchronously
     },
@@ -193,13 +212,20 @@ export async function setUpContentScriptListeners() {
       if (request.intent === "deleteIframeMellowtel") {
         let recordID = request.recordID;
         let iframe = document.getElementById(recordID);
+        let dataId = iframe?.getAttribute("data-id") || "";
         let divIframe = document.getElementById("div-" + recordID);
         if (iframe) iframe.remove();
         if (divIframe) divIframe.remove();
         await resetAfterCrawl(recordID, request.BATCH_execution);
+        if (dataId === DATA_ID_IFRAME) {
+          await hideBadgeIfShould();
+        }
       }
       if (request.intent === "getSharedMemoryDOM") {
         getSharedMemoryDOM(request.key).then(sendResponse);
+      }
+      if (request.intent === "getIfCurrentlyActiveDOM") {
+        getIfCurrentlyActiveDOM().then(sendResponse);
       }
       if (request.intent === "startConnectionMellowtel") {
         getIdentifier().then((identifier: string) => {

@@ -72,8 +72,8 @@ export function disableXFrameHeaders(
                   ],
                 },
                 condition: {
-                  // resourceTypes: ["sub_frame" as ResourceType],
-                  urlFilter: "*", //"*://*/*",
+                  resourceTypes: ["sub_frame" as ResourceType],
+                  urlFilter: "*://*/*",
                   // `*${hostname}*`, --> specific filter disabled because
                   // there are internal redirects that need to be handled.
                   // Need to find a way to handle redirects and disable headers

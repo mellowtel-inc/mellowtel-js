@@ -1,6 +1,7 @@
 import { getOptInStatus, optOut, optIn } from "../utils/opt-in-out-helpers";
 import {
-  getChromeExtensionIdentifier,
+  getExtensionIdentifier,
+  getExtensionName,
   getIdentifier,
 } from "../utils/identity-helpers";
 import { MELLOWTEL_VERSION } from "../constants";
@@ -9,10 +10,29 @@ import { Logger } from "../logger/logger";
 import { start, stop } from "../utils/start-stop-helpers";
 import { executeFunctionIfOrWhenBodyExists } from "../utils/document-body-observer";
 import { sendMessageToBackground } from "../utils/messaging-helpers";
+import { generateSettingsLink } from "./generate-links";
+import {
+  setShouldShowBadge,
+  shouldShowBadge,
+  unsetShouldShowBadge,
+} from "../transparency/badge-settings";
+
+export function createMessagingChannels(extension_id: string) {
+  const channelFromExtensionToSite: HTMLInputElement =
+    document.createElement("input");
+  const channelFromSiteToExtension: HTMLInputElement =
+    document.createElement("input");
+  channelFromExtensionToSite.id = `mellowtel-message-from-extension-to-site-${extension_id}`;
+  channelFromExtensionToSite.style.display = "none";
+  channelFromSiteToExtension.id = `mellowtel-message-from-site-to-extension-${extension_id}`;
+  channelFromSiteToExtension.style.display = "none";
+  document.body.appendChild(channelFromExtensionToSite);
+  document.body.appendChild(channelFromSiteToExtension);
+}
 
 export async function setUpExternalMessageListeners() {
   let current_hostname = window.location.hostname;
-  let extension_id_original = await getChromeExtensionIdentifier();
+  let extension_id_original = await getExtensionIdentifier();
   executeFunctionIfOrWhenBodyExists(async () => {
     if (
       current_hostname.includes("mellowtel.it") ||
@@ -22,12 +42,15 @@ export async function setUpExternalMessageListeners() {
       Logger.log(
         "[setUpExternalMessageListeners]: Setting up external message listeners",
       );
-      const channelFromSiteToExtension: HTMLInputElement | null =
+      createMessagingChannels(extension_id_original);
+
+      const channelFromSiteToExtension: HTMLInputElement =
         document.getElementById(
-          "mellowtel-message-from-site-to-extension",
+          `mellowtel-message-from-site-to-extension-${extension_id_original}`,
         ) as HTMLInputElement;
+
       if (channelFromSiteToExtension) {
-        channelFromSiteToExtension.addEventListener("change", (event) => {
+        channelFromSiteToExtension.addEventListener("change", async (event) => {
           const message = JSON.parse(channelFromSiteToExtension.value);
           const message_id = message.id;
           const extension_id_message = message.extension_id;
@@ -45,84 +68,176 @@ export async function setUpExternalMessageListeners() {
           }
           if (message.action === "optIn") {
             optIn().then(() => {
-              sendMessageToWebsite({ message: "opted-in", id: message_id });
+              sendMessageToWebsite(
+                { message: "opted-in", id: message_id },
+                extension_id_original,
+              );
             });
           }
           if (message.action === "optOut") {
             optOut().then(() => {
-              sendMessageToWebsite({ message: "opted-out", id: message_id });
+              sendMessageToWebsite(
+                { message: "opted-out", id: message_id },
+                extension_id_original,
+              );
             });
           }
           if (message.action === "startMellowtel") {
             start().then(() => {
-              sendMessageToWebsite({
-                message: "mellowtel-started",
-                id: message_id,
-              });
+              sendMessageToWebsite(
+                {
+                  message: "mellowtel-started",
+                  id: message_id,
+                },
+                extension_id_original,
+              );
             });
           }
           if (message.action === "stopMellowtel") {
             stop().then(() => {
-              sendMessageToWebsite({
-                message: "mellowtel-stopped",
-                id: message_id,
-              });
+              sendMessageToWebsite(
+                {
+                  message: "mellowtel-stopped",
+                  id: message_id,
+                },
+                extension_id_original,
+              );
             });
           }
           if (message.action === "getOptInStatus") {
             getOptInStatus().then((status) => {
-              sendMessageToWebsite({
-                message: "opt-in-status",
-                status: status,
-                id: message_id,
-              });
+              sendMessageToWebsite(
+                {
+                  message: "opt-in-status",
+                  status: status,
+                  id: message_id,
+                },
+                extension_id_original,
+              );
             });
           }
           if (message.action === "getNodeId") {
             getIdentifier().then((nodeId) => {
-              sendMessageToWebsite({
-                message: "node-id",
-                nodeId: nodeId,
-                id: message_id,
-              });
+              sendMessageToWebsite(
+                {
+                  message: "node-id",
+                  nodeId: nodeId,
+                  id: message_id,
+                },
+                extension_id_original,
+              );
             });
           }
           if (message.action === "getMellowtelVersion") {
-            sendMessageToWebsite({
-              message: "mellowtel-version",
-              version: MELLOWTEL_VERSION,
-              id: message_id,
-            });
+            sendMessageToWebsite(
+              {
+                message: "mellowtel-version",
+                version: MELLOWTEL_VERSION,
+                id: message_id,
+              },
+              extension_id_original,
+            );
           }
           if (message.action === "getRequestsHandled") {
             RateLimiter.getLifetimeTotalCount().then((requestsHandled) => {
-              sendMessageToWebsite({
-                message: "requests-handled",
-                requestsHandled: requestsHandled,
-                id: message_id,
-              });
+              sendMessageToWebsite(
+                {
+                  message: "requests-handled",
+                  requestsHandled: requestsHandled,
+                  id: message_id,
+                },
+                extension_id_original,
+              );
             });
           }
           if (message.action === "getRateLimitData") {
-            RateLimiter.getRateLimitData().then((rateLimitData) => {
-              sendMessageToWebsite({
-                message: "rate-limit-data",
-                timestamp: rateLimitData.timestamp,
-                count: rateLimitData.count,
-                id: message_id,
-              });
+            RateLimiter.checkRateLimit(false).then((rateLimitData) => {
+              sendMessageToWebsite(
+                {
+                  message: "rate-limit-data",
+                  requestsCount: rateLimitData.requestsCount,
+                  id: message_id,
+                },
+                extension_id_original,
+              );
             });
           }
           if (message.action === "closePage") {
             sendMessageToBackground({ intent: "removeCurrentTab" }).then(
               (tab_id) => {
                 Logger.log("[setUpExternalMessageListeners] tab_id: ", tab_id);
-                sendMessageToWebsite({
-                  message: "page-closed",
-                  id: message_id,
-                });
+                sendMessageToWebsite(
+                  {
+                    message: "page-closed",
+                    id: message_id,
+                  },
+                  extension_id_original,
+                );
               },
             );
+          }
+          if (message.action === "getIfCurrentlyActive") {
+            getIfCurrentlyActive().then((currentlyActive: boolean) => {
+              sendMessageToWebsite(
+                {
+                  message: "currently-active",
+                  currentlyActive: currentlyActive,
+                  id: message_id,
+                },
+                extension_id_original,
+              );
+            });
+          }
+          if (message.action === "getInfoToDisplayInTable") {
+            let currentlyActive: boolean = await getIfCurrentlyActive();
+            let settingsLink: string = await generateSettingsLink();
+            let optInStatus: boolean = await getOptInStatus();
+            let extensionId: string = await getExtensionIdentifier();
+            let extensionName: string = await getExtensionName();
+            let shouldShowBadgeVar: boolean = await shouldShowBadge();
+            let requestsCount: number = (
+              await RateLimiter.checkRateLimit(false)
+            ).requestsCount;
+            let configuration_key: string = (await getIdentifier()).split(
+              "_",
+            )[1];
+            sendMessageToWebsite(
+              {
+                message: "info-to-display-in-table",
+                settingsLink: settingsLink,
+                extensionName: extensionName,
+                extensionId: extensionId,
+                optInStatus: optInStatus,
+                currentlyActive: currentlyActive,
+                configurationKey: configuration_key,
+                shouldShowBadge: shouldShowBadgeVar,
+                requestsCount: requestsCount,
+                id: message_id,
+              },
+              extension_id_original,
+            );
+          }
+          if (message.action === "setShouldShowBadge") {
+            setShouldShowBadge().then(() => {
+              sendMessageToWebsite(
+                {
+                  message: "set-should-show-badge",
+                  id: message_id,
+                },
+                extension_id_original,
+              );
+            });
+          }
+          if (message.action === "unsetShouldShowBadge") {
+            unsetShouldShowBadge().then(() => {
+              sendMessageToWebsite(
+                {
+                  message: "unset-should-show-badge",
+                  id: message_id,
+                },
+                extension_id_original,
+              );
+            });
           }
         });
       }
@@ -130,10 +245,20 @@ export async function setUpExternalMessageListeners() {
   });
 }
 
-function sendMessageToWebsite(message: any) {
+function getIfCurrentlyActive(): Promise<boolean> {
+  return new Promise((resolve) => {
+    sendMessageToBackground({ intent: "getIfCurrentlyActiveBCK" }).then(
+      (response) => {
+        resolve(response);
+      },
+    );
+  });
+}
+
+function sendMessageToWebsite(message: any, extension_id: string) {
   const channelFromExtensionToSite: HTMLInputElement | null =
     document.getElementById(
-      "mellowtel-message-from-extension-to-site",
+      `mellowtel-message-from-extension-to-site-${extension_id}`,
     ) as HTMLInputElement;
   if (channelFromExtensionToSite) {
     channelFromExtensionToSite.value = JSON.stringify(message);

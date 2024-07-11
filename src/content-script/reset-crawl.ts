@@ -1,5 +1,6 @@
 import { getLastFromQueue } from "./queue-crawl";
 import {
+  DATA_ID_IFRAME,
   LIFESPAN_IFRAME,
   MAX_PARALLEL_EXECUTIONS,
   MAX_PARALLEL_EXECUTIONS_BATCH,
@@ -9,6 +10,7 @@ import { getFrameCount } from "../utils/utils";
 import { enableXFrameHeaders } from "../utils/dnr-helpers";
 import { Logger } from "../logger/logger";
 import { resetTriggersDownload } from "../utils/triggers-download-helpers";
+import { hideBadgeIfShould } from "../transparency/badge-settings";
 
 export async function resetAfterCrawl(
   recordID: string,
@@ -79,9 +81,13 @@ export function setLifespanForIframe(
   );
   setTimeout(async () => {
     let iframe = document.getElementById(recordID);
+    let dataId = iframe?.getAttribute("data-id") || "";
     let divIframe = document.getElementById("div-" + recordID);
     if (iframe) iframe.remove();
     if (divIframe) divIframe.remove();
     await resetAfterCrawl(recordID, BATCH_execution);
+    if (dataId === DATA_ID_IFRAME) {
+      await hideBadgeIfShould();
+    }
   }, LIFESPAN_IFRAME + waitBeforeScraping);
 }
