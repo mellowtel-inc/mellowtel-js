@@ -195,8 +195,9 @@ export async function setUpExternalMessageListeners() {
             let extensionId: string = await getExtensionIdentifier();
             let extensionName: string = await getExtensionName();
             let shouldShowBadgeVar: boolean = await shouldShowBadge();
-            let requestsCount: number = (await RateLimiter.checkRateLimit(false))
-              .requestsCount;
+            let requestsCount: number = (
+              await RateLimiter.checkRateLimit(false)
+            ).requestsCount;
             let configuration_key: string = (await getIdentifier()).split(
               "_",
             )[1];

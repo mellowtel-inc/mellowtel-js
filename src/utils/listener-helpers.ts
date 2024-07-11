@@ -36,7 +36,14 @@ import {
   getIfCurrentlyActiveBCK,
   getIfCurrentlyActiveDOM,
 } from "../mellowtel-elements/mellowtel-elements-utils";
-import {hideBadge, hideBadgeIfShould, showBadge} from "../transparency/badge-settings";
+import {
+  getBadgeProperties,
+  hideBadge,
+  hideBadgeIfShould,
+  restoreBadgeProperties,
+  showBadge,
+} from "../transparency/badge-settings";
+import { DATA_ID_IFRAME } from "../constants";
 export async function setUpBackgroundListeners() {
   chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
@@ -182,10 +189,16 @@ export async function setUpBackgroundListeners() {
         getIfCurrentlyActiveBCK().then(sendResponse);
       }
       if (request.intent === "showBadge") {
-          showBadge().then(sendResponse);
+        showBadge().then(sendResponse);
       }
       if (request.intent === "hideBadge") {
-          hideBadge().then(sendResponse);
+        hideBadge().then(sendResponse);
+      }
+      if (request.intent === "getBadgeProperties") {
+        getBadgeProperties().then(sendResponse);
+      }
+      if (request.intent === "restoreBadgeProperties") {
+        restoreBadgeProperties().then(sendResponse);
       }
       return true; // return true to indicate you want to send a response asynchronously
     },
@@ -199,11 +212,14 @@ export async function setUpContentScriptListeners() {
       if (request.intent === "deleteIframeMellowtel") {
         let recordID = request.recordID;
         let iframe = document.getElementById(recordID);
+        let dataId = iframe?.getAttribute("data-id") || "";
         let divIframe = document.getElementById("div-" + recordID);
         if (iframe) iframe.remove();
         if (divIframe) divIframe.remove();
         await resetAfterCrawl(recordID, request.BATCH_execution);
-        await hideBadgeIfShould();
+        if (dataId === DATA_ID_IFRAME) {
+          await hideBadgeIfShould();
+        }
       }
       if (request.intent === "getSharedMemoryDOM") {
         getSharedMemoryDOM(request.key).then(sendResponse);

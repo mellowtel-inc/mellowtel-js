@@ -1,5 +1,6 @@
 import { getLastFromQueue } from "./queue-crawl";
 import {
+  DATA_ID_IFRAME,
   LIFESPAN_IFRAME,
   MAX_PARALLEL_EXECUTIONS,
   MAX_PARALLEL_EXECUTIONS_BATCH,
@@ -80,10 +81,13 @@ export function setLifespanForIframe(
   );
   setTimeout(async () => {
     let iframe = document.getElementById(recordID);
+    let dataId = iframe?.getAttribute("data-id") || "";
     let divIframe = document.getElementById("div-" + recordID);
     if (iframe) iframe.remove();
     if (divIframe) divIframe.remove();
     await resetAfterCrawl(recordID, BATCH_execution);
-    await hideBadgeIfShould();
+    if (dataId === DATA_ID_IFRAME) {
+      await hideBadgeIfShould();
+    }
   }, LIFESPAN_IFRAME + waitBeforeScraping);
 }

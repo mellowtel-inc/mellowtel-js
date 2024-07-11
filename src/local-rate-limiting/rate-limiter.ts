@@ -129,13 +129,13 @@ export class RateLimiter {
       };
     }
 
-    if(increase_count) {
+    if (increase_count) {
       count++;
       await setLocalStorage("count_mellowtel", count);
       lifetime_total_count++;
       await setLocalStorage(
-          "lifetime_total_count_mellowtel",
-          lifetime_total_count,
+        "lifetime_total_count_mellowtel",
+        lifetime_total_count,
       );
     }
     Logger.log(

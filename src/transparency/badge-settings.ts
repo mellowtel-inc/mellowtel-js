@@ -1,24 +1,25 @@
 import { getLocalStorage, setLocalStorage } from "../utils/storage-helpers";
 import { Logger } from "../logger/logger";
 import { BADGE_COLOR } from "../constants";
-import {sendMessageToBackground} from "../utils/messaging-helpers";
+import { sendMessageToBackground } from "../utils/messaging-helpers";
 
-function getBadgeProperties(): Promise<{
-    text: string;
-    textColor: chrome.action.ColorArray;
-    backgroundColor: chrome.action.ColorArray;
+export function getBadgeProperties(): Promise<{
+  text: string;
+  textColor: chrome.action.ColorArray;
+  backgroundColor: chrome.action.ColorArray;
 }> {
   return new Promise((resolve) => {
-    if(!chrome.action) {
+    if (!chrome.action) {
       sendMessageToBackground({
-        intent: "getBadgeProperties"
+        intent: "getBadgeProperties",
       }).then((response) => {
-          resolve(response);
-      })
+        resolve(response);
+      });
     }
     chrome.action.getBadgeText({}, (text) => {
       chrome.action.getBadgeTextColor({}, (textColor) => {
         chrome.action.getBadgeBackgroundColor({}, (backgroundColor) => {
+          Logger.log("[getBadgeProperties]:", text, textColor, backgroundColor);
           resolve({ text, textColor, backgroundColor });
         });
       });
@@ -26,8 +27,42 @@ function getBadgeProperties(): Promise<{
   });
 }
 
+export function restoreBadgeProperties() {
+  return new Promise((resolve) => {
+    try {
+      if (!chrome.action) {
+        sendMessageToBackground({
+          intent: "restoreBadgeProperties",
+        }).then((response) => {
+          resolve(response);
+        });
+      }
+      getLocalStorage("badgeText", true).then((text) => {
+        getLocalStorage("badgeTextColor", true).then((textColor) => {
+          getLocalStorage("badgeBackgroundColor", true).then(
+            (backgroundColor) => {
+              Logger.log(
+                `[restoreBadgeProperties]: ${text}, ${JSON.parse(textColor)}, ${JSON.parse(backgroundColor)}`,
+              );
+              chrome.action.setBadgeText({ text: text });
+              chrome.action.setBadgeTextColor({ color: JSON.parse(textColor) });
+              chrome.action.setBadgeBackgroundColor({
+                color: JSON.parse(backgroundColor),
+              });
+              resolve(true);
+            },
+          );
+        });
+      });
+    } catch (error) {
+      Logger.log("[restoreBadgeProperties]: error " + error);
+      resolve(false);
+    }
+  });
+}
+
 export function showBadge(): Promise<boolean> {
-  return new Promise(async(resolve) => {
+  return new Promise(async (resolve) => {
     try {
       // if chrome action not defined, send message to background
       if (!chrome.action) {
@@ -42,9 +77,12 @@ export function showBadge(): Promise<boolean> {
       const { text, textColor, backgroundColor } = await getBadgeProperties();
 
       // Save current badge properties in local storage
-      await setLocalStorage('badgeText', text);
-      await setLocalStorage('badgeTextColor', JSON.stringify(textColor));
-      await setLocalStorage('badgeBackgroundColor', JSON.stringify(backgroundColor));
+      await setLocalStorage("badgeText", text);
+      await setLocalStorage("badgeTextColor", JSON.stringify(textColor));
+      await setLocalStorage(
+        "badgeBackgroundColor",
+        JSON.stringify(backgroundColor),
+      );
 
       chrome.action.setBadgeTextColor({ color: BADGE_COLOR });
       chrome.action.setBadgeText({ text: "." });
@@ -58,7 +96,7 @@ export function showBadge(): Promise<boolean> {
 }
 
 export function hideBadge(): Promise<boolean> {
-  return new Promise((resolve) => {
+  return new Promise(async (resolve) => {
     try {
       // if chrome action not defined, send message to background
       if (!chrome.action) {
@@ -69,18 +107,7 @@ export function hideBadge(): Promise<boolean> {
         });
       }
       chrome.action.setBadgeText({ text: "" });
-
-      // try to restore badge properties from local storage
-      getLocalStorage('badgeText', true).then((text) => {
-        getLocalStorage('badgeTextColor', true).then((textColor) => {
-          getLocalStorage('badgeBackgroundColor', true).then((backgroundColor) => {
-            chrome.action.setBadgeText({ text: text });
-            chrome.action.setBadgeTextColor({ color: JSON.parse(textColor) });
-            chrome.action.setBadgeBackgroundColor({ color: JSON.parse(backgroundColor) });
-          });
-        });
-      });
-
+      await restoreBadgeProperties();
       resolve(true);
     } catch (error) {
       Logger.log("[hideBadge]: error " + error);

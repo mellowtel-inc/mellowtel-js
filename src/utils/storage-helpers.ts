@@ -1,6 +1,9 @@
 import { sendMessageToBackground } from "./messaging-helpers";
 
-export function getLocalStorage(key: string, extract_key = false): Promise<any> {
+export function getLocalStorage(
+  key: string,
+  extract_key = false,
+): Promise<any> {
   return new Promise((resolve) => {
     shouldDelegateStorage().then((delegate) => {
       if (delegate) {
@@ -11,7 +14,7 @@ export function getLocalStorage(key: string, extract_key = false): Promise<any> 
         );
       } else {
         chrome.storage.local.get(key, function (result) {
-          if(extract_key) {
+          if (extract_key) {
             resolve(result[key]);
           } else {
             resolve(result);

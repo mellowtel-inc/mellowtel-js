@@ -1,4 +1,5 @@
 import { showBadgeIfShould } from "../transparency/badge-settings";
+import { DATA_ID_IFRAME } from "../constants";
 
 export function injectHiddenIFrame(
   url: string,
@@ -15,7 +16,7 @@ export function injectHiddenIFrame(
   iframe.id = id;
   // credentialles iframe to avoid leaking cookies & session data
   // https://developer.mozilla.org/en-US/docs/Web/Security/IFrame_credentialless
-  // Experimental feature, not supported by all browsers
+  // Experimental feature, not supported by Firefox and Safari
   // @ts-ignore
   iframe.credentialless = true;
 
@@ -55,7 +56,9 @@ export function injectHiddenIFrame(
     iframe.style.display = "none";
     document.body.prepend(iframe);
   }
-  showBadgeIfShould().then();
+  if (data_id === DATA_ID_IFRAME) {
+    showBadgeIfShould().then();
+  }
 }
 
 export function inIframe(): boolean {
