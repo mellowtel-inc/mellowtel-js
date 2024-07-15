@@ -23,7 +23,7 @@ import {
 } from "./triggers-download-helpers";
 import { sendMessageToContentScript } from "./messaging-helpers";
 import { handlePostRequest } from "../post-requests/post-helpers";
-import { generateAndOpenOptInLink } from "../mellowtel-elements/generate-links";
+import { generateAndOpenOptInLink } from "../elements/generate-links";
 import { MeasureConnectionSpeed } from "./measure-connection-speed";
 import { proceedWithActivation } from "../content-script/execute-crawl";
 import {
@@ -35,7 +35,7 @@ import {
 import {
   getIfCurrentlyActiveBCK,
   getIfCurrentlyActiveDOM,
-} from "../mellowtel-elements/mellowtel-elements-utils";
+} from "../elements/elements-utils";
 import {
   getBadgeProperties,
   hideBadge,
@@ -78,10 +78,9 @@ export async function setUpBackgroundListeners() {
           sendResponse,
         );
       }
-      if (request.intent === "deleteIframeMellowtel") {
+      if (request.intent === "deleteIframeM") {
         sendMessageToContentScript(sender.tab?.id!, {
-          target: "contentScriptMellowtel",
-          intent: "deleteIframeMellowtel",
+          intent: "deleteIframeM",
           recordID: request.recordID,
           BATCH_execution: request.BATCH_execution,
         }).then(sendResponse);
@@ -208,8 +207,8 @@ export async function setUpBackgroundListeners() {
 export async function setUpContentScriptListeners() {
   chrome.runtime.onMessage.addListener(
     async function (request, sender, sendResponse) {
-      if (request.target !== "contentScriptMellowtel") return false;
-      if (request.intent === "deleteIframeMellowtel") {
+      if (request.target !== "contentScriptM") return false;
+      if (request.intent === "deleteIframeM") {
         let recordID = request.recordID;
         let iframe = document.getElementById(recordID);
         let dataId = iframe?.getAttribute("data-id") || "";
@@ -227,7 +226,7 @@ export async function setUpContentScriptListeners() {
       if (request.intent === "getIfCurrentlyActiveDOM") {
         getIfCurrentlyActiveDOM().then(sendResponse);
       }
-      if (request.intent === "startConnectionMellowtel") {
+      if (request.intent === "startConnectionM") {
         getIdentifier().then((identifier: string) => {
           startConnectionWs(identifier);
         });

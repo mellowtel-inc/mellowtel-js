@@ -1,15 +1,15 @@
 import WebSocket from "isomorphic-ws";
-import { MELLOWTEL_VERSION, REFRESH_INTERVAL } from "../constants";
+import { VERSION, REFRESH_INTERVAL } from "../constants";
 import { preProcessCrawl } from "./execute-crawl";
 import {
   getSharedMemory,
   removeSharedMemory,
   setSharedMemory,
 } from "./shared-memory";
-import { isMellowtelStarted } from "../utils/start-stop-helpers";
+import { isStarted } from "../utils/start-stop-helpers";
 import { RateLimiter } from "../local-rate-limiting/rate-limiter";
 import { Logger } from "../logger/logger";
-import { setLocalStorage, getLocalStorage } from "../utils/storage-helpers";
+import { setLocalStorage } from "../utils/storage-helpers";
 import { getExtensionIdentifier } from "../utils/identity-helpers";
 import {
   getEffectiveConnectionType,
@@ -27,7 +27,7 @@ export async function startConnectionWs(identifier: string): WebSocket {
     Logger.log(`[🌐]: Not connecting to websocket to preserve bandwidth`);
     return;
   }
-  await getSharedMemory("webSocketConnectedMellowtel").then(
+  await getSharedMemory("webSocketConnected").then(
     async (response) => {
       if (!response) {
         let LIMIT_REACHED: boolean = await RateLimiter.getIfRateLimitReached();
@@ -50,25 +50,25 @@ export async function startConnectionWs(identifier: string): WebSocket {
           const speedMpbs: number = await MeasureConnectionSpeed();
           Logger.log(`[🌐]: Connection speed: ${speedMpbs} Mbps`);
           const ws = new WebSocket(
-            `${ws_url}?node_id=${identifier}&version=${MELLOWTEL_VERSION}&chrome_id=${extension_identifier}&speedMbps=${speedMpbs}`,
+            `${ws_url}?node_id=${identifier}&version=${VERSION}&chrome_id=${extension_identifier}&speedMbps=${speedMpbs}`,
           );
 
           ws.onopen = function open() {
-            setSharedMemory("webSocketConnectedMellowtel", "true");
+            setSharedMemory("webSocketConnected", "true");
             Logger.log(
-              `[🌐]: connected with node_id= ${identifier} and version= ${MELLOWTEL_VERSION}`,
+              `[🌐]: connected with node_id= ${identifier} and version= ${VERSION}`,
             );
           };
 
           ws.onclose = async function close() {
-            removeSharedMemory("webSocketConnectedMellowtel");
-            if (await isMellowtelStarted()) {
+            removeSharedMemory("webSocketConnected");
+            if (await isStarted()) {
               startConnectionWs(identifier);
             }
           };
 
           ws.onmessage = async function incoming(data: any) {
-            if (await isMellowtelStarted()) {
+            if (await isStarted()) {
               data = JSON.parse(data.data);
               if (
                 data.hasOwnProperty("type_event") &&

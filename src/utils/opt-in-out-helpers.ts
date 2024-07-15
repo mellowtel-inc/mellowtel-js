@@ -1,9 +1,11 @@
 import { setLocalStorage } from "./storage-helpers";
 
+const optInKey: string = "mellowtelOptIn";
+
 export async function getOptInStatus(): Promise<boolean> {
   return new Promise((resolve) => {
-    chrome.storage.local.get("mellowtelOptIn", function (result) {
-      if (result !== undefined && result["mellowtelOptIn"] === "true") {
+    chrome.storage.local.get(optInKey, function (result) {
+      if (result !== undefined && result[optInKey] === "true") {
         resolve(true);
       } else {
         resolve(false);
@@ -14,7 +16,7 @@ export async function getOptInStatus(): Promise<boolean> {
 
 export async function optIn(): Promise<boolean> {
   return new Promise((resolve) => {
-    setLocalStorage("mellowtelOptIn", "true").then(() => {
+    setLocalStorage(optInKey, "true").then(() => {
       resolve(true);
     });
   });
@@ -22,8 +24,8 @@ export async function optIn(): Promise<boolean> {
 
 export async function optOut(): Promise<boolean> {
   return new Promise((resolve) => {
-    setLocalStorage("mellowtelOptIn", "false").then(() => {
-      setLocalStorage("mellowtelStatus", "stop").then(() => {
+    setLocalStorage(optInKey, "false").then(() => {
+      setLocalStorage("mStatus", "stop").then(() => {
         resolve(true);
       });
     });

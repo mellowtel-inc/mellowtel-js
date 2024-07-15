@@ -12,6 +12,14 @@ import { safeRenderIframe } from "./safe-render";
 
 let alreadyReplied: boolean = false;
 
+export function listenerAlive(){
+  window.addEventListener("message", (event) => {
+    if (event.data.isContentScriptAlive) {
+      window.parent.postMessage({ isIframeAlive: true, recordID: event.data.recordID }, "*");
+    }
+  });
+}
+
 export function attachMutationObserver() {
   executeFunctionIfOrWhenBodyExists(() => {
     initIframeListeners();
@@ -27,10 +35,10 @@ function initIframeListeners() {
 }
 
 async function initialEventListener(event: MessageEvent) {
-  let isMellowtelCrawl = event.data.isMellowtelCrawl;
-  if (isMellowtelCrawl && !alreadyReplied) {
+  let isMCrawl = event.data.isMCrawl;
+  if (isMCrawl && !alreadyReplied) {
     window.parent.postMessage(
-      { isMellowtelReply: true, recordID: event.data.recordID },
+      { isMReply: true, recordID: event.data.recordID },
       "*",
     );
     alreadyReplied = true;

@@ -18,9 +18,11 @@ const BASE_LINK_OPT_IN: string = "https://www.mellow.tel/opt-in/";
     If called from the content script, it will send a message to the background script to open the link.
 */
 
+const optInOpenedKey: string = "mellowtelOptInOpened";
+
 async function setAlreadyOpened() {
   return new Promise((resolve) => {
-    setLocalStorage("mellowtelOptInOpened", "true").then(() => {
+    setLocalStorage(optInOpenedKey, "true").then(() => {
       resolve(true);
     });
   });
@@ -28,15 +30,15 @@ async function setAlreadyOpened() {
 
 async function getAlreadyOpened(): Promise<boolean> {
   return new Promise((resolve) => {
-    getLocalStorage("mellowtelOptInOpened").then((result) => {
+    getLocalStorage(optInOpenedKey).then((result) => {
       if (
         result === undefined ||
-        !result.hasOwnProperty("mellowtelOptInOpened")
+        !result.hasOwnProperty(optInOpenedKey)
       ) {
         resolve(false);
       } else {
         let opened =
-          result["mellowtelOptInOpened"].toString().toLowerCase() === "true";
+          result[optInOpenedKey].toString().toLowerCase() === "true";
         resolve(opened);
       }
     });
@@ -101,7 +103,7 @@ export function openUserSettingsInPopupWindow(): Promise<boolean> {
       );
       resolve(false);
     }
-    await openPopupWindow(userSettingsLink, "Mellowtel Settings", 768, 400);
+    await openPopupWindow(userSettingsLink, "Settings", 768, 400);
     resolve(true);
   });
 }

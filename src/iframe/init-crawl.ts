@@ -25,8 +25,8 @@ export async function initCrawl(event: MessageEvent, shouldDispatch: boolean) {
 }
 
 function initCrawlHelper(event: MessageEvent, numTries: number) {
-  let isMellowtelCrawl = event.data.isMellowtelCrawl;
-  if (isMellowtelCrawl) {
+  let isMCrawl = event.data.isMCrawl;
+  if (isMCrawl) {
     let recordID = event.data.recordID;
     let removeCSSselectors = event.data.removeCSSselectors;
     let classNamesToBeRemoved = event.data.classNamesToBeRemoved;

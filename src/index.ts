@@ -8,28 +8,28 @@ import { inIframe } from "./utils/iframe-helpers";
 import { purgeOnStartup } from "./background-script/purge-on-startup";
 import { setUpStorageChangeListeners } from "./content-script/storage-change-listeners";
 import {
-  isMellowtelStarted,
+  isStarted,
   start,
-  startMellowtelWebsocket,
+  startWebsocket,
   stop,
 } from "./utils/start-stop-helpers";
 import { getOptInStatus, optIn, optOut } from "./utils/opt-in-out-helpers";
 import { checkRequiredPermissions } from "./utils/permission-helpers";
 import {
   MAX_DAILY_RATE as DEFAULT_MAX_DAILY_RATE,
-  MELLOWTEL_VERSION,
+  VERSION,
 } from "./constants";
 import { Logger } from "./logger/logger";
 import { RateLimiter } from "./local-rate-limiting/rate-limiter";
-import { setUpExternalMessageListeners } from "./mellowtel-elements/message-web-platform";
+import { setUpExternalMessageListeners } from "./elements/web-platform";
 import {
   generateOptInLink,
   generateSettingsLink,
   openUserSettingsInPopupWindow,
   generateAndOpenOptInLink,
-} from "./mellowtel-elements/generate-links";
+} from "./elements/generate-links";
 
-export default class Mellowtel {
+export default class M {
   private publishableKey: string;
   private options?: any;
   private disableLogs: boolean = true;
@@ -76,10 +76,11 @@ export default class Mellowtel {
         const mutationObserverModule = await import(
           "./iframe/mutation-observer"
         );
+        mutationObserverModule.listenerAlive();
         mutationObserverModule.attachMutationObserver();
       } else {
-        if ((await isMellowtelStarted()) && (await getOptInStatus())) {
-          startMellowtelWebsocket();
+        if ((await isStarted()) && (await getOptInStatus())) {
+          startWebsocket();
         } else {
           await setUpStorageChangeListeners();
         }
@@ -119,8 +120,8 @@ export default class Mellowtel {
     return getOrGenerateIdentifier(this.publishableKey);
   }
 
-  public async getMellowtelVersion(): Promise<string> {
-    return MELLOWTEL_VERSION;
+  public async getVersion(): Promise<string> {
+    return VERSION;
   }
 
   public async getExtensionIdentifier(): Promise<string> {

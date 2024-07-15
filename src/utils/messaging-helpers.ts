@@ -3,7 +3,7 @@ export async function sendMessageToContentScript(
   message: any,
 ): Promise<any> {
   return new Promise((resolve) => {
-    message.target = "contentScriptMellowtel";
+    message.target = "contentScriptM";
     chrome.tabs.sendMessage(tabId, message, function (response) {
       resolve(response);
     });
