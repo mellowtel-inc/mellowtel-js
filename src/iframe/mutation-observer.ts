@@ -12,10 +12,13 @@ import { safeRenderIframe } from "./safe-render";
 
 let alreadyReplied: boolean = false;
 
-export function listenerAlive(){
+export function listenerAlive() {
   window.addEventListener("message", (event) => {
     if (event.data.isContentScriptAlive) {
-      window.parent.postMessage({ isIframeAlive: true, recordID: event.data.recordID }, "*");
+      window.parent.postMessage(
+        { isIframeAlive: true, recordID: event.data.recordID },
+        "*",
+      );
     }
   });
 }

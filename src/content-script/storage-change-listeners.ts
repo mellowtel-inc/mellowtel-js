@@ -1,7 +1,4 @@
-import {
-  startWebsocket,
-  stopConnection,
-} from "../utils/start-stop-helpers";
+import { startWebsocket, stopConnection } from "../utils/start-stop-helpers";
 import { Logger } from "../logger/logger";
 
 export async function setUpStorageChangeListeners(): Promise<void> {

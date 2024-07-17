@@ -34,9 +34,7 @@ export async function setUpExternalMessageListeners() {
   let current_hostname = window.location.hostname;
   let extension_id_original = await getExtensionIdentifier();
   executeFunctionIfOrWhenBodyExists(async () => {
-    if (
-      current_hostname.includes("mellow.tel")
-    ) {
+    if (current_hostname.includes("mellow.tel")) {
       Logger.log(
         "[setUpExternalMessageListeners]: Setting up external message listeners",
       );

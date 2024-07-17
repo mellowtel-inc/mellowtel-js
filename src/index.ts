@@ -15,10 +15,7 @@ import {
 } from "./utils/start-stop-helpers";
 import { getOptInStatus, optIn, optOut } from "./utils/opt-in-out-helpers";
 import { checkRequiredPermissions } from "./utils/permission-helpers";
-import {
-  MAX_DAILY_RATE as DEFAULT_MAX_DAILY_RATE,
-  VERSION,
-} from "./constants";
+import { MAX_DAILY_RATE as DEFAULT_MAX_DAILY_RATE, VERSION } from "./constants";
 import { Logger } from "./logger/logger";
 import { RateLimiter } from "./local-rate-limiting/rate-limiter";
 import { setUpExternalMessageListeners } from "./elements/web-platform";

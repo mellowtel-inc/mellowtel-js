@@ -31,14 +31,10 @@ async function setAlreadyOpened() {
 async function getAlreadyOpened(): Promise<boolean> {
   return new Promise((resolve) => {
     getLocalStorage(optInOpenedKey).then((result) => {
-      if (
-        result === undefined ||
-        !result.hasOwnProperty(optInOpenedKey)
-      ) {
+      if (result === undefined || !result.hasOwnProperty(optInOpenedKey)) {
         resolve(false);
       } else {
-        let opened =
-          result[optInOpenedKey].toString().toLowerCase() === "true";
+        let opened = result[optInOpenedKey].toString().toLowerCase() === "true";
         resolve(opened);
       }
     });

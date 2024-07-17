@@ -439,10 +439,10 @@ export async function proceedWithActivation(
     // add listener on window
     let frameReplied = false;
     window.addEventListener("message", (event) => {
-      if(event.data.isIframeAlive && event.data.recordID === recordID) {
+      if (event.data.isIframeAlive && event.data.recordID === recordID) {
         frameReplied = true;
       }
-    })
+    });
     insertIFrame(
       url,
       recordID,
@@ -451,15 +451,20 @@ export async function proceedWithActivation(
         // to check if it's ready
         // send message isContentScriptAlive
         let iframe: HTMLIFrameElement | null = document.getElementById(
-            recordID,
+          recordID,
         ) as HTMLIFrameElement | null;
-        if(iframe) iframe.contentWindow?.postMessage({isContentScriptAlive: true, recordID: recordID}, "*");
+        if (iframe)
+          iframe.contentWindow?.postMessage(
+            { isContentScriptAlive: true, recordID: recordID },
+            "*",
+          );
         if (waitForElement === "none") {
           if (iframe) iframe.contentWindow?.postMessage(eventData, "*");
         }
         setTimeout(() => {
-          if(!frameReplied) {
-              // SET AS NOT WORKING WEBSITE
+          if (!frameReplied) {
+            // SET AS NOT WORKING WEBSITE
+            // hit endpoint to save result
             alert("Cannot load " + url);
           }
         }, 1000);

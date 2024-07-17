@@ -13,10 +13,7 @@ export class RateLimiter {
     count: number;
   }> {
     let timestamp = await getLocalStorage("timestamp_m");
-    if (
-      timestamp === undefined ||
-      !timestamp.hasOwnProperty("timestamp_m")
-    ) {
+    if (timestamp === undefined || !timestamp.hasOwnProperty("timestamp_m")) {
       timestamp = undefined;
     } else {
       timestamp = parseInt(timestamp.timestamp_m);
@@ -41,9 +38,7 @@ export class RateLimiter {
   static async getLifetimeTotalCount(): Promise<{
     lifetime_total_count: number;
   }> {
-    let lifetime_total_count = await getLocalStorage(
-      "lifetime_total_count_m",
-    );
+    let lifetime_total_count = await getLocalStorage("lifetime_total_count_m");
     if (
       lifetime_total_count === undefined ||
       !lifetime_total_count.hasOwnProperty("lifetime_total_count_m")
@@ -62,10 +57,7 @@ export class RateLimiter {
     lifetime_total_count: number,
   ): Promise<void> {
     await setLocalStorage("initial_timestamp_m", initial_timestamp);
-    await setLocalStorage(
-      "lifetime_total_count_m",
-      lifetime_total_count,
-    );
+    await setLocalStorage("lifetime_total_count_m", lifetime_total_count);
   }
 
   static calculateElapsedTime(now: number, timestamp: number): number {
@@ -133,10 +125,7 @@ export class RateLimiter {
       count++;
       await setLocalStorage("count_m", count);
       lifetime_total_count++;
-      await setLocalStorage(
-        "lifetime_total_count_m",
-        lifetime_total_count,
-      );
+      await setLocalStorage("lifetime_total_count_m", lifetime_total_count);
     }
     Logger.log(
       `[🕒]: SHOULD CONTINUE? IF COUNT (${count}) <= ${this.MAX_DAILY_RATE} : ${count <= this.MAX_DAILY_RATE}`,
