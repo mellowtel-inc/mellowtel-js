@@ -12,6 +12,7 @@ import { insertIFrame } from "../utils/iframe-helpers";
 import { sendToBackgroundToSeeIfTriggersDownload } from "../utils/triggers-download-helpers";
 import { Logger } from "../logger/logger";
 import { sendMessageToBackground } from "../utils/messaging-helpers";
+import { saveCrawl } from "../iframe/save-crawl";
 
 function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
   Logger.log(
@@ -465,7 +466,25 @@ export async function proceedWithActivation(
           if (!frameReplied) {
             // SET AS NOT WORKING WEBSITE
             // hit endpoint to save result
-            alert("Cannot load " + url);
+            saveCrawl(
+              recordID,
+              "",
+              "",
+              eventData.hasOwnProperty("fastLane")
+                ? eventData.fastLane.toString() === "true"
+                : false,
+              url,
+              eventData.hasOwnProperty("htmlTransformer")
+                ? eventData.htmlTransformer
+                : "none",
+              eventData.hasOwnProperty("orgId") ? eventData.orgId : "",
+              eventData.hasOwnProperty("saveText")
+                ? eventData.saveText
+                : "false",
+              BATCH_execution,
+              eventData.hasOwnProperty("batch_id") ? eventData.batch_id : "",
+              true,
+            );
           }
         }, 1000);
       },

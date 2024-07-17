@@ -13,6 +13,7 @@ export function saveCrawl(
   saveText: string,
   BATCH_execution: boolean,
   batch_id: string,
+  website_unreachable: boolean = false,
 ) {
   Logger.log("📋 Saving Crawl 📋");
   Logger.log("RecordID:", recordID);
@@ -34,6 +35,7 @@ export function saveCrawl(
       BATCH_execution: BATCH_execution,
       batch_id: batch_id,
       final_url: window.location.href,
+      website_unreachable: website_unreachable,
     };
 
     const requestOptions = {
