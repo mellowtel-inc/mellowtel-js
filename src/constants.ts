@@ -1,4 +1,4 @@
-export const VERSION: string = "1.3.7";
+export const VERSION: string = "1.3.8";
 export const MAX_PARALLEL_EXECUTIONS: number = 4;
 export const MAX_PARALLEL_EXECUTIONS_BATCH: number = 4;
 export const MAX_QUEUE_SIZE: number = 24;

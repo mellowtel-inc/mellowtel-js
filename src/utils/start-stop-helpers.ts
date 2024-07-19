@@ -1,5 +1,5 @@
 import { isCSPEnabled } from "../content-script/test-csp";
-import { setUpContentScriptListeners } from "./listener-helpers";
+import { setUpContentScriptListeners } from "./listener-helpers-CS";
 import { getIdentifier } from "./identity-helpers";
 import { executeFunctionIfOrWhenBodyExists } from "./document-body-observer";
 import { DATA_ID_IFRAME } from "../constants";

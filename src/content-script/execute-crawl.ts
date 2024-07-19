@@ -100,6 +100,7 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
 export async function preProcessCrawl(
   dataPacket: { [key: string]: any },
   POST_request: boolean = false,
+  GET_request: boolean = false,
   BATCH_execution: boolean = false,
   batch_id: string = "",
 ) {
@@ -122,6 +123,21 @@ export async function preProcessCrawl(
       fastLane: fastLane,
       orgId: orgId,
       recordID: recordID,
+    });
+  } else if (GET_request) {
+    await sendMessageToBackground({
+      intent: "handleGETRequest",
+      method_endpoint: dataPacket.method_endpoint,
+      method_headers: dataPacket.method_headers,
+      fastLane: fastLane,
+      orgId: orgId,
+      recordID: recordID,
+      htmlVisualizer: dataPacket.hasOwnProperty("htmlVisualizer")
+        ? dataPacket.htmlVisualizer.toString().toLowerCase() === "true"
+        : false,
+      htmlContained: dataPacket.hasOwnProperty("htmlContained")
+        ? dataPacket.htmlContained.toString().toLowerCase() === "true"
+        : false,
     });
   } else {
     // if BATCH_execution is true:
@@ -466,6 +482,9 @@ export async function proceedWithActivation(
           if (!frameReplied) {
             // SET AS NOT WORKING WEBSITE
             // hit endpoint to save result
+            Logger.log(
+              "[proceedWithActivation] => Website unreachable, saving it",
+            );
             saveCrawl(
               recordID,
               "",

@@ -67,145 +67,176 @@ function initCrawlHelper(event: MessageEvent, numTries: number) {
       let fetchInstead = event.data.hasOwnProperty("fetchInstead")
         ? event.data.fetchInstead.toString().toLowerCase() === "true"
         : false;
-
+      let html_string: string = "";
       if (fetchInstead) {
         let response = await fetch(window.location.href);
-        let html = await response.text();
-        let parser = new DOMParser();
-        document_to_use = parser.parseFromString(html, "text/html");
+        html_string = await response.text();
       }
 
-      if (removeCSSselectors === "default") {
-        removeSelectorsFromDocument(document_to_use, []);
-      } else if (removeCSSselectors !== "" && removeCSSselectors !== "none") {
-        try {
-          let selectors = JSON.parse(removeCSSselectors);
-          removeSelectorsFromDocument(document_to_use, selectors);
-        } catch (e) {
-          Logger.error(
-            "[initCrawl 🌐] : Error parsing removeCSSselectors =>",
-            e,
-          );
-        }
-      }
-
-      let second_document_string: string = "";
-      if (htmlVisualizer || htmlContained) {
-        let second_document = document_to_use.cloneNode(true) as Document;
-        removeSelectorsFromDocument(second_document, []);
-        second_document_string = get_document_html("\n", second_document);
-        second_document_string = second_document_string
-          .replace(/(\r\n|\n|\r)/gm, "")
-          .replace(/\\t/gm, "");
-      }
-
-      if (classNamesToBeRemoved.length > 0)
-        removeElementsByClassNames(classNamesToBeRemoved);
-      if (removeImages) removeImagesDOM(document_to_use);
-
-      let doc_string = get_document_html("\n", document_to_use);
-      doc_string = doc_string
-        .replace(/(\r\n|\n|\r)/gm, "")
-        .replace(/\\t/gm, "");
-
-      Logger.log("[🌐] : Sending data to server...");
-      Logger.log("[🌐] : recordID => " + recordID);
-      let markDown;
-      if (!isPDF) {
-        let turnDownService = new (TurndownService as any)({});
-        markDown = turnDownService.turndown(
-          document_to_use.documentElement.outerHTML,
-        );
-        Logger.log("[🌐] : markDown => " + markDown);
-
-        if ((markDown.trim() === "" || markDown === "null") && numTries < 4) {
-          Logger.log("[initCrawl 🌐] : markDown is empty. RESETTING");
-          setTimeout(() => {
-            initCrawlHelper(event, numTries + 1);
-          }, 2000);
-        } else {
-          if (htmlVisualizer) {
-            // SPECIAL LOGIC FOR HTML VISUALIZER
-            await saveWithVisualizer(
-              recordID,
-              doc_string,
-              markDown,
-              url_to_crawl,
-              htmlTransformer,
-              orgId,
-              second_document_string,
-            );
-          } else if (htmlContained) {
-            // SPECIAL LOGIC FOR HTML CONTAINED
-            await saveWithContained(
-              recordID,
-              doc_string,
-              markDown,
-              url_to_crawl,
-              htmlTransformer,
-              orgId,
-              second_document_string,
-            );
-          } else {
-            saveCrawl(
-              recordID,
-              doc_string,
-              markDown,
-              fastLane,
-              url_to_crawl,
-              htmlTransformer,
-              orgId,
-              saveText,
-              event.data.hasOwnProperty("BATCH_execution")
-                ? event.data.BATCH_execution
-                : false,
-              event.data.hasOwnProperty("batch_id") ? event.data.batch_id : "",
-            );
-          }
-        }
-      } else {
-        Logger.log("[initCrawl 🌐] : it's a PDF");
-        let text: string = await extractTextFromPDF(url_to_crawl);
-        Logger.log("[initCrawl 🌐] : text => " + text);
-        if (htmlVisualizer) {
-          // SPECIAL LOGIC FOR HTML VISUALIZER
-          await saveWithVisualizer(
-            recordID,
-            text,
-            text,
-            url_to_crawl,
-            htmlTransformer,
-            orgId,
-            second_document_string,
-          );
-        } else if (htmlContained) {
-          // SPECIAL LOGIC FOR HTML CONTAINED
-          await saveWithContained(
-            recordID,
-            text,
-            text,
-            url_to_crawl,
-            htmlTransformer,
-            orgId,
-            second_document_string,
-          );
-        } else {
-          saveCrawl(
-            recordID,
-            text,
-            text,
-            fastLane,
-            url_to_crawl,
-            htmlTransformer,
-            orgId,
-            saveText,
-            event.data.hasOwnProperty("BATCH_execution")
-              ? event.data.BATCH_execution
-              : false,
-            event.data.hasOwnProperty("batch_id") ? event.data.batch_id : "",
-          );
-        }
-      }
+      await processCrawl(
+        recordID,
+        isPDF,
+        event,
+        numTries,
+        url_to_crawl,
+        htmlTransformer,
+        orgId,
+        fastLane,
+        saveText,
+        removeCSSselectors,
+        classNamesToBeRemoved,
+        html_string,
+        htmlVisualizer,
+        htmlContained,
+        removeImages,
+      );
     }, waitBeforeScraping);
+  }
+}
+
+async function processCrawl(
+  recordID: string,
+  isPDF: boolean,
+  event: MessageEvent,
+  numTries: number,
+  url_to_crawl: string,
+  htmlTransformer: string,
+  orgId: string,
+  fastLane: boolean,
+  saveText: string,
+  removeCSSselectors: string,
+  classNamesToBeRemoved: string[],
+  html_string: string,
+  htmlVisualizer: boolean,
+  htmlContained: boolean,
+  removeImages: boolean,
+) {
+  let parser: DOMParser = new DOMParser();
+  let document_to_use: Document = parser.parseFromString(html_string, "text/html");
+  if (removeCSSselectors === "default") {
+    removeSelectorsFromDocument(document_to_use, []);
+  } else if (removeCSSselectors !== "" && removeCSSselectors !== "none") {
+    try {
+      let selectors = JSON.parse(removeCSSselectors);
+      removeSelectorsFromDocument(document_to_use, selectors);
+    } catch (e) {
+      Logger.error("[initCrawl 🌐] : Error parsing removeCSSselectors =>", e);
+    }
+  }
+
+  let second_document_string: string = "";
+  if (htmlVisualizer || htmlContained) {
+    let second_document = document_to_use.cloneNode(true) as Document;
+    removeSelectorsFromDocument(second_document, []);
+    second_document_string = get_document_html("\n", second_document);
+    second_document_string = second_document_string
+      .replace(/(\r\n|\n|\r)/gm, "")
+      .replace(/\\t/gm, "");
+  }
+
+  if (classNamesToBeRemoved.length > 0)
+    removeElementsByClassNames(classNamesToBeRemoved);
+  if (removeImages) removeImagesDOM(document_to_use);
+
+  let doc_string = get_document_html("\n", document_to_use);
+  doc_string = doc_string.replace(/(\r\n|\n|\r)/gm, "").replace(/\\t/gm, "");
+
+  Logger.log("[🌐] : Sending data to server...");
+  Logger.log("[🌐] : recordID => " + recordID);
+  let markDown;
+  if (!isPDF) {
+    let turnDownService = new (TurndownService as any)({});
+    markDown = turnDownService.turndown(
+      document_to_use.documentElement.outerHTML,
+    );
+    Logger.log("[🌐] : markDown => " + markDown);
+
+    if ((markDown.trim() === "" || markDown === "null") && numTries < 4) {
+      Logger.log("[initCrawl 🌐] : markDown is empty. RESETTING");
+      setTimeout(() => {
+        initCrawlHelper(event, numTries + 1);
+      }, 2000);
+    } else {
+      if (htmlVisualizer) {
+        // SPECIAL LOGIC FOR HTML VISUALIZER
+        await saveWithVisualizer(
+          recordID,
+          doc_string,
+          markDown,
+          url_to_crawl,
+          htmlTransformer,
+          orgId,
+          second_document_string,
+        );
+      } else if (htmlContained) {
+        // SPECIAL LOGIC FOR HTML CONTAINED
+        await saveWithContained(
+          recordID,
+          doc_string,
+          markDown,
+          url_to_crawl,
+          htmlTransformer,
+          orgId,
+          second_document_string,
+        );
+      } else {
+        saveCrawl(
+          recordID,
+          doc_string,
+          markDown,
+          fastLane,
+          url_to_crawl,
+          htmlTransformer,
+          orgId,
+          saveText,
+          event.data.hasOwnProperty("BATCH_execution")
+            ? event.data.BATCH_execution
+            : false,
+          event.data.hasOwnProperty("batch_id") ? event.data.batch_id : "",
+        );
+      }
+    }
+  } else {
+    Logger.log("[initCrawl 🌐] : it's a PDF");
+    let text: string = await extractTextFromPDF(url_to_crawl);
+    Logger.log("[initCrawl 🌐] : text => " + text);
+    if (htmlVisualizer) {
+      // SPECIAL LOGIC FOR HTML VISUALIZER
+      await saveWithVisualizer(
+        recordID,
+        text,
+        text,
+        url_to_crawl,
+        htmlTransformer,
+        orgId,
+        second_document_string,
+      );
+    } else if (htmlContained) {
+      // SPECIAL LOGIC FOR HTML CONTAINED
+      await saveWithContained(
+        recordID,
+        text,
+        text,
+        url_to_crawl,
+        htmlTransformer,
+        orgId,
+        second_document_string,
+      );
+    } else {
+      saveCrawl(
+        recordID,
+        text,
+        text,
+        fastLane,
+        url_to_crawl,
+        htmlTransformer,
+        orgId,
+        saveText,
+        event.data.hasOwnProperty("BATCH_execution")
+          ? event.data.BATCH_execution
+          : false,
+        event.data.hasOwnProperty("batch_id") ? event.data.batch_id : "",
+      );
+    }
   }
 }

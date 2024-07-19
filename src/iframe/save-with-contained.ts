@@ -64,6 +64,7 @@ export async function saveWithContained(
   htmlTransformer: string,
   orgId: string,
   second_document_string: string,
+  not_in_iframe: boolean = false,
 ) {
   Logger.log("📋  saveWithContained - Saving Crawl 📋. RecordID:", recordID);
   // first pass through filters
@@ -96,27 +97,30 @@ export async function saveWithContained(
   Logger.log("Attempting to visualize CONTAINED HTML...");
   Logger.log("##########################################");
   // before capturing, scroll down 5 times, smoothly
-  for (let i = 0; i < 5; i++) {
-    window.scrollTo({
-      top: window.innerHeight * i,
-      behavior: "smooth",
-    });
+  if(!not_in_iframe) {
+    for (let i = 0; i < 5; i++) {
+      window.scrollTo({
+        top: window.innerHeight * i,
+        behavior: "smooth",
+      });
+    }
+    // scroll to top and capture
+    for (let i = 0; i < 5; i++) {
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    }
   }
-  // scroll to top and capture
-  for (let i = 0; i < 5; i++) {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
-  }
-  const capturedHtml = capture(OutputType.STRING, window.document);
+
+  let capturedHtml = capture(OutputType.OBJECT, window.document);
   Logger.log(capturedHtml);
   Logger.log("##########################################");
 
   await sendMessageToBackground({
     intent: "putHTMLContainedToSigned",
     htmlContainedURL_signed: htmlContainedURL,
-    htmlContainedString: capturedHtml,
+    htmlContainedString: not_in_iframe ? content : capturedHtml,
   });
   await sendMessageToBackground({
     intent: "resetImageRenderHTMLVisualizer",

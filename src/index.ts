@@ -3,7 +3,7 @@ import {
   getOrGenerateIdentifier,
 } from "./utils/identity-helpers";
 import { setUpOnTabRemoveListeners } from "./background-script/tab-remove-listeners";
-import { setUpBackgroundListeners } from "./utils/listener-helpers";
+import { setUpBackgroundListeners } from "./utils/listener-helpers-SW";
 import { inIframe } from "./utils/iframe-helpers";
 import { purgeOnStartup } from "./background-script/purge-on-startup";
 import { setUpStorageChangeListeners } from "./content-script/storage-change-listeners";
