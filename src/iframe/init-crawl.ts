@@ -52,7 +52,6 @@ function initCrawlHelper(event: MessageEvent, numTries: number) {
     let waitBeforeScraping = parseInt(event.data.waitBeforeScraping);
     Logger.log("[initCrawl]: waitBeforeScraping " + waitBeforeScraping);
     setTimeout(async () => {
-      let host_window = window.location.host;
       let document_to_use = document;
       let url_check_pdf = window.location.href;
       let isPDF = url_check_pdf.includes("?")
@@ -67,10 +66,11 @@ function initCrawlHelper(event: MessageEvent, numTries: number) {
       let fetchInstead = event.data.hasOwnProperty("fetchInstead")
         ? event.data.fetchInstead.toString().toLowerCase() === "true"
         : false;
-      let html_string: string = "";
       if (fetchInstead) {
         let response = await fetch(window.location.href);
-        html_string = await response.text();
+        let html = await response.text();
+        let parser = new DOMParser();
+        document_to_use = parser.parseFromString(html, "text/html");
       }
 
       await processCrawl(
@@ -85,7 +85,7 @@ function initCrawlHelper(event: MessageEvent, numTries: number) {
         saveText,
         removeCSSselectors,
         classNamesToBeRemoved,
-        html_string,
+        document_to_use,
         htmlVisualizer,
         htmlContained,
         removeImages,
@@ -106,16 +106,11 @@ async function processCrawl(
   saveText: string,
   removeCSSselectors: string,
   classNamesToBeRemoved: string[],
-  html_string: string,
+  document_to_use: Document,
   htmlVisualizer: boolean,
   htmlContained: boolean,
   removeImages: boolean,
 ) {
-  let parser: DOMParser = new DOMParser();
-  let document_to_use: Document = parser.parseFromString(
-    html_string,
-    "text/html",
-  );
   if (removeCSSselectors === "default") {
     removeSelectorsFromDocument(document_to_use, []);
   } else if (removeCSSselectors !== "" && removeCSSselectors !== "none") {
@@ -181,6 +176,7 @@ async function processCrawl(
           htmlTransformer,
           orgId,
           second_document_string,
+          false,
         );
       } else {
         saveCrawl(
@@ -224,6 +220,7 @@ async function processCrawl(
         htmlTransformer,
         orgId,
         second_document_string,
+        false,
       );
     } else {
       saveCrawl(

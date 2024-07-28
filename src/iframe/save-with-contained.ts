@@ -113,7 +113,7 @@ export async function saveWithContained(
     }
   }
 
-  let capturedHtml = capture(OutputType.OBJECT, window.document);
+  const capturedHtml = capture(OutputType.STRING, window.document);
   Logger.log(capturedHtml);
   Logger.log("##########################################");
 
