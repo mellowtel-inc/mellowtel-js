@@ -3,8 +3,7 @@ import {
   disableHeadersForPOST,
   enableHeadersForPOST,
 } from "../utils/dnr-helpers";
-import {sendMessageToContentScript} from "../utils/messaging-helpers";
-// import { processCrawl } from "../iframe/init-crawl";
+import { sendMessageToContentScript } from "../utils/messaging-helpers";
 
 export function handleGetRequest(
   method_endpoint: string,
@@ -39,9 +38,9 @@ export function handleGetRequest(
         Logger.log("HTML from GET:", html);
         // use chrome tabs to query a tab and send a message
         // then save the message to the server
-        chrome.tabs.query({}, function (tabs){
-          for(let i=0; i<tabs.length; i++){
-            if(!tabs[i]?.url?.includes("chrome://")){
+        chrome.tabs.query({}, function (tabs) {
+          for (let i = 0; i < tabs.length; i++) {
+            if (!tabs[i]?.url?.includes("chrome://")) {
               sendMessageToContentScript(tabs[i].id!, {
                 intent: "processCrawl",
                 recordID: recordID,
@@ -50,29 +49,12 @@ export function handleGetRequest(
                 htmlVisualizer: htmlVisualizer,
                 htmlContained: htmlContained,
                 html_string: html,
-                method_endpoint: method_endpoint
-              })
+                method_endpoint: method_endpoint,
+              });
               break;
             }
           }
         });
-        /*await processCrawl(
-          recordID,
-          false,
-          new MessageEvent("message", { data: {} }),
-          0,
-          method_endpoint,
-          "none",
-          orgId,
-          fastLane,
-          "false",
-          "",
-          [],
-          document_to_use,
-          htmlVisualizer,
-          htmlContained,
-          false,
-        );*/
         await enableHeadersForPOST();
         res(true);
       })

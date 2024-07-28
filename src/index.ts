@@ -24,6 +24,8 @@ import {
   generateSettingsLink,
   openUserSettingsInPopupWindow,
   generateAndOpenOptInLink,
+  generateUpdateLink,
+  generateAndOpenUpdateLink,
 } from "./elements/generate-links";
 
 export default class M {
@@ -107,6 +109,14 @@ export default class M {
 
   public async generateSettingsLink(): Promise<string> {
     return generateSettingsLink();
+  }
+
+  public async generateUpdateLink(): Promise<string> {
+    return generateUpdateLink();
+  }
+
+  public async generateAndOpenUpdateLink(): Promise<string> {
+    return generateAndOpenUpdateLink();
   }
 
   public async openUserSettingsInPopupWindow(): Promise<boolean> {

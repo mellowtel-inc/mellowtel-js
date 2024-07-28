@@ -97,7 +97,7 @@ export async function saveWithContained(
   Logger.log("Attempting to visualize CONTAINED HTML...");
   Logger.log("##########################################");
   // before capturing, scroll down 5 times, smoothly
-  if(!not_in_iframe) {
+  if (!not_in_iframe) {
     for (let i = 0; i < 5; i++) {
       window.scrollTo({
         top: window.innerHeight * i,

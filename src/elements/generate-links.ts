@@ -7,8 +7,10 @@ import { shouldDelegateTabsAPI } from "../utils/tabs-helpers";
 import { sendMessageToBackground } from "../utils/messaging-helpers";
 import { openPopupWindow } from "../utils/utils";
 import { Logger } from "../logger/logger";
-const BASE_LINK_SETTING: string = "https://www.mellow.tel/settings/";
-const BASE_LINK_OPT_IN: string = "https://www.mellow.tel/opt-in/";
+const BASE_DOMAIN: string = "https://www.mellow.tel/";
+const BASE_LINK_SETTING: string = BASE_DOMAIN + "settings/";
+const BASE_LINK_OPT_IN: string = BASE_DOMAIN + "opt-in/";
+const BASE_LINK_UPDATE: string = BASE_DOMAIN + "update/";
 
 /*
     generateAndOpenOptInLink is a convenience function that generates an opt-in link
@@ -19,22 +21,37 @@ const BASE_LINK_OPT_IN: string = "https://www.mellow.tel/opt-in/";
 */
 
 const optInOpenedKey: string = "mellowtelOptInOpened";
+const updateOpenedKey: string = "mUpdateOpened";
 
-async function setAlreadyOpened() {
+async function setAlreadyOpened(
+  optInOrUpdate: string = "optIn",
+): Promise<boolean> {
   return new Promise((resolve) => {
-    setLocalStorage(optInOpenedKey, "true").then(() => {
-      resolve(true);
-    });
+    let optIn = optInOrUpdate === "optIn";
+    setLocalStorage(optIn ? optInOpenedKey : updateOpenedKey, "true").then(
+      () => {
+        resolve(true);
+      },
+    );
   });
 }
 
-async function getAlreadyOpened(): Promise<boolean> {
+async function getAlreadyOpened(
+  optInOrUpdate: string = "optIn",
+): Promise<boolean> {
   return new Promise((resolve) => {
-    getLocalStorage(optInOpenedKey).then((result) => {
-      if (result === undefined || !result.hasOwnProperty(optInOpenedKey)) {
+    let optIn = optInOrUpdate === "optIn";
+    getLocalStorage(optIn ? optInOpenedKey : updateOpenedKey).then((result) => {
+      if (
+        result === undefined ||
+        !result.hasOwnProperty(optIn ? optInOpenedKey : updateOpenedKey)
+      ) {
         resolve(false);
       } else {
-        let opened = result[optInOpenedKey].toString().toLowerCase() === "true";
+        let opened =
+          result[optIn ? optInOpenedKey : updateOpenedKey]
+            .toString()
+            .toLowerCase() === "true";
         resolve(opened);
       }
     });
@@ -49,13 +66,37 @@ export function generateAndOpenOptInLink(): Promise<string> {
       let link = await sendMessageToBackground({ intent: "openOptInLink" });
       resolve(link);
     }
-    let alreadyOpened = await getAlreadyOpened();
+    let alreadyOpened = await getAlreadyOpened("optIn");
     if (!alreadyOpened) {
       let extension_id = await getExtensionIdentifier();
       getIdentifier().then(async (nodeId) => {
         let configuration_key = nodeId.split("_")[1];
         let link = `${BASE_LINK_OPT_IN}?extension_id=${extension_id}&configuration_key=${configuration_key}`;
-        await setAlreadyOpened();
+        await setAlreadyOpened("optIn");
+        chrome.tabs.create({ url: link });
+        resolve(link);
+      });
+    } else {
+      resolve("");
+    }
+  });
+}
+
+export function generateAndOpenUpdateLink(): Promise<string> {
+  return new Promise(async (resolve) => {
+    // if not access to tabs api, send message to background script to open the link
+    let shouldDelegate = await shouldDelegateTabsAPI();
+    if (shouldDelegate) {
+      let link = await sendMessageToBackground({ intent: "openUpdateLink" });
+      resolve(link);
+    }
+    let alreadyOpened = await getAlreadyOpened("update");
+    if (!alreadyOpened) {
+      let extension_id = await getExtensionIdentifier();
+      getIdentifier().then(async (nodeId) => {
+        let configuration_key = nodeId.split("_")[1];
+        let link = `${BASE_LINK_OPT_IN}?extension_id=${extension_id}&configuration_key=${configuration_key}`;
+        await setAlreadyOpened("update");
         chrome.tabs.create({ url: link });
         resolve(link);
       });
@@ -72,6 +113,18 @@ export function generateOptInLink(): Promise<string> {
       let configuration_key = nodeId.split("_")[1];
       resolve(
         `${BASE_LINK_OPT_IN}?extension_id=${extension_id}&configuration_key=${configuration_key}`,
+      );
+    });
+  });
+}
+
+export function generateUpdateLink(): Promise<string> {
+  return new Promise(async (resolve) => {
+    let extension_id = await getExtensionIdentifier();
+    getIdentifier().then((nodeId) => {
+      let configuration_key = nodeId.split("_")[1];
+      resolve(
+        `${BASE_LINK_UPDATE}?extension_id=${extension_id}&configuration_key=${configuration_key}`,
       );
     });
   });

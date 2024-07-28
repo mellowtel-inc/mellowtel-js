@@ -112,7 +112,10 @@ async function processCrawl(
   removeImages: boolean,
 ) {
   let parser: DOMParser = new DOMParser();
-  let document_to_use: Document = parser.parseFromString(html_string, "text/html");
+  let document_to_use: Document = parser.parseFromString(
+    html_string,
+    "text/html",
+  );
   if (removeCSSselectors === "default") {
     removeSelectorsFromDocument(document_to_use, []);
   } else if (removeCSSselectors !== "" && removeCSSselectors !== "none") {
