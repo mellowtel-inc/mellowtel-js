@@ -28,6 +28,7 @@ export async function startConnectionWs(identifier: string): WebSocket {
     return;
   }
   await getSharedMemory("webSocketConnected").then(async (response) => {
+    Logger.log(`[🌐]: webSocketConnected: ${response}`);
     if (!response) {
       let LIMIT_REACHED: boolean = await RateLimiter.getIfRateLimitReached();
       if (LIMIT_REACHED) {
