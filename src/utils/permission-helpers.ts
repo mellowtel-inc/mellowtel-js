@@ -4,7 +4,7 @@ import { Logger } from "../logger/logger";
 // declarativeNetRequest is the exception, as it can't be specified in optional_permissions:
 // it is replaced internally with declarativeNetRequestWithHostAccess in optional_permissions alongside
 // optional_host_permissions (https://*/*)
-export const mellowtelRequiredPermissions: string[] = [
+export const requiredPermissions: string[] = [
   "storage",
   "tabs",
   "declarativeNetRequest",
@@ -33,7 +33,7 @@ export async function checkRequiredPermissions(
 ): Promise<void> {
   let permissionsToRequest: string[] = [];
   let hostPermissions: string[] = [];
-  for (let permission of mellowtelRequiredPermissions) {
+  for (let permission of requiredPermissions) {
     let isPermissionPresent = false;
     checkIfInPermissions(permission, (isPresent) => {
       if (isPresent) {

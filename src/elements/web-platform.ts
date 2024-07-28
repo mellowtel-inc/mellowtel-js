@@ -4,7 +4,7 @@ import {
   getExtensionName,
   getIdentifier,
 } from "../utils/identity-helpers";
-import { MELLOWTEL_VERSION } from "../constants";
+import { VERSION } from "../constants";
 import { RateLimiter } from "../local-rate-limiting/rate-limiter";
 import { Logger } from "../logger/logger";
 import { start, stop } from "../utils/start-stop-helpers";
@@ -22,9 +22,9 @@ export function createMessagingChannels(extension_id: string) {
     document.createElement("input");
   const channelFromSiteToExtension: HTMLInputElement =
     document.createElement("input");
-  channelFromExtensionToSite.id = `mellowtel-message-from-extension-to-site-${extension_id}`;
+  channelFromExtensionToSite.id = `message-from-extension-to-site-${extension_id}`;
   channelFromExtensionToSite.style.display = "none";
-  channelFromSiteToExtension.id = `mellowtel-message-from-site-to-extension-${extension_id}`;
+  channelFromSiteToExtension.id = `message-from-site-to-extension-${extension_id}`;
   channelFromSiteToExtension.style.display = "none";
   document.body.appendChild(channelFromExtensionToSite);
   document.body.appendChild(channelFromSiteToExtension);
@@ -34,11 +34,7 @@ export async function setUpExternalMessageListeners() {
   let current_hostname = window.location.hostname;
   let extension_id_original = await getExtensionIdentifier();
   executeFunctionIfOrWhenBodyExists(async () => {
-    if (
-      current_hostname.includes("mellowtel.it") ||
-      current_hostname.includes("mellow.tel") ||
-      current_hostname.includes("mellowtel.dev")
-    ) {
+    if (current_hostname.includes("mellow.tel")) {
       Logger.log(
         "[setUpExternalMessageListeners]: Setting up external message listeners",
       );
@@ -46,7 +42,7 @@ export async function setUpExternalMessageListeners() {
 
       const channelFromSiteToExtension: HTMLInputElement =
         document.getElementById(
-          `mellowtel-message-from-site-to-extension-${extension_id_original}`,
+          `message-from-site-to-extension-${extension_id_original}`,
         ) as HTMLInputElement;
 
       if (channelFromSiteToExtension) {
@@ -82,22 +78,22 @@ export async function setUpExternalMessageListeners() {
               );
             });
           }
-          if (message.action === "startMellowtel") {
+          if (message.action === "start") {
             start().then(() => {
               sendMessageToWebsite(
                 {
-                  message: "mellowtel-started",
+                  message: "started",
                   id: message_id,
                 },
                 extension_id_original,
               );
             });
           }
-          if (message.action === "stopMellowtel") {
+          if (message.action === "stop") {
             stop().then(() => {
               sendMessageToWebsite(
                 {
-                  message: "mellowtel-stopped",
+                  message: "stopped",
                   id: message_id,
                 },
                 extension_id_original,
@@ -128,11 +124,11 @@ export async function setUpExternalMessageListeners() {
               );
             });
           }
-          if (message.action === "getMellowtelVersion") {
+          if (message.action === "getVersion") {
             sendMessageToWebsite(
               {
-                message: "mellowtel-version",
-                version: MELLOWTEL_VERSION,
+                message: "version",
+                version: VERSION,
                 id: message_id,
               },
               extension_id_original,
@@ -258,7 +254,7 @@ function getIfCurrentlyActive(): Promise<boolean> {
 function sendMessageToWebsite(message: any, extension_id: string) {
   const channelFromExtensionToSite: HTMLInputElement | null =
     document.getElementById(
-      `mellowtel-message-from-extension-to-site-${extension_id}`,
+      `message-from-extension-to-site-${extension_id}`,
     ) as HTMLInputElement;
   if (channelFromExtensionToSite) {
     channelFromExtensionToSite.value = JSON.stringify(message);

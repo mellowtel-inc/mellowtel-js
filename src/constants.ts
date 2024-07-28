@@ -1,4 +1,4 @@
-export const MELLOWTEL_VERSION: string = "1.3.6";
+export const VERSION: string = "1.3.7";
 export const MAX_PARALLEL_EXECUTIONS: number = 4;
 export const MAX_PARALLEL_EXECUTIONS_BATCH: number = 4;
 export const MAX_QUEUE_SIZE: number = 24;
@@ -11,7 +11,7 @@ export const RULE_ID_CONTENT_DISPOSITION: number = 80046;
 export const RULE_ID_CONTENT_TYPE: number = 80047;
 export const RULE_ID_VALUE_TO_MODIFY_CONTENT_TYPE_TO: number = 80048;
 export const RULE_ID_POST_REQUEST: number = 80049;
-export let MAX_DAILY_RATE: number = 300;
+export let MAX_DAILY_RATE: number = 500;
 export const BADGE_COLOR: string = "#4CAF50";
 
 export const REFRESH_INTERVAL: number = 1000 * 60 * 60 * 24; // 24 hours

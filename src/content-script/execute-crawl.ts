@@ -8,10 +8,11 @@ import { insertInQueue } from "./queue-crawl";
 import { setLifespanForIframe } from "./reset-crawl";
 import { disableXFrameHeaders } from "../utils/dnr-helpers";
 import { getFrameCount } from "../utils/utils";
-import { injectHiddenIFrame } from "../utils/iframe-helpers";
+import { insertIFrame } from "../utils/iframe-helpers";
 import { sendToBackgroundToSeeIfTriggersDownload } from "../utils/triggers-download-helpers";
 import { Logger } from "../logger/logger";
 import { sendMessageToBackground } from "../utils/messaging-helpers";
+import { saveCrawl } from "../iframe/save-crawl";
 
 function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
   Logger.log(
@@ -99,6 +100,7 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
 export async function preProcessCrawl(
   dataPacket: { [key: string]: any },
   POST_request: boolean = false,
+  GET_request: boolean = false,
   BATCH_execution: boolean = false,
   batch_id: string = "",
 ) {
@@ -121,6 +123,21 @@ export async function preProcessCrawl(
       fastLane: fastLane,
       orgId: orgId,
       recordID: recordID,
+    });
+  } else if (GET_request) {
+    await sendMessageToBackground({
+      intent: "handleGETRequest",
+      method_endpoint: dataPacket.method_endpoint,
+      method_headers: dataPacket.method_headers,
+      fastLane: fastLane,
+      orgId: orgId,
+      recordID: recordID,
+      htmlVisualizer: dataPacket.hasOwnProperty("htmlVisualizer")
+        ? dataPacket.htmlVisualizer.toString().toLowerCase() === "true"
+        : false,
+      htmlContained: dataPacket.hasOwnProperty("htmlContained")
+        ? dataPacket.htmlContained.toString().toLowerCase() === "true"
+        : false,
     });
   } else {
     // if BATCH_execution is true:
@@ -225,7 +242,7 @@ export async function preProcessCrawl(
           htmlContained,
         } = fromDataPacketToNecessaryElements(dataPacket);
         let eventData: { [key: string]: any } = {
-          isMellowtelCrawl: true,
+          isMCrawl: true,
           fastLane: fastLane,
           url_to_crawl: url,
           recordID: recordID,
@@ -271,7 +288,7 @@ export function preProcessUrl(url: string, recordID: string): string[] {
   if (url.startsWith("http://")) url = url.replace("http://", "https://");
   let urlObj = new URL(url);
   let params = new URLSearchParams(urlObj.search);
-  params.append("mellowtel-p2p", "true");
+  params.append("sb-p2p", "true");
   params.append("should-crawl", "true");
   params.append("record-id", recordID);
   urlObj.search = params.toString();
@@ -315,7 +332,7 @@ export function crawlP2P(
       sendToBackgroundToSeeIfTriggersDownload(url, triggersDownload),
     ]).then(async () => {
       let eventData: { [key: string]: any } = {
-        isMellowtelCrawl: true,
+        isMCrawl: true,
         fastLane: fastLane,
         url_to_crawl: url_to_crawl,
         recordID: recordID,
@@ -436,16 +453,59 @@ export async function proceedWithActivation(
       parseInt(eventData.waitBeforeScraping),
       BATCH_execution,
     );
-    injectHiddenIFrame(
+    // add listener on window
+    let frameReplied = false;
+    window.addEventListener("message", (event) => {
+      if (event.data.isIframeAlive && event.data.recordID === recordID) {
+        frameReplied = true;
+      }
+    });
+    insertIFrame(
       url,
       recordID,
       function () {
+        // find a way to send a message to the content script inside this iframe
+        // to check if it's ready
+        // send message isContentScriptAlive
+        let iframe: HTMLIFrameElement | null = document.getElementById(
+          recordID,
+        ) as HTMLIFrameElement | null;
+        if (iframe)
+          iframe.contentWindow?.postMessage(
+            { isContentScriptAlive: true, recordID: recordID },
+            "*",
+          );
         if (waitForElement === "none") {
-          let iframe: HTMLIFrameElement | null = document.getElementById(
-            recordID,
-          ) as HTMLIFrameElement | null;
           if (iframe) iframe.contentWindow?.postMessage(eventData, "*");
         }
+        setTimeout(() => {
+          if (!frameReplied) {
+            // SET AS NOT WORKING WEBSITE
+            // hit endpoint to save result
+            Logger.log(
+              "[proceedWithActivation] => Website unreachable, saving it",
+            );
+            saveCrawl(
+              recordID,
+              "",
+              "",
+              eventData.hasOwnProperty("fastLane")
+                ? eventData.fastLane.toString() === "true"
+                : false,
+              url,
+              eventData.hasOwnProperty("htmlTransformer")
+                ? eventData.htmlTransformer
+                : "none",
+              eventData.hasOwnProperty("orgId") ? eventData.orgId : "",
+              eventData.hasOwnProperty("saveText")
+                ? eventData.saveText
+                : "false",
+              BATCH_execution,
+              eventData.hasOwnProperty("batch_id") ? eventData.batch_id : "",
+              true,
+            );
+          }
+        }, 1000);
       },
       "800px",
       BATCH_execution ? DATA_ID_IFRAME_BATCH : DATA_ID_IFRAME,
@@ -460,7 +520,7 @@ export async function proceedWithActivation(
     if (waitForElement !== "none") {
       let iFrameReplied = false;
       window.addEventListener("message", function (event) {
-        if (event.data.isMellowtelReply && event.data.recordID === recordID)
+        if (event.data.isMReply && event.data.recordID === recordID)
           iFrameReplied = true;
       });
       let timer = setInterval(function () {

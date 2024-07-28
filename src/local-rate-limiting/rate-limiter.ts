@@ -12,20 +12,17 @@ export class RateLimiter {
     timestamp: number;
     count: number;
   }> {
-    let timestamp = await getLocalStorage("timestamp_mellowtel");
-    if (
-      timestamp === undefined ||
-      !timestamp.hasOwnProperty("timestamp_mellowtel")
-    ) {
+    let timestamp = await getLocalStorage("timestamp_m");
+    if (timestamp === undefined || !timestamp.hasOwnProperty("timestamp_m")) {
       timestamp = undefined;
     } else {
-      timestamp = parseInt(timestamp.timestamp_mellowtel);
+      timestamp = parseInt(timestamp.timestamp_m);
     }
-    let count = await getLocalStorage("count_mellowtel");
-    if (count === undefined || !count.hasOwnProperty("count_mellowtel")) {
+    let count = await getLocalStorage("count_m");
+    if (count === undefined || !count.hasOwnProperty("count_m")) {
       count = undefined;
     } else {
-      count = parseInt(count.count_mellowtel);
+      count = parseInt(count.count_m);
     }
     return { timestamp, count };
   }
@@ -34,24 +31,22 @@ export class RateLimiter {
     timestamp: number,
     count: number,
   ): Promise<void> {
-    await setLocalStorage("timestamp_mellowtel", timestamp);
-    await setLocalStorage("count_mellowtel", count);
+    await setLocalStorage("timestamp_m", timestamp);
+    await setLocalStorage("count_m", count);
   }
 
   static async getLifetimeTotalCount(): Promise<{
     lifetime_total_count: number;
   }> {
-    let lifetime_total_count = await getLocalStorage(
-      "lifetime_total_count_mellowtel",
-    );
+    let lifetime_total_count = await getLocalStorage("lifetime_total_count_m");
     if (
       lifetime_total_count === undefined ||
-      !lifetime_total_count.hasOwnProperty("lifetime_total_count_mellowtel")
+      !lifetime_total_count.hasOwnProperty("lifetime_total_count_m")
     ) {
       lifetime_total_count = 0;
     } else {
       lifetime_total_count = parseInt(
-        lifetime_total_count.lifetime_total_count_mellowtel,
+        lifetime_total_count.lifetime_total_count_m,
       );
     }
     return { lifetime_total_count };
@@ -61,11 +56,8 @@ export class RateLimiter {
     initial_timestamp: number,
     lifetime_total_count: number,
   ): Promise<void> {
-    await setLocalStorage("initial_timestamp_mellowtel", initial_timestamp);
-    await setLocalStorage(
-      "lifetime_total_count_mellowtel",
-      lifetime_total_count,
-    );
+    await setLocalStorage("initial_timestamp_m", initial_timestamp);
+    await setLocalStorage("lifetime_total_count_m", lifetime_total_count);
   }
 
   static calculateElapsedTime(now: number, timestamp: number): number {
@@ -131,12 +123,9 @@ export class RateLimiter {
 
     if (increase_count) {
       count++;
-      await setLocalStorage("count_mellowtel", count);
+      await setLocalStorage("count_m", count);
       lifetime_total_count++;
-      await setLocalStorage(
-        "lifetime_total_count_mellowtel",
-        lifetime_total_count,
-      );
+      await setLocalStorage("lifetime_total_count_m", lifetime_total_count);
     }
     Logger.log(
       `[🕒]: SHOULD CONTINUE? IF COUNT (${count}) <= ${this.MAX_DAILY_RATE} : ${count <= this.MAX_DAILY_RATE}`,

@@ -3,7 +3,6 @@ import {
   getLocalStorage,
   setLocalStorage,
 } from "./storage-helpers";
-import { resetAfterCrawl } from "../content-script/reset-crawl";
 import {
   disableXFrameHeaders,
   enableXFrameHeaders,
@@ -12,38 +11,34 @@ import {
 } from "./dnr-helpers";
 import {
   getSharedMemoryBCK,
-  getSharedMemoryDOM,
   setSharedMemoryBCK,
 } from "../content-script/shared-memory";
-import { startConnectionWs } from "../content-script/websocket";
-import { getIdentifier } from "./identity-helpers";
 import {
   resetTriggersDownload,
   seeIfTriggersDownload,
 } from "./triggers-download-helpers";
 import { sendMessageToContentScript } from "./messaging-helpers";
 import { handlePostRequest } from "../post-requests/post-helpers";
-import { generateAndOpenOptInLink } from "../mellowtel-elements/generate-links";
+import {
+  generateAndOpenOptInLink,
+  generateAndOpenUpdateLink,
+} from "../elements/generate-links";
 import { MeasureConnectionSpeed } from "./measure-connection-speed";
-import { proceedWithActivation } from "../content-script/execute-crawl";
 import {
   putHTMLToSigned,
   putMarkdownToSigned,
   putHTMLVisualizerToSigned,
   putHTMLContainedToSigned,
 } from "./put-to-signed";
-import {
-  getIfCurrentlyActiveBCK,
-  getIfCurrentlyActiveDOM,
-} from "../mellowtel-elements/mellowtel-elements-utils";
+import { getIfCurrentlyActiveBCK } from "../elements/elements-utils";
 import {
   getBadgeProperties,
   hideBadge,
-  hideBadgeIfShould,
   restoreBadgeProperties,
   showBadge,
 } from "../transparency/badge-settings";
-import { DATA_ID_IFRAME } from "../constants";
+import { handleGetRequest } from "../get-requests/get-helpers";
+
 export async function setUpBackgroundListeners() {
   chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
@@ -78,10 +73,9 @@ export async function setUpBackgroundListeners() {
           sendResponse,
         );
       }
-      if (request.intent === "deleteIframeMellowtel") {
+      if (request.intent === "deleteIframeM") {
         sendMessageToContentScript(sender.tab?.id!, {
-          target: "contentScriptMellowtel",
-          intent: "deleteIframeMellowtel",
+          intent: "deleteIframeM",
           recordID: request.recordID,
           BATCH_execution: request.BATCH_execution,
         }).then(sendResponse);
@@ -96,8 +90,24 @@ export async function setUpBackgroundListeners() {
           request.recordID,
         ).then(sendResponse);
       }
+      if (request.intent === "handleGETRequest") {
+        handleGetRequest(
+          request.method_endpoint,
+          request.method_headers,
+          request.fastLane,
+          request.orgId,
+          request.recordID,
+          request.htmlVisualizer,
+          request.htmlContained,
+        ).then(sendResponse);
+      }
       if (request.intent === "openOptInLink") {
         generateAndOpenOptInLink().then((link) => {
+          sendResponse(link);
+        });
+      }
+      if (request.intent === "openUpdateLink") {
+        generateAndOpenUpdateLink().then((link) => {
           sendResponse(link);
         });
       }
@@ -199,72 +209,6 @@ export async function setUpBackgroundListeners() {
       }
       if (request.intent === "restoreBadgeProperties") {
         restoreBadgeProperties().then(sendResponse);
-      }
-      return true; // return true to indicate you want to send a response asynchronously
-    },
-  );
-}
-
-export async function setUpContentScriptListeners() {
-  chrome.runtime.onMessage.addListener(
-    async function (request, sender, sendResponse) {
-      if (request.target !== "contentScriptMellowtel") return false;
-      if (request.intent === "deleteIframeMellowtel") {
-        let recordID = request.recordID;
-        let iframe = document.getElementById(recordID);
-        let dataId = iframe?.getAttribute("data-id") || "";
-        let divIframe = document.getElementById("div-" + recordID);
-        if (iframe) iframe.remove();
-        if (divIframe) divIframe.remove();
-        await resetAfterCrawl(recordID, request.BATCH_execution);
-        if (dataId === DATA_ID_IFRAME) {
-          await hideBadgeIfShould();
-        }
-      }
-      if (request.intent === "getSharedMemoryDOM") {
-        getSharedMemoryDOM(request.key).then(sendResponse);
-      }
-      if (request.intent === "getIfCurrentlyActiveDOM") {
-        getIfCurrentlyActiveDOM().then(sendResponse);
-      }
-      if (request.intent === "startConnectionMellowtel") {
-        getIdentifier().then((identifier: string) => {
-          startConnectionWs(identifier);
-        });
-      }
-      if (request.intent === "handleHTMLVisualizer") {
-        await proceedWithActivation(
-          request.url,
-          request.recordID,
-          JSON.parse(request.eventData),
-          request.waitForElement,
-          request.shouldSandbox,
-          request.sandBoxAttributes,
-          request.BATCH_execution,
-          request.triggerDownload,
-          request.skipHeaders,
-          request.hostname,
-          true,
-          false,
-          true, // to break the loop
-        );
-      }
-      if (request.intent === "handleHTMLContained") {
-        await proceedWithActivation(
-          request.url,
-          request.recordID,
-          JSON.parse(request.eventData),
-          request.waitForElement,
-          request.shouldSandbox,
-          request.sandBoxAttributes,
-          request.BATCH_execution,
-          request.triggerDownload,
-          request.skipHeaders,
-          request.hostname,
-          false,
-          true,
-          true, // to break the loop
-        );
       }
       return true; // return true to indicate you want to send a response asynchronously
     },

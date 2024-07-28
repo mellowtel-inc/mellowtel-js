@@ -6559,7 +6559,7 @@ export var htmlVisualizer = (function () {
       var clone = node.cloneNode(false);
       if (isImageElement(clone)) {
         clone.onerror = function () {
-          console.error("Failed to load image: " + clone.src);
+          // console.error("Failed to load image: " + clone.src);
           // Handle the error (e.g., replace the image or hide it)
         };
         if (

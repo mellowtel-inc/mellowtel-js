@@ -7,4 +7,5 @@ export default defineConfig({
   splitting: false, // Enable code splitting for dynamic imports
   sourcemap: true,
   clean: true,
+  minify: true,
 });

@@ -1,7 +1,7 @@
 import { showBadgeIfShould } from "../transparency/badge-settings";
 import { DATA_ID_IFRAME } from "../constants";
 
-export function injectHiddenIFrame(
+export function insertIFrame(
   url: string,
   id: string,
   onload = function () {},
@@ -16,7 +16,7 @@ export function injectHiddenIFrame(
   iframe.id = id;
   // credentialles iframe to avoid leaking cookies & session data
   // https://developer.mozilla.org/en-US/docs/Web/Security/IFrame_credentialless
-  // Experimental feature, not supported by Firefox and Safari
+  // Experimental feature, not supported by Firefox and Safari yet
   // @ts-ignore
   iframe.credentialless = true;
 
