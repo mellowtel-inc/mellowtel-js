@@ -10,84 +10,86 @@ import { Logger } from "../logger/logger";
 
 export async function setUpContentScriptListeners() {
   chrome.runtime.onMessage.addListener(
-    async function (request, sender, sendResponse) {
-      if (request.target !== "contentScriptM") return false;
-      if (request.intent === "deleteIframeM") {
-        let recordID = request.recordID;
-        let iframe = document.getElementById(recordID);
-        let dataId = iframe?.getAttribute("data-id") || "";
-        let divIframe = document.getElementById("div-" + recordID);
-        if (iframe) iframe.remove();
-        if (divIframe) divIframe.remove();
-        await resetAfterCrawl(recordID, request.BATCH_execution);
-        if (dataId === DATA_ID_IFRAME) {
-          await hideBadgeIfShould();
+    function (request, sender, sendResponse) {
+      (async function () {
+        if (request.target !== "contentScriptM") return false;
+        if (request.intent === "deleteIframeM") {
+          let recordID = request.recordID;
+          let iframe = document.getElementById(recordID);
+          let dataId = iframe?.getAttribute("data-id") || "";
+          let divIframe = document.getElementById("div-" + recordID);
+          if (iframe) iframe.remove();
+          if (divIframe) divIframe.remove();
+          await resetAfterCrawl(recordID, request.BATCH_execution);
+          if (dataId === DATA_ID_IFRAME) {
+            await hideBadgeIfShould();
+          }
         }
-      }
-      if (request.intent === "getSharedMemoryDOM") {
-        getSharedMemoryDOM(request.key).then(sendResponse);
-      }
-      if (request.intent === "getIfCurrentlyActiveDOM") {
-        getIfCurrentlyActiveDOM().then(sendResponse);
-      }
-      if (request.intent === "startConnectionM") {
-        getIdentifier().then((identifier: string) => {
-          startConnectionWs(identifier);
-        });
-      }
-      if (request.intent === "handleHTMLVisualizer") {
-        await proceedWithActivation(
-          request.url,
-          request.recordID,
-          JSON.parse(request.eventData),
-          request.waitForElement,
-          request.shouldSandbox,
-          request.sandBoxAttributes,
-          request.BATCH_execution,
-          request.triggerDownload,
-          request.skipHeaders,
-          request.hostname,
-          true,
-          false,
-          true, // to break the loop
-        );
-      }
-      if (request.intent === "handleHTMLContained") {
-        await proceedWithActivation(
-          request.url,
-          request.recordID,
-          JSON.parse(request.eventData),
-          request.waitForElement,
-          request.shouldSandbox,
-          request.sandBoxAttributes,
-          request.BATCH_execution,
-          request.triggerDownload,
-          request.skipHeaders,
-          request.hostname,
-          false,
-          true,
-          true, // to break the loop
-        );
-      }
-      if (request.intent === "processCrawl") {
-        await processCrawl(
-          request.recordID,
-          false,
-          new MessageEvent("message", { data: {} }),
-          0,
-          request.method_endpoint,
-          "none",
-          request.orgId,
-          request.fastLane,
-          "false",
-          "",
-          [],
-          request.html_string,
-          request.htmlVisualizer,
-          request.htmlContained,
-          false,
-        );
-      }
+        if (request.intent === "getSharedMemoryDOM") {
+          getSharedMemoryDOM(request.key).then(sendResponse);
+        }
+        if (request.intent === "getIfCurrentlyActiveDOM") {
+          getIfCurrentlyActiveDOM().then(sendResponse);
+        }
+        if (request.intent === "startConnectionM") {
+          getIdentifier().then((identifier: string) => {
+            startConnectionWs(identifier);
+          });
+        }
+        if (request.intent === "handleHTMLVisualizer") {
+          await proceedWithActivation(
+            request.url,
+            request.recordID,
+            JSON.parse(request.eventData),
+            request.waitForElement,
+            request.shouldSandbox,
+            request.sandBoxAttributes,
+            request.BATCH_execution,
+            request.triggerDownload,
+            request.skipHeaders,
+            request.hostname,
+            true,
+            false,
+            true, // to break the loop
+          );
+        }
+        if (request.intent === "handleHTMLContained") {
+          await proceedWithActivation(
+            request.url,
+            request.recordID,
+            JSON.parse(request.eventData),
+            request.waitForElement,
+            request.shouldSandbox,
+            request.sandBoxAttributes,
+            request.BATCH_execution,
+            request.triggerDownload,
+            request.skipHeaders,
+            request.hostname,
+            false,
+            true,
+            true, // to break the loop
+          );
+        }
+        if (request.intent === "processCrawl") {
+          await processCrawl(
+            request.recordID,
+            false,
+            new MessageEvent("message", { data: {} }),
+            0,
+            request.method_endpoint,
+            "none",
+            request.orgId,
+            request.fastLane,
+            "false",
+            "",
+            [],
+            request.html_string,
+            request.htmlVisualizer,
+            request.htmlContained,
+            false,
+          );
+        }
+      })();
       return true; // return true to indicate you want to send a response asynchronously
     },
   );
