@@ -64,6 +64,16 @@ export async function checkRequiredPermissions(
     }
   }
 
+  const manifest = chrome.runtime.getManifest();
+  if (manifest.manifest_version === 2) {
+    const permissions = manifest.permissions || [];
+    if (!permissions.includes("<all_urls>") && !permissions.includes("https://*/*")) {
+      throw new Error(
+        `Required permission "https://*/*" is not present in the manifest`,
+      );
+    }
+  }
+
   Logger.log(
     "PERMISSIONS TO REQUEST : " + JSON.stringify(permissionsToRequest),
   );
