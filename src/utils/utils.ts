@@ -43,3 +43,7 @@ export function detectBrowser() {
 
   return "unknown";
 }
+
+export function getManifestVersion() {
+  return chrome.runtime.getManifest().manifest_version;
+}

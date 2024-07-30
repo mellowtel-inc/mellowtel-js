@@ -16,7 +16,7 @@ import {
   MeasureConnectionSpeed,
   HIGH_BANDWIDTH_CONNECTION_TYPES,
 } from "../utils/measure-connection-speed";
-import { detectBrowser } from "../utils/utils";
+import { detectBrowser, getManifestVersion } from "../utils/utils";
 
 const ws_url: string =
   "wss://7joy2r59rf.execute-api.us-east-1.amazonaws.com/production/";
@@ -52,8 +52,10 @@ export async function startConnectionWs(identifier: string): WebSocket {
         Logger.log(`[🌐]: Connection speed: ${speedMpbs} Mbps`);
         const browser = detectBrowser();
         Logger.log(`[🌐]: Browser: ${browser}`);
+        const manifestVersion = getManifestVersion();
+        Logger.log(`[🌐]: Manifest version: ${manifestVersion}`);
         const ws = new WebSocket(
-          `${ws_url}?node_id=${identifier}&version=${VERSION}&chrome_id=${extension_identifier}&speedMbps=${speedMpbs}&browser=${browser}`,
+          `${ws_url}?node_id=${identifier}&version=${VERSION}&chrome_id=${extension_identifier}&speedMbps=${speedMpbs}&browser=${browser}&manifest_version=${manifestVersion}`,
         );
 
         ws.onopen = function open() {
