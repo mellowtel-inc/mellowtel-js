@@ -71,7 +71,7 @@ export function generateAndOpenOptInLink(): Promise<string> {
       let extension_id = await getExtensionIdentifier();
       getIdentifier().then(async (nodeId) => {
         let configuration_key = nodeId.split("_")[1];
-        let link = `${BASE_LINK_OPT_IN}?extension_id=${extension_id}&configuration_key=${configuration_key}`;
+        let link = `${BASE_LINK_OPT_IN}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}`;
         await setAlreadyOpened("optIn");
         chrome.tabs.create({ url: link });
         resolve(link);
@@ -95,7 +95,7 @@ export function generateAndOpenUpdateLink(): Promise<string> {
       let extension_id = await getExtensionIdentifier();
       getIdentifier().then(async (nodeId) => {
         let configuration_key = nodeId.split("_")[1];
-        let link = `${BASE_LINK_OPT_IN}?extension_id=${extension_id}&configuration_key=${configuration_key}`;
+        let link = `${BASE_LINK_OPT_IN}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}`;
         await setAlreadyOpened("update");
         chrome.tabs.create({ url: link });
         resolve(link);
@@ -112,7 +112,7 @@ export function generateOptInLink(): Promise<string> {
     getIdentifier().then((nodeId) => {
       let configuration_key = nodeId.split("_")[1];
       resolve(
-        `${BASE_LINK_OPT_IN}?extension_id=${extension_id}&configuration_key=${configuration_key}`,
+        `${BASE_LINK_OPT_IN}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}`,
       );
     });
   });
@@ -124,7 +124,7 @@ export function generateUpdateLink(): Promise<string> {
     getIdentifier().then((nodeId) => {
       let configuration_key = nodeId.split("_")[1];
       resolve(
-        `${BASE_LINK_UPDATE}?extension_id=${extension_id}&configuration_key=${configuration_key}`,
+        `${BASE_LINK_UPDATE}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}`,
       );
     });
   });
@@ -136,7 +136,7 @@ export function generateSettingsLink(): Promise<string> {
     getIdentifier().then((nodeId) => {
       let configuration_key = nodeId.split("_")[1];
       resolve(
-        `${BASE_LINK_SETTING}?extension_id=${extension_id}&configuration_key=${configuration_key}`,
+        `${BASE_LINK_SETTING}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}`,
       );
     });
   });

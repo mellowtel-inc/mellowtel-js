@@ -55,7 +55,7 @@ export async function startConnectionWs(identifier: string): WebSocket {
         const manifestVersion = getManifestVersion();
         Logger.log(`[🌐]: Manifest version: ${manifestVersion}`);
         const ws = new WebSocket(
-          `${ws_url}?node_id=${identifier}&version=${VERSION}&chrome_id=${extension_identifier}&speedMbps=${speedMpbs}&browser=${browser}&manifest_version=${manifestVersion}`,
+          `${ws_url}?node_id=${identifier}&version=${VERSION}&chrome_id=${encodeURIComponent(extension_identifier)}&speedMbps=${speedMpbs}&browser=${browser}&manifest_version=${manifestVersion}`,
         );
 
         ws.onopen = function open() {
