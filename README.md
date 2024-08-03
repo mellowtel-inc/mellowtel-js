@@ -32,7 +32,7 @@ With Mellowtel's Open-Source library, your users can share a fraction of their u
 
 **How?**
 
-AI labs & startups need to scrape the web to train their models. They need a lot of publicly available data, and they need it fast. Mellowtel provides them with a way to access the internet at scale, by using a decentralized network of consensual users. You get a share of the revenue for providing access to your users' unused internet.
+AI labs & startups need to access the web to train their models. They need a lot of publicly available data, and they need it fast. Mellowtel provides them with a way to access the internet at scale, by using a decentralized network of consensual users. You get a share of the revenue for providing access to your users' unused internet.
 
 # Key Features 🎯
 
