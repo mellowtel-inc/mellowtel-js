@@ -37,7 +37,10 @@ export function detectBrowser() {
     return "firefox";
   } else if (userAgent.indexOf("Safari") > -1) {
     return "safari";
-  } else if (userAgent.indexOf("Trident") > -1 || userAgent.indexOf("MSIE") > -1) {
+  } else if (
+    userAgent.indexOf("Trident") > -1 ||
+    userAgent.indexOf("MSIE") > -1
+  ) {
     return "ie";
   }
 

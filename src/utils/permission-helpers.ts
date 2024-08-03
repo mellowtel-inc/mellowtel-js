@@ -1,10 +1,11 @@
 import { Logger } from "../logger/logger";
+import { detectBrowser } from "./utils";
 
 // The following permissions have to be either in permissions or optional_permissions in manifest.json
 // declarativeNetRequest is the exception, as it can't be specified in optional_permissions:
 // it is replaced internally with declarativeNetRequestWithHostAccess in optional_permissions alongside
 // optional_host_permissions (https://*/*)
-export const requiredPermissions: string[] = [
+export let requiredPermissions: string[] = [
   "storage",
   "tabs",
   "declarativeNetRequest",
@@ -33,6 +34,13 @@ export async function checkRequiredPermissions(
 ): Promise<void> {
   let permissionsToRequest: string[] = [];
   let hostPermissions: string[] = [];
+  // if browser is safari, we can remove declarativeNetRequest from requiredPermissions
+  if (detectBrowser() === "safari") {
+    requiredPermissions.splice(
+      requiredPermissions.indexOf("declarativeNetRequest"),
+      1,
+    );
+  }
   for (let permission of requiredPermissions) {
     let isPermissionPresent = false;
     checkIfInPermissions(permission, (isPresent) => {
@@ -67,7 +75,10 @@ export async function checkRequiredPermissions(
   const manifest = chrome.runtime.getManifest();
   if (manifest.manifest_version === 2) {
     const permissions = manifest.permissions || [];
-    if (!permissions.includes("<all_urls>") && !permissions.includes("https://*/*")) {
+    if (
+      !permissions.includes("<all_urls>") &&
+      !permissions.includes("https://*/*")
+    ) {
       throw new Error(
         `Required permission "https://*/*" is not present in the manifest`,
       );
