@@ -26,6 +26,7 @@ export function openPopupWindow(
 }
 
 export function detectBrowser() {
+  if(typeof navigator === "undefined") return "unknown";
   var userAgent = navigator.userAgent;
   if (userAgent.indexOf("Edg") > -1) {
     return "edge";

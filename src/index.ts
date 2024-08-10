@@ -27,6 +27,7 @@ import {
   generateUpdateLink,
   generateAndOpenUpdateLink,
 } from "./elements/generate-links";
+import { detectBrowser } from "./utils/utils";
 
 export default class M {
   private publishableKey: string;
@@ -135,6 +136,10 @@ export default class M {
 
   public async getExtensionIdentifier(): Promise<string> {
     return getExtensionIdentifier();
+  }
+
+  public async getBrowser(): Promise<string> {
+    return detectBrowser();
   }
 
   public async start(metadata_id?: string | undefined): Promise<boolean> {
