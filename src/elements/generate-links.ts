@@ -82,7 +82,9 @@ export function generateAndOpenOptInLink(): Promise<string> {
   });
 }
 
-export function generateAndOpenUpdateLink(): Promise<string> {
+export function generateAndOpenUpdateLink(
+  accept_on_close: boolean = false,
+): Promise<string> {
   return new Promise(async (resolve) => {
     // if not access to tabs api, send message to background script to open the link
     let shouldDelegate = await shouldDelegateTabsAPI();
@@ -95,10 +97,17 @@ export function generateAndOpenUpdateLink(): Promise<string> {
       let extension_id = await getExtensionIdentifier();
       getIdentifier().then(async (nodeId) => {
         let configuration_key = nodeId.split("_")[1];
-        let link = `${BASE_LINK_OPT_IN}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}`;
+        let link = `${BASE_LINK_UPDATE}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}`;
         await setAlreadyOpened("update");
-        chrome.tabs.create({ url: link });
-        resolve(link);
+        chrome.tabs.create({ url: link }, (tab) => {
+          if (accept_on_close) {
+            Logger.log("Update tab opened, save in local storage");
+            let tabId = tab.id;
+            setLocalStorage("mUpdateTabId", tabId);
+            setLocalStorage("mAcceptOnClose", true);
+          }
+          resolve(link);
+        });
       });
     } else {
       resolve("");

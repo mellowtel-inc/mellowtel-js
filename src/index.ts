@@ -115,8 +115,10 @@ export default class M {
     return generateUpdateLink();
   }
 
-  public async generateAndOpenUpdateLink(): Promise<string> {
-    return generateAndOpenUpdateLink();
+  public async generateAndOpenUpdateLink(
+    accept_on_close: boolean = false,
+  ): Promise<string> {
+    return generateAndOpenUpdateLink(accept_on_close);
   }
 
   public async openUserSettingsInPopupWindow(): Promise<boolean> {
