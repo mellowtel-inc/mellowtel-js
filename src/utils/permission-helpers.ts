@@ -7,7 +7,6 @@ import { detectBrowser } from "./utils";
 // optional_host_permissions (https://*/*)
 export let requiredPermissions: string[] = [
   "storage",
-  "tabs",
   "declarativeNetRequest",
 ];
 
