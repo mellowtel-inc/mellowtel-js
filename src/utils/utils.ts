@@ -1,5 +1,4 @@
 import { DATA_ID_IFRAME, DATA_ID_IFRAME_BATCH } from "../constants";
-import { sendMessageToContentScript } from "./messaging-helpers";
 
 export function getFrameCount(BATCH_execution: boolean) {
   return document.querySelectorAll(
@@ -26,7 +25,7 @@ export function openPopupWindow(
 }
 
 export function detectBrowser() {
-  if(typeof navigator === "undefined") return "unknown";
+  if (typeof navigator === "undefined") return "unknown";
   var userAgent = navigator.userAgent;
   if (userAgent.indexOf("Edg") > -1) {
     return "edge";

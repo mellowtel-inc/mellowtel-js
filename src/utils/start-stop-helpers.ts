@@ -9,7 +9,7 @@ import { getOptInStatus, optOut } from "./opt-in-out-helpers";
 
 export function start(metadata_id?: string | undefined): Promise<boolean> {
   return new Promise(async (resolve) => {
-    let optInStatus = await getOptInStatus();
+    let optInStatus: boolean = (await getOptInStatus()).boolean;
     if (!optInStatus) {
       throw new Error(
         "Node has not opted in yet. Request a disclaimer to the end-user and then call the optIn() method if they agree to join.",

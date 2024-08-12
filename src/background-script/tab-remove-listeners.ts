@@ -1,7 +1,7 @@
 import { sendMessageToContentScript } from "../utils/messaging-helpers";
 import { getLocalStorage, setLocalStorage } from "../utils/storage-helpers";
 import { start } from "../utils/start-stop-helpers";
-import { optIn } from "../utils/opt-in-out-helpers";
+import { getOptInStatus, optIn } from "../utils/opt-in-out-helpers";
 import { Logger } from "../logger/logger";
 
 export async function setUpOnTabRemoveListeners(): Promise<void> {
@@ -12,11 +12,18 @@ export async function setUpOnTabRemoveListeners(): Promise<void> {
     let mAcceptOnClose: boolean = await getLocalStorage("mAcceptOnClose", true);
     let mUpdateTabId: number = await getLocalStorage("mUpdateTabId", true);
     if (mAcceptOnClose && tabId === mUpdateTabId) {
-      Logger.log("Update tab closed and accepted");
-      await optIn();
-      await start();
-      await setLocalStorage("mAcceptOnClose", false);
-      await setLocalStorage("mUpdateTabId", "NO_TAB");
+      Logger.log("Update tab closed and (possibly) accepted");
+      let optInStatus = await getOptInStatus();
+      let optInStatusBoolean = optInStatus.boolean;
+      let optInStatusString = optInStatus.status;
+      Logger.log("optInStatusBoolean: ", optInStatusBoolean);
+      Logger.log("optInStatusString: ", optInStatusString);
+      if (!optInStatusBoolean && optInStatusString === "undefined") {
+        await optIn();
+        await start();
+        await setLocalStorage("mAcceptOnClose", false);
+        await setLocalStorage("mUpdateTabId", "NO_TAB");
+      }
     }
     chrome.storage.local.get(
       ["webSocketConnected"],

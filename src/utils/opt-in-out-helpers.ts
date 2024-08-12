@@ -2,13 +2,22 @@ import { setLocalStorage } from "./storage-helpers";
 
 const optInKey: string = "mellowtelOptIn";
 
-export async function getOptInStatus(): Promise<boolean> {
+export async function getOptInStatus(): Promise<{
+  status: string;
+  boolean: boolean;
+}> {
   return new Promise((resolve) => {
     chrome.storage.local.get(optInKey, function (result) {
-      if (result !== undefined && result[optInKey] === "true") {
-        resolve(true);
+      if (result !== undefined) {
+        if (result[optInKey] === "true") {
+          resolve({ status: "opted_in", boolean: true });
+        } else if (result[optInKey] === "false") {
+          resolve({ status: "opted_out", boolean: false });
+        } else {
+          resolve({ status: "undefined", boolean: false });
+        }
       } else {
-        resolve(false);
+        resolve({ status: "undefined", boolean: false });
       }
     });
   });

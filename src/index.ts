@@ -62,7 +62,7 @@ export default class M {
     await setUpBackgroundListeners();
     await getOrGenerateIdentifier(this.publishableKey);
     if (auto_start_if_opted_in === undefined || auto_start_if_opted_in) {
-      let optInStatus = await getOptInStatus();
+      let optInStatus: boolean = (await getOptInStatus()).boolean;
       if (optInStatus) {
         await this.start(metadata_id);
       }
@@ -97,7 +97,7 @@ export default class M {
   }
 
   public async getOptInStatus(): Promise<boolean> {
-    return getOptInStatus();
+    return (await getOptInStatus()).boolean;
   }
 
   public async generateOptInLink(): Promise<string> {

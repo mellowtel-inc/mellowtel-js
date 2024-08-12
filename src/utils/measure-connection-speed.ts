@@ -31,7 +31,7 @@ export function MeasureConnectionSpeed(): Promise<number> {
             measurements: [{ type: "download", bytes: 10e6, count: 1 }],
           });
 
-          speedTest.onFinish = (results) => {
+          speedTest.onFinish = async (results) => {
             const bandwidth = results.getDownloadBandwidth();
             if (!bandwidth) {
               Logger.log("Speed test failed. Could not get bandwidth");
@@ -41,6 +41,7 @@ export function MeasureConnectionSpeed(): Promise<number> {
               Logger.log(
                 `Speed test finished. Download bandwidth: ${speedMbps} Mbps`,
               );
+              await saveSpeedTestResults(parseFloat(speedMbps));
               resolve(parseFloat(speedMbps));
             }
           };

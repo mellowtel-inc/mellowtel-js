@@ -105,8 +105,9 @@ export async function setUpExternalMessageListeners() {
               sendMessageToWebsite(
                 {
                   message: "opt-in-status",
-                  status: status,
+                  status: status.boolean,
                   id: message_id,
+                  status_string: status.status,
                 },
                 extension_id_original,
               );
@@ -187,7 +188,7 @@ export async function setUpExternalMessageListeners() {
           if (message.action === "getInfoToDisplayInTable") {
             let currentlyActive: boolean = await getIfCurrentlyActive();
             let settingsLink: string = await generateSettingsLink();
-            let optInStatus: boolean = await getOptInStatus();
+            let optInStatus: boolean = (await getOptInStatus()).boolean;
             let extensionId: string = await getExtensionIdentifier();
             let extensionName: string = await getExtensionName();
             let shouldShowBadgeVar: boolean = await shouldShowBadge();
