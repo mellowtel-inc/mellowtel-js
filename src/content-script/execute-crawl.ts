@@ -7,7 +7,7 @@ import {
 import { insertInQueue } from "./queue-crawl";
 import { setLifespanForIframe } from "./reset-crawl";
 import { disableXFrameHeaders } from "../utils/dnr-helpers";
-import { getFrameCount } from "../utils/utils";
+import { detectBrowser, getFrameCount } from "../utils/utils";
 import { insertIFrame } from "../utils/iframe-helpers";
 import { sendToBackgroundToSeeIfTriggersDownload } from "../utils/triggers-download-helpers";
 import { Logger } from "../logger/logger";
@@ -460,6 +460,19 @@ export async function proceedWithActivation(
         frameReplied = true;
       }
     });
+    let browser = detectBrowser();
+    if (browser === "firefox") {
+      let current_url = new URL(window.location.href);
+      let url_to_load = new URL(url);
+      // if on same domain, skip, because firefox doesn't have credentialless iframes and the
+      // only way to avoid leaking cookies is to not load the iframe at all if on same domain.
+      if (current_url.hostname === url_to_load.hostname) {
+        Logger.log(
+          "[proceedWithActivation] => Same domain, skipping iframe load",
+        );
+        return;
+      }
+    }
     insertIFrame(
       url,
       recordID,

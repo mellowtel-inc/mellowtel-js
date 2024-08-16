@@ -16,21 +16,47 @@ import {
   MeasureConnectionSpeed,
   HIGH_BANDWIDTH_CONNECTION_TYPES,
 } from "../utils/measure-connection-speed";
-import { detectBrowser, getManifestVersion } from "../utils/utils";
+import { detectBrowser, getManifestVersion, isInSW } from "../utils/utils";
+import {
+  sendMessageToBackground,
+  sendMessageToContentScript,
+} from "../utils/messaging-helpers";
 
 const ws_url: string =
   "wss://7joy2r59rf.execute-api.us-east-1.amazonaws.com/production/";
 
 export async function startConnectionWs(identifier: string): WebSocket {
-  let effectiveConnectionType: string = await getEffectiveConnectionType();
-  Logger.log(`[🌐]: Effective connection type: ${effectiveConnectionType}`);
-  if (!HIGH_BANDWIDTH_CONNECTION_TYPES.includes(effectiveConnectionType)) {
-    Logger.log(`[🌐]: Not connecting to websocket to preserve bandwidth`);
-    return;
-  }
-  await getSharedMemory("webSocketConnected").then(async (response) => {
-    Logger.log(`[🌐]: webSocketConnected: ${response}`);
-    if (!response) {
+  // if mv2, we can send message to bg and start the ws there since there is a DOM
+  // in mv3, we need to start the ws here in the content script
+  let manifestVersion = getManifestVersion();
+  let isInServiceWorker: boolean = await isInSW();
+  Logger.log("############################################################");
+  Logger.log(`[startConnectionWs]: Manifest version: ${manifestVersion}`);
+  Logger.log(`[startConnectionWs]: Is in service worker: ${isInServiceWorker}`);
+  if (manifestVersion.toString() === "2" && !isInServiceWorker) {
+    Logger.log(`[🌐]: MV2 Sending message to background to start websocket...`);
+    await sendMessageToBackground({
+      intent: "startWebsocket",
+      identifier: identifier,
+    });
+  } else {
+    let effectiveConnectionType: string = await getEffectiveConnectionType();
+    Logger.log(`[🌐]: Effective connection type: ${effectiveConnectionType}`);
+    if (!HIGH_BANDWIDTH_CONNECTION_TYPES.includes(effectiveConnectionType)) {
+      Logger.log(`[🌐]: Not connecting to websocket to preserve bandwidth`);
+      return;
+    }
+    let webSocketConnected: boolean;
+    if (manifestVersion.toString() === "2") {
+      Logger.log(`[🌐]: MV2 Getting webSocketConnected from DOM MODEL...`);
+      webSocketConnected =
+        document.getElementById("webSocketConnected") !== null;
+    } else {
+      Logger.log(`[🌐]: MV3 Getting webSocketConnected from shared memory...`);
+      webSocketConnected = await getSharedMemory("webSocketConnected");
+    }
+    Logger.log(`[🌐]: webSocketConnected: ${webSocketConnected}`);
+    if (!webSocketConnected) {
       let LIMIT_REACHED: boolean = await RateLimiter.getIfRateLimitReached();
       if (LIMIT_REACHED) {
         Logger.log(`[🌐]: Rate limit, not connecting to websocket`);
@@ -55,18 +81,34 @@ export async function startConnectionWs(identifier: string): WebSocket {
         const manifestVersion = getManifestVersion();
         Logger.log(`[🌐]: Manifest version: ${manifestVersion}`);
         const ws = new WebSocket(
-          `${ws_url}?node_id=${identifier}&version=${VERSION}&chrome_id=${encodeURIComponent(extension_identifier)}&speedMbps=${speedMpbs}&browser=${browser}&manifest_version=${manifestVersion}`,
+          `${ws_url}?node_id=${identifier}&version=${VERSION}&extension_id=${encodeURIComponent(extension_identifier)}&speedMbps=${speedMpbs}&browser=${browser}&manifest_version=${manifestVersion}`,
         );
 
         ws.onopen = function open() {
-          setSharedMemory("webSocketConnected", "true");
+          if (manifestVersion.toString() === "2") {
+            Logger.log(`[🌐]: MV2 Setting webSocketConnected in DOM MODEL...`);
+            let hiddenInput: HTMLInputElement = document.createElement("input");
+            hiddenInput.setAttribute("type", "hidden");
+            hiddenInput.setAttribute("id", "webSocketConnected");
+            hiddenInput.setAttribute("value", "true");
+            document.body.appendChild(hiddenInput);
+          } else {
+            Logger.log(
+              `[🌐]: MV3 Setting webSocketConnected in shared memory...`,
+            );
+            setSharedMemory("webSocketConnected", "true");
+          }
           Logger.log(
             `[🌐]: connected with node_id= ${identifier} and version= ${VERSION}`,
           );
         };
 
         ws.onclose = async function close() {
-          removeSharedMemory("webSocketConnected");
+          if (manifestVersion.toString() === "3") {
+            removeSharedMemory("webSocketConnected");
+          } else {
+            document.getElementById("webSocketConnected")?.remove();
+          }
           if (await isStarted()) {
             startConnectionWs(identifier);
           }
@@ -121,13 +163,45 @@ export async function startConnectionWs(identifier: string): WebSocket {
                 await setLocalStorage("mllwtl_rate_limit_reached", true);
                 ws.close();
               }
-              await preProcessCrawl(
-                data,
-                POST_request,
-                GET_request,
-                BATCH_execution,
-                batch_id,
-              );
+              if (manifestVersion.toString() === "2") {
+                Logger.log(
+                  "[🌐]: MV2 Sending message to a viable content script...",
+                );
+                // send a message to a content script to execute the crawl
+                // first tab that replies will be the one to execute the crawl
+                let tabReply = false;
+                chrome.tabs.query({}, async (tabs) => {
+                  for (let tab of tabs) {
+                    if (tabReply) {
+                      Logger.log("[🌐]: Tab already replied, breaking...");
+                      break;
+                    }
+                    await sendMessageToContentScript(tab.id!, {
+                      intent: "preProcessCrawl",
+                      data: JSON.stringify(data),
+                      POST_request: POST_request,
+                      GET_request: GET_request,
+                      BATCH_execution: BATCH_execution,
+                      batch_id: batch_id,
+                    }).then((response) => {
+                      if (response === "success") {
+                        Logger.log(
+                          "[🌐]: Tab replied success, setting tabReply to true...",
+                        );
+                        tabReply = true;
+                      }
+                    });
+                  }
+                });
+              } else {
+                await preProcessCrawl(
+                  data,
+                  POST_request,
+                  GET_request,
+                  BATCH_execution,
+                  batch_id,
+                );
+              }
             } else {
               Logger.log("[🌐]: Rate limit reached, closing connection...");
               await setLocalStorage("mllwtl_rate_limit_reached", true);
@@ -138,5 +212,5 @@ export async function startConnectionWs(identifier: string): WebSocket {
         return ws;
       }
     }
-  });
+  }
 }

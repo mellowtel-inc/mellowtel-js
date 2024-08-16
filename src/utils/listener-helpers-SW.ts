@@ -38,9 +38,32 @@ import {
   showBadge,
 } from "../transparency/badge-settings";
 import { handleGetRequest } from "../get-requests/get-helpers";
+import { startConnectionWs } from "../content-script/websocket";
+import { Logger } from "../logger/logger";
 
 export async function setUpBackgroundListeners() {
-  chrome.runtime.onMessage.addListener(
+    // Queue to store incoming messages to start websocket
+    const startWebsocketMessageQueue: { identifier: string }[] = [];
+
+    // Function to process messages from the queue
+    function processWebsocketQueue() {
+        if (startWebsocketMessageQueue.length > 0) {
+            const message = startWebsocketMessageQueue.shift();
+            if (message) {
+                Logger.log("Processing message from queue:", message);
+                Logger.log("Content script requested to start websocket");
+                Logger.log(document.getElementById("webSocketConnected"));
+                Logger.log("####################################");
+                startConnectionWs(message.identifier);
+            }
+        }
+        setTimeout(processWebsocketQueue, 7000); // Process next message after 7 seconds
+    }
+
+    // Start processing the queue
+    processWebsocketQueue();
+
+    chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
       if (request.intent == "getLocalStorage") {
         getLocalStorage(request.key).then(sendResponse);
@@ -209,6 +232,10 @@ export async function setUpBackgroundListeners() {
       }
       if (request.intent === "restoreBadgeProperties") {
         restoreBadgeProperties().then(sendResponse);
+      }
+      if (request.intent === "startWebsocket") {
+      startWebsocketMessageQueue.push({ identifier: request.identifier });
+      sendResponse(true);
       }
       return true; // return true to indicate you want to send a response asynchronously
     },

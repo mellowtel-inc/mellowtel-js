@@ -16,7 +16,7 @@ export function setSharedMemory(key: string, value: any): void {
   }).then();
 }
 
-export function getSharedMemory(key: string): Promise<any> {
+export function getSharedMemory(key: string): Promise<boolean> {
   return new Promise((resolve) => {
     // send message to background.js, that will then broadcast it to all tabs
     sendMessageToBackground({
@@ -52,7 +52,7 @@ export async function setSharedMemoryBCK(key: string, tabId: number) {
   });
 }
 
-export async function getSharedMemoryBCK(key: string) {
+export async function getSharedMemoryBCK(key: string): Promise<boolean> {
   return new Promise(function (res) {
     chrome.tabs.query({}, function (tabs) {
       let numTabs: number = tabs.length;

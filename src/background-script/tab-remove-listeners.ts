@@ -9,22 +9,6 @@ export async function setUpOnTabRemoveListeners(): Promise<void> {
     tabId: number,
     removeInfo: chrome.tabs.TabRemoveInfo,
   ) {
-    let mAcceptOnClose: boolean = await getLocalStorage("mAcceptOnClose", true);
-    let mUpdateTabId: number = await getLocalStorage("mUpdateTabId", true);
-    if (mAcceptOnClose && tabId === mUpdateTabId) {
-      Logger.log("Update tab closed and (possibly) accepted");
-      let optInStatus = await getOptInStatus();
-      let optInStatusBoolean = optInStatus.boolean;
-      let optInStatusString = optInStatus.status;
-      Logger.log("optInStatusBoolean: ", optInStatusBoolean);
-      Logger.log("optInStatusString: ", optInStatusString);
-      if (!optInStatusBoolean && optInStatusString === "undefined") {
-        await optIn();
-        await start();
-        await setLocalStorage("mAcceptOnClose", false);
-        await setLocalStorage("mUpdateTabId", "NO_TAB");
-      }
-    }
     chrome.storage.local.get(
       ["webSocketConnected"],
       function (result: { [key: string]: any }) {

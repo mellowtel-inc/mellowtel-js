@@ -5,7 +5,10 @@ import { getSharedMemoryDOM } from "../content-script/shared-memory";
 import { getIfCurrentlyActiveDOM } from "../elements/elements-utils";
 import { getIdentifier } from "./identity-helpers";
 import { startConnectionWs } from "../content-script/websocket";
-import { proceedWithActivation } from "../content-script/execute-crawl";
+import {
+  preProcessCrawl,
+  proceedWithActivation,
+} from "../content-script/execute-crawl";
 import { Logger } from "../logger/logger";
 
 export async function setUpContentScriptListeners() {
@@ -87,6 +90,22 @@ export async function setUpContentScriptListeners() {
             request.htmlVisualizer,
             request.htmlContained,
             false,
+          );
+        }
+        if (request.intent === "preProcessCrawl") {
+          sendResponse("success");
+          Logger.log("[setUpContentScriptListeners] : preProcessCrawl");
+          let data = JSON.parse(request.data);
+          let POST_request = request.POST_request;
+          let GET_request = request.GET_request;
+          let BATCH_execution = request.BATCH_execution;
+          let batch_id = request.batch_id;
+          await preProcessCrawl(
+            data,
+            POST_request,
+            GET_request,
+            BATCH_execution,
+            batch_id,
           );
         }
       })();

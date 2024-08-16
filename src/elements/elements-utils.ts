@@ -10,6 +10,7 @@ export async function getIfCurrentlyActiveBCK() {
       for (let i = 0; i < numTabs; i++) {
         sendMessageToContentScript(tabs[i].id!, {
           intent: "getSharedMemoryDOM",
+          key: "webSocketConnected",
         }).then(function (response): void {
           numTabsChecked++;
           if (response) {

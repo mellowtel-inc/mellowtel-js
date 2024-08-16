@@ -47,6 +47,22 @@ export function detectBrowser() {
   return "unknown";
 }
 
+export function isInSW(): Promise<boolean> {
+  return new Promise((resolve) => {
+    try {
+      chrome.declarativeNetRequest.getDynamicRules((rules) => {
+        if (chrome.runtime.lastError) {
+          resolve(false);
+        } else {
+          resolve(true);
+        }
+      });
+    } catch (error) {
+      resolve(false);
+    }
+  });
+}
+
 export function getManifestVersion() {
   return chrome.runtime.getManifest().manifest_version;
 }

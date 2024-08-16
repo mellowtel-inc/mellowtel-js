@@ -117,12 +117,8 @@ export function getEffectiveConnectionType(): Promise<string> {
   return new Promise((resolve) => {
     try {
       // https://developer.mozilla.org/en-US/docs/Web/API/NetworkInformation/effectiveType
-      if (navigator.hasOwnProperty("connection")) {
-        // @ts-ignore
-        resolve(navigator.connection.effectiveType || "unknown");
-      } else {
-        resolve("unknown");
-      }
+      // @ts-ignore
+      resolve(navigator.connection.effectiveType || "unknown");
     } catch (error) {
       resolve("unknown");
     }
