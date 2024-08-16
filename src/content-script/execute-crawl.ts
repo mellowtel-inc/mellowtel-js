@@ -461,91 +461,92 @@ export async function proceedWithActivation(
       }
     });
     let browser = detectBrowser();
-    if (browser === "firefox") {
+    let safeToProceed: boolean = true;
+    if (browser === "firefox" || browser === "safari") {
       let current_url = new URL(window.location.href);
       let url_to_load = new URL(url);
-      // if on same domain, skip, because firefox doesn't have credentialless iframes and the
-      // only way to avoid leaking cookies is to not load the iframe at all if on same domain.
       if (current_url.hostname === url_to_load.hostname) {
         Logger.log(
           "[proceedWithActivation] => Same domain, skipping iframe load",
         );
-        return;
+        safeToProceed = false;
       }
     }
-    insertIFrame(
-      url,
-      recordID,
-      function () {
-        // find a way to send a message to the content script inside this iframe
-        // to check if it's ready
-        // send message isContentScriptAlive
-        let iframe: HTMLIFrameElement | null = document.getElementById(
+    if(safeToProceed) {
+      insertIFrame(
+          url,
           recordID,
-        ) as HTMLIFrameElement | null;
-        if (iframe)
-          iframe.contentWindow?.postMessage(
-            { isContentScriptAlive: true, recordID: recordID },
-            "*",
-          );
-        if (waitForElement === "none") {
-          if (iframe) iframe.contentWindow?.postMessage(eventData, "*");
-        }
-        setTimeout(() => {
-          if (!frameReplied) {
-            // SET AS NOT WORKING WEBSITE
-            // hit endpoint to save result
-            Logger.log(
-              "[proceedWithActivation] => Website unreachable, saving it",
-            );
-            saveCrawl(
+          function () {
+            // find a way to send a message to the content script inside this iframe
+            // to check if it's ready
+            // send message isContentScriptAlive
+            let iframe: HTMLIFrameElement | null = document.getElementById(
+                recordID,
+            ) as HTMLIFrameElement | null;
+            if (iframe)
+              iframe.contentWindow?.postMessage(
+                  {isContentScriptAlive: true, recordID: recordID},
+                  "*",
+              );
+            if (waitForElement === "none") {
+              if (iframe) iframe.contentWindow?.postMessage(eventData, "*");
+            }
+            setTimeout(() => {
+              if (!frameReplied) {
+                // SET AS NOT WORKING WEBSITE
+                // hit endpoint to save result
+                Logger.log(
+                    "[proceedWithActivation] => Website unreachable, saving it",
+                );
+                saveCrawl(
+                    recordID,
+                    "",
+                    "",
+                    eventData.hasOwnProperty("fastLane")
+                        ? eventData.fastLane.toString() === "true"
+                        : false,
+                    url,
+                    eventData.hasOwnProperty("htmlTransformer")
+                        ? eventData.htmlTransformer
+                        : "none",
+                    eventData.hasOwnProperty("orgId") ? eventData.orgId : "",
+                    eventData.hasOwnProperty("saveText")
+                        ? eventData.saveText
+                        : "false",
+                    BATCH_execution,
+                    eventData.hasOwnProperty("batch_id") ? eventData.batch_id : "",
+                    true,
+                );
+              }
+            }, 1000);
+          },
+          "800px",
+          BATCH_execution ? DATA_ID_IFRAME_BATCH : DATA_ID_IFRAME,
+          shouldSandbox,
+          sandBoxAttributes,
+          htmlVisualizer,
+          htmlContained,
+      );
+      // if waitForElement isn't none, don't
+      // wait to load the iframe, but keep
+      // sending message until iframe replies.
+      if (waitForElement !== "none") {
+        let iFrameReplied = false;
+        window.addEventListener("message", function (event) {
+          if (event.data.isMReply && event.data.recordID === recordID)
+            iFrameReplied = true;
+        });
+        let timer = setInterval(function () {
+          let iframe: HTMLIFrameElement | null = document.getElementById(
               recordID,
-              "",
-              "",
-              eventData.hasOwnProperty("fastLane")
-                ? eventData.fastLane.toString() === "true"
-                : false,
-              url,
-              eventData.hasOwnProperty("htmlTransformer")
-                ? eventData.htmlTransformer
-                : "none",
-              eventData.hasOwnProperty("orgId") ? eventData.orgId : "",
-              eventData.hasOwnProperty("saveText")
-                ? eventData.saveText
-                : "false",
-              BATCH_execution,
-              eventData.hasOwnProperty("batch_id") ? eventData.batch_id : "",
-              true,
-            );
+          ) as HTMLIFrameElement | null;
+          if (iFrameReplied) {
+            clearInterval(timer);
+            return;
           }
-        }, 1000);
-      },
-      "800px",
-      BATCH_execution ? DATA_ID_IFRAME_BATCH : DATA_ID_IFRAME,
-      shouldSandbox,
-      sandBoxAttributes,
-      htmlVisualizer,
-      htmlContained,
-    );
-    // if waitForElement isn't none, don't
-    // wait to load the iframe, but keep
-    // sending message until iframe replies.
-    if (waitForElement !== "none") {
-      let iFrameReplied = false;
-      window.addEventListener("message", function (event) {
-        if (event.data.isMReply && event.data.recordID === recordID)
-          iFrameReplied = true;
-      });
-      let timer = setInterval(function () {
-        let iframe: HTMLIFrameElement | null = document.getElementById(
-          recordID,
-        ) as HTMLIFrameElement | null;
-        if (iFrameReplied) {
-          clearInterval(timer);
-          return;
-        }
-        if (iframe) iframe.contentWindow?.postMessage(eventData, "*");
-      }, 50);
+          if (iframe) iframe.contentWindow?.postMessage(eventData, "*");
+        }, 50);
+      }
     }
   }
 }
