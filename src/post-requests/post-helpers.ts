@@ -17,15 +17,25 @@ export function handlePostRequest(
     // make a fetch/post to the endpoint with the payload (if not empty)
     // then save the JSON response to the server
     // and return the response to the caller
-    const requestOptions: { method: string; body?: any; headers?: any } = {
+    const requestOptions: {
+      method: string;
+      credentials: RequestCredentials;
+      body?: any;
+      headers?: any;
+    } = {
       method: "POST",
+      credentials: "omit",
     };
-    if (method_payload !== "{}") {
-      requestOptions["body"] = method_payload;
-    }
-    if (method_headers !== "{}") {
+    if (method_payload !== "no_payload") {
       try {
-        requestOptions["headers"] = JSON.parse(method_headers);
+        method_payload = JSON.parse(method_payload);
+        requestOptions["body"] = JSON.stringify(method_payload);
+      } catch (e) {}
+    }
+    if (method_headers !== "no_headers") {
+      try {
+        method_headers = JSON.parse(method_headers);
+        requestOptions["headers"] = method_headers;
       } catch (e) {}
     }
     fetch(method_endpoint, requestOptions)

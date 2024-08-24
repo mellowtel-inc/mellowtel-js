@@ -472,60 +472,60 @@ export async function proceedWithActivation(
         safeToProceed = false;
       }
     }
-    if(safeToProceed) {
+    if (safeToProceed) {
       insertIFrame(
-          url,
-          recordID,
-          function () {
-            // find a way to send a message to the content script inside this iframe
-            // to check if it's ready
-            // send message isContentScriptAlive
-            let iframe: HTMLIFrameElement | null = document.getElementById(
-                recordID,
-            ) as HTMLIFrameElement | null;
-            if (iframe)
-              iframe.contentWindow?.postMessage(
-                  {isContentScriptAlive: true, recordID: recordID},
-                  "*",
+        url,
+        recordID,
+        function () {
+          // find a way to send a message to the content script inside this iframe
+          // to check if it's ready
+          // send message isContentScriptAlive
+          let iframe: HTMLIFrameElement | null = document.getElementById(
+            recordID,
+          ) as HTMLIFrameElement | null;
+          if (iframe)
+            iframe.contentWindow?.postMessage(
+              { isContentScriptAlive: true, recordID: recordID },
+              "*",
+            );
+          if (waitForElement === "none") {
+            if (iframe) iframe.contentWindow?.postMessage(eventData, "*");
+          }
+          setTimeout(() => {
+            if (!frameReplied) {
+              // SET AS NOT WORKING WEBSITE
+              // hit endpoint to save result
+              Logger.log(
+                "[proceedWithActivation] => Website unreachable, saving it",
               );
-            if (waitForElement === "none") {
-              if (iframe) iframe.contentWindow?.postMessage(eventData, "*");
+              saveCrawl(
+                recordID,
+                "",
+                "",
+                eventData.hasOwnProperty("fastLane")
+                  ? eventData.fastLane.toString() === "true"
+                  : false,
+                url,
+                eventData.hasOwnProperty("htmlTransformer")
+                  ? eventData.htmlTransformer
+                  : "none",
+                eventData.hasOwnProperty("orgId") ? eventData.orgId : "",
+                eventData.hasOwnProperty("saveText")
+                  ? eventData.saveText
+                  : "false",
+                BATCH_execution,
+                eventData.hasOwnProperty("batch_id") ? eventData.batch_id : "",
+                true,
+              );
             }
-            setTimeout(() => {
-              if (!frameReplied) {
-                // SET AS NOT WORKING WEBSITE
-                // hit endpoint to save result
-                Logger.log(
-                    "[proceedWithActivation] => Website unreachable, saving it",
-                );
-                saveCrawl(
-                    recordID,
-                    "",
-                    "",
-                    eventData.hasOwnProperty("fastLane")
-                        ? eventData.fastLane.toString() === "true"
-                        : false,
-                    url,
-                    eventData.hasOwnProperty("htmlTransformer")
-                        ? eventData.htmlTransformer
-                        : "none",
-                    eventData.hasOwnProperty("orgId") ? eventData.orgId : "",
-                    eventData.hasOwnProperty("saveText")
-                        ? eventData.saveText
-                        : "false",
-                    BATCH_execution,
-                    eventData.hasOwnProperty("batch_id") ? eventData.batch_id : "",
-                    true,
-                );
-              }
-            }, 1000);
-          },
-          "800px",
-          BATCH_execution ? DATA_ID_IFRAME_BATCH : DATA_ID_IFRAME,
-          shouldSandbox,
-          sandBoxAttributes,
-          htmlVisualizer,
-          htmlContained,
+          }, 1000);
+        },
+        "800px",
+        BATCH_execution ? DATA_ID_IFRAME_BATCH : DATA_ID_IFRAME,
+        shouldSandbox,
+        sandBoxAttributes,
+        htmlVisualizer,
+        htmlContained,
       );
       // if waitForElement isn't none, don't
       // wait to load the iframe, but keep
@@ -538,7 +538,7 @@ export async function proceedWithActivation(
         });
         let timer = setInterval(function () {
           let iframe: HTMLIFrameElement | null = document.getElementById(
-              recordID,
+            recordID,
           ) as HTMLIFrameElement | null;
           if (iFrameReplied) {
             clearInterval(timer);
