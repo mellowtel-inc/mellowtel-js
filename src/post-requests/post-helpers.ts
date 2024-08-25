@@ -40,9 +40,6 @@ export function handlePostRequest(
     }
     fetch(method_endpoint, requestOptions)
       .then((response) => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
         return response.json();
       })
       .then(async (data) => {
