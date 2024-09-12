@@ -14,6 +14,10 @@ export function handleGetRequest(
   recordID: string,
   htmlVisualizer: boolean,
   htmlContained: boolean,
+  removeImages: boolean,
+  removeCSSselectors: string,
+  classNamesToBeRemoved: string,
+  htmlTransformer: string,
 ) {
   return new Promise(async function (res) {
     await disableHeadersForPOST();
@@ -54,23 +58,25 @@ export function handleGetRequest(
         } catch (_) {
           Logger.log("Not JSON");
           // not json
-          // use chrome tabs to query a tab and send a message
+          // query a tab and send a message
           // then save the message to the server
-          chrome.tabs.query({}, function (tabs) {
+          chrome.tabs.query({}, async function (tabs) {
             for (let i = 0; i < tabs.length; i++) {
-              if (!tabs[i]?.url?.includes("chrome://")) {
-                // todo: remove this check as if "tabs" permission is not granted, this will not work
-                // also, not only limited to chrome://, also other browser specific pages
-                sendMessageToContentScript(tabs[i].id!, {
-                  intent: "processCrawl",
-                  recordID: recordID,
-                  fastLane: fastLane,
-                  orgId: orgId,
-                  htmlVisualizer: htmlVisualizer,
-                  htmlContained: htmlContained,
-                  html_string: html_or_json,
-                  method_endpoint: method_endpoint,
-                });
+              let response = await sendMessageToContentScript(tabs[i].id!, {
+                intent: "processCrawl",
+                recordID: recordID,
+                fastLane: fastLane,
+                orgId: orgId,
+                htmlVisualizer: htmlVisualizer,
+                htmlContained: htmlContained,
+                html_string: html_or_json,
+                method_endpoint: method_endpoint,
+                removeImages: removeImages,
+                removeCSSselectors: removeCSSselectors,
+                classNamesToBeRemoved: classNamesToBeRemoved,
+                htmlTransformer: htmlTransformer,
+              });
+              if (response !== null) {
                 break;
               }
             }

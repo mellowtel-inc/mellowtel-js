@@ -5,12 +5,13 @@ export function insertIFrame(
   url: string,
   id: string,
   onload = function () {},
-  width = "500px",
   data_id = "",
   should_sandbox = false,
   sandbox_attributes = "",
   htmlVisualizer = false,
   htmlContained = false,
+  screenWidth: string = "1024px",
+  screenHeight: string = "768px",
 ) {
   let iframe: HTMLIFrameElement = document.createElement("iframe");
   iframe.id = id;
@@ -31,14 +32,15 @@ export function insertIFrame(
   iframe.referrerPolicy = "no-referrer";
 
   if (htmlVisualizer) {
-    iframe.style.width = "1800px";
+    iframe.style.width = screenWidth;
+    // don't overwrite the height if htmlVisualizer is true
     iframe.style.height = "0px";
     iframe.style.border = "none";
     iframe.style.opacity = "0";
     document.body.appendChild(iframe);
   } else if (htmlContained) {
-    iframe.style.width = "100vw";
-    iframe.style.height = "600px";
+    iframe.style.width = screenWidth;
+    iframe.style.height = screenHeight;
     iframe.style.border = "none";
     iframe.style.opacity = "0";
     const div: HTMLDivElement = document.createElement("div");
@@ -51,8 +53,8 @@ export function insertIFrame(
     div.id = "div-" + id;
     document.body.prepend(div);
   } else {
-    iframe.style.width = width;
-    iframe.style.height = "200px";
+    iframe.style.width = screenWidth;
+    iframe.style.height = screenHeight;
     iframe.style.display = "none";
     document.body.prepend(iframe);
   }

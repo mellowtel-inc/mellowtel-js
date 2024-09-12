@@ -39,6 +39,13 @@ export async function resetAfterCrawl(
         dataPacket.hostname,
         dataPacket.htmlVisualizer,
         dataPacket.htmlContained,
+        dataPacket.screenWidth,
+        dataPacket.screenHeight,
+        dataPacket.POST_request,
+        dataPacket.GET_request,
+        dataPacket.methodEndpoint,
+        dataPacket.methodPayload,
+        dataPacket.methodHeaders,
       );
     }
   } else {

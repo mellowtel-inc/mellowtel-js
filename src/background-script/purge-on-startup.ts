@@ -6,6 +6,8 @@ export async function purgeOnStartup(): Promise<void> {
       "webSocketConnected",
       "queue_batch",
       "queue",
+      "already_checked_switch",
+      "checked_switch_value",
     ];
     await deleteLocalStorage(keysToPurge);
   });

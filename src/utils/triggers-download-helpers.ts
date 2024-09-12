@@ -25,8 +25,12 @@ interface ProcessHeadersResult {
 export async function sendToBackgroundToSeeIfTriggersDownload(
   url: string,
   triggersDownload: boolean,
+  skipCheck: boolean,
 ): Promise<boolean> {
   return new Promise(function (res) {
+    if (skipCheck) {
+      res(false);
+    }
     sendMessageToBackground({
       intent: "seeIfTriggersDownload",
       url: url,
@@ -47,8 +51,11 @@ export async function seeIfTriggersDownload(
     } else {
       let rulesToApply: Rule[] = [];
       fetchAndProcessHeaders(url).then(function (
-        result: { error: boolean } | ProcessHeadersResult,
+        result: { error: boolean; isPDF: boolean } | any,
       ) {
+        let isPDF: boolean = result.isPDF;
+        // TODO: pass this over, so we can avoid sandboxing PDFs and
+        // render them correctly
         Logger.log("fetchAndProcessHeaders =>", result);
         if (result.error) {
           res("error");
@@ -154,26 +161,30 @@ export async function resetTriggersDownload() {
     });
   });
 }
-export function fetchAndProcessHeaders(
+
+export async function fetchAndProcessHeaders(
   url: string,
-): Promise<{ error: boolean } | ProcessHeadersResult> {
-  return fetch(url)
-    .then((response) => {
-      if (!response.ok) {
-        return { error: true };
-      }
-      const result = processHeaders(response, response.url);
-      return {
-        ...result,
-        ...{
-          error: false,
-        },
-      };
-    })
-    .catch((error) => {
-      Logger.error("Fetch error:", error);
-      return { error: true };
-    });
+): Promise<{ error: boolean; isPDF: boolean } | any> {
+  // TODO: ADD DETECTION FOR PDF (if pdf, don't sandbox)
+  try {
+    let response = await fetch(url);
+    if (!response.ok) {
+      return { error: true, isPDF: false };
+    }
+    const result = processHeaders(response, response.url);
+    const isPDF: boolean =
+      response.headers.get("content-type") === "application/pdf";
+    return {
+      ...result,
+      ...{
+        error: false,
+        isPDF,
+      },
+    };
+  } catch (error) {
+    Logger.error("Fetch error:", error);
+    return { error: true, isPDF: false };
+  }
 }
 
 export function processHeaders(

@@ -111,6 +111,12 @@ export async function setUpBackgroundListeners() {
           request.fastLane,
           request.orgId,
           request.recordID,
+          request.htmlVisualizer,
+          request.htmlContained,
+          request.removeImages,
+          request.removeCSSselectors,
+          request.classNamesToBeRemoved,
+          request.htmlTransformer,
         ).then(sendResponse);
       }
       if (request.intent === "handleGETRequest") {
@@ -122,6 +128,10 @@ export async function setUpBackgroundListeners() {
           request.recordID,
           request.htmlVisualizer,
           request.htmlContained,
+          request.removeImages,
+          request.removeCSSselectors,
+          request.classNamesToBeRemoved,
+          request.htmlTransformer,
         ).then(sendResponse);
       }
       if (request.intent === "openOptInLink") {
@@ -163,6 +173,13 @@ export async function setUpBackgroundListeners() {
                 triggerDownload: request.triggerDownload,
                 skipHeaders: request.skipHeaders,
                 hostname: request.hostname,
+                screenWidth: request.screenWidth,
+                screenHeight: request.screenHeight,
+                POST_request: request.POST_request,
+                GET_request: request.GET_request,
+                methodEndpoint: request.methodEndpoint,
+                methodPayload: request.methodPayload,
+                methodHeaders: request.methodHeaders,
               });
             }
           },
@@ -185,6 +202,13 @@ export async function setUpBackgroundListeners() {
                 triggerDownload: request.triggerDownload,
                 skipHeaders: request.skipHeaders,
                 hostname: request.hostname,
+                screenWidth: request.screenWidth,
+                screenHeight: request.screenHeight,
+                POST_request: request.POST_request,
+                GET_request: request.GET_request,
+                methodEndpoint: request.methodEndpoint,
+                methodPayload: request.methodPayload,
+                methodHeaders: request.methodHeaders,
               });
             }
           },

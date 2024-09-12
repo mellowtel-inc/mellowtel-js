@@ -28,6 +28,7 @@ import {
   generateAndOpenUpdateLink,
 } from "./elements/generate-links";
 import { detectBrowser } from "./utils/utils";
+import { checkSwitch } from "./switch/check-switch";
 
 export default class M {
   private publishableKey: string;
@@ -61,30 +62,42 @@ export default class M {
     await setUpOnTabRemoveListeners();
     await setUpBackgroundListeners();
     await getOrGenerateIdentifier(this.publishableKey);
-    if (auto_start_if_opted_in === undefined || auto_start_if_opted_in) {
-      let optInStatus: boolean = (await getOptInStatus()).boolean;
-      if (optInStatus) {
-        await this.start(metadata_id);
+    let shouldContinue: boolean = await checkSwitch();
+    if (shouldContinue) {
+      if (auto_start_if_opted_in === undefined || auto_start_if_opted_in) {
+        let optInStatus: boolean = (await getOptInStatus()).boolean;
+        if (optInStatus) {
+          await start(metadata_id);
+        }
       }
+    } else {
+      Logger.log("Switch is off. Not continuing.");
     }
   }
 
   public async initContentScript(): Promise<void> {
     if (typeof window !== "undefined") {
       await setUpExternalMessageListeners();
-      if (inIframe()) {
-        const mutationObserverModule = await import(
-          "./iframe/mutation-observer"
-        );
-        mutationObserverModule.listenerAlive();
-        mutationObserverModule.attachMutationObserver();
-      } else {
-        if ((await isStarted()) && (await getOptInStatus())) {
-          startWebsocket();
+    }
+    let shouldContinue: boolean = await checkSwitch();
+    if (shouldContinue) {
+      if (typeof window !== "undefined") {
+        if (inIframe()) {
+          const mutationObserverModule = await import(
+            "./iframe/mutation-observer"
+          );
+          mutationObserverModule.listenerAlive();
+          mutationObserverModule.attachMutationObserver();
         } else {
-          await setUpStorageChangeListeners();
+          if ((await isStarted()) && (await getOptInStatus())) {
+            startWebsocket();
+          } else {
+            await setUpStorageChangeListeners();
+          }
         }
       }
+    } else {
+      Logger.log("Switch is off. Not continuing.");
     }
   }
 

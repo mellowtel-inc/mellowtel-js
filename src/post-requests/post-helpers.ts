@@ -3,6 +3,7 @@ import {
   disableHeadersForPOST,
   enableHeadersForPOST,
 } from "../utils/dnr-helpers";
+import { sendMessageToContentScript } from "../utils/messaging-helpers";
 
 export function handlePostRequest(
   method_endpoint: string,
@@ -11,6 +12,12 @@ export function handlePostRequest(
   fastLane: boolean,
   orgId: string,
   recordID: string,
+  htmlVisualizer: boolean,
+  htmlContained: boolean,
+  removeImages: boolean,
+  removeCSSselectors: string,
+  classNamesToBeRemoved: string,
+  htmlTransformer: string,
 ) {
   return new Promise(async function (res) {
     await disableHeadersForPOST();
@@ -40,12 +47,47 @@ export function handlePostRequest(
     }
     fetch(method_endpoint, requestOptions)
       .then((response) => {
-        return response.json();
+        return response.text();
       })
-      .then(async (data) => {
-        Logger.log("Response from server:", data);
-        await saveJSON(recordID, data, orgId, fastLane, method_endpoint);
-        res(data);
+      .then(async (html_or_json: string) => {
+        Logger.log("HTML or JSON:", html_or_json);
+        try {
+          JSON.parse(html_or_json);
+          await saveJSON(
+            recordID,
+            JSON.parse(html_or_json),
+            orgId,
+            fastLane,
+            method_endpoint,
+          );
+          res(html_or_json);
+        } catch (_) {
+          Logger.log("Not JSON");
+          // not json
+          // query a tab and send a message
+          // then save the message to the server
+          chrome.tabs.query({}, async function (tabs) {
+            for (let i = 0; i < tabs.length; i++) {
+              let response = await sendMessageToContentScript(tabs[i].id!, {
+                intent: "processCrawl",
+                recordID: recordID,
+                fastLane: fastLane,
+                orgId: orgId,
+                htmlVisualizer: htmlVisualizer,
+                htmlContained: htmlContained,
+                html_string: html_or_json,
+                method_endpoint: method_endpoint,
+                removeImages: removeImages,
+                removeCSSselectors: removeCSSselectors,
+                classNamesToBeRemoved: classNamesToBeRemoved,
+                htmlTransformer: htmlTransformer,
+              });
+              if (response !== null) {
+                break;
+              }
+            }
+          });
+        }
       })
       .catch((error) => {
         Logger.log("Error:", error);
