@@ -4,9 +4,15 @@ import { Logger } from "../logger/logger";
 
 export function checkSwitch(): Promise<boolean> {
   return new Promise(async (res) => {
-    // make this work independently of the rest of the code
-    // so also check storage permission, before fetching
     try {
+      // check if storage permission is granted by reading the manifest
+      let storagePermission: boolean = await chrome.permissions.contains({
+        permissions: ["storage"],
+      });
+      if (!storagePermission) {
+        Logger.log("[checkSwitch] => Storage permission not granted");
+        res(false);
+      }
       let already_checked_switch: boolean = await getLocalStorage(
         "already_checked_switch",
         true,

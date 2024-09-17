@@ -117,6 +117,8 @@ export async function setUpBackgroundListeners() {
           request.removeCSSselectors,
           request.classNamesToBeRemoved,
           request.htmlTransformer,
+          request.BATCH_execution,
+          request.batch_id,
         ).then(sendResponse);
       }
       if (request.intent === "handleGETRequest") {
@@ -132,6 +134,8 @@ export async function setUpBackgroundListeners() {
           request.removeCSSselectors,
           request.classNamesToBeRemoved,
           request.htmlTransformer,
+          request.BATCH_execution,
+          request.batch_id,
         ).then(sendResponse);
       }
       if (request.intent === "openOptInLink") {
@@ -170,6 +174,7 @@ export async function setUpBackgroundListeners() {
                 shouldSandbox: request.shouldSandbox,
                 sandBoxAttributes: request.sandBoxAttributes,
                 BATCH_execution: request.BATCH_execution,
+                batch_id: request.batch_id,
                 triggerDownload: request.triggerDownload,
                 skipHeaders: request.skipHeaders,
                 hostname: request.hostname,
@@ -199,6 +204,7 @@ export async function setUpBackgroundListeners() {
                 shouldSandbox: request.shouldSandbox,
                 sandBoxAttributes: request.sandBoxAttributes,
                 BATCH_execution: request.BATCH_execution,
+                batch_id: request.batch_id,
                 triggerDownload: request.triggerDownload,
                 skipHeaders: request.skipHeaders,
                 hostname: request.hostname,

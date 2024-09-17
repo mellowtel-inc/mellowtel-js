@@ -18,6 +18,8 @@ export function handlePostRequest(
   removeCSSselectors: string,
   classNamesToBeRemoved: string,
   htmlTransformer: string,
+  BATCH_execution: boolean,
+  batch_id: string,
 ) {
   return new Promise(async function (res) {
     await disableHeadersForPOST();
@@ -59,6 +61,8 @@ export function handlePostRequest(
             orgId,
             fastLane,
             method_endpoint,
+            BATCH_execution,
+            batch_id,
           );
           res(html_or_json);
         } catch (_) {
@@ -81,6 +85,8 @@ export function handlePostRequest(
                 removeCSSselectors: removeCSSselectors,
                 classNamesToBeRemoved: classNamesToBeRemoved,
                 htmlTransformer: htmlTransformer,
+                BATCH_execution: BATCH_execution,
+                batch_id: batch_id,
               });
               if (response !== null) {
                 break;
@@ -101,6 +107,8 @@ export async function saveJSON(
   orgId: string,
   fastLane: boolean,
   endpoint: string,
+  BATCH_execution: boolean,
+  batch_id: string,
 ) {
   return new Promise(function (res) {
     const targetUrl: string =
@@ -118,6 +126,8 @@ export async function saveJSON(
         htmlTransformer: "none",
         orgId: orgId,
         saveText: false,
+        BATCH_execution: BATCH_execution,
+        batch_id: batch_id,
       }),
     };
     Logger.log("Request options => ");

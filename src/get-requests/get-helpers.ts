@@ -18,6 +18,8 @@ export function handleGetRequest(
   removeCSSselectors: string,
   classNamesToBeRemoved: string,
   htmlTransformer: string,
+  BATCH_execution: boolean,
+  batch_id: string,
 ) {
   return new Promise(async function (res) {
     await disableHeadersForPOST();
@@ -54,6 +56,8 @@ export function handleGetRequest(
             orgId,
             fastLane,
             method_endpoint,
+            BATCH_execution,
+            batch_id,
           );
         } catch (_) {
           Logger.log("Not JSON");
@@ -75,6 +79,8 @@ export function handleGetRequest(
                 removeCSSselectors: removeCSSselectors,
                 classNamesToBeRemoved: classNamesToBeRemoved,
                 htmlTransformer: htmlTransformer,
+                BATCH_execution: BATCH_execution,
+                batch_id: batch_id,
               });
               if (response !== null) {
                 break;

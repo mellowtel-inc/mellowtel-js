@@ -453,6 +453,7 @@ export function crawlP2P(
           shouldSandbox,
           sandBoxAttributes,
           BATCH_execution,
+          batch_id,
           triggersDownload,
           skipHeaders,
           hostname,
@@ -480,6 +481,7 @@ export async function proceedWithActivation(
   shouldSandbox: boolean,
   sandBoxAttributes: string,
   BATCH_execution: boolean,
+  batch_id: string = "",
   triggerDownload: boolean = false,
   skipHeaders: boolean = false,
   hostname: string = "",
@@ -507,6 +509,7 @@ export async function proceedWithActivation(
       shouldSandbox: shouldSandbox,
       sandBoxAttributes: sandBoxAttributes,
       BATCH_execution: BATCH_execution,
+      batch_id: batch_id,
       triggerDownload: triggerDownload,
       skipHeaders: skipHeaders,
       hostname: hostname,
@@ -523,6 +526,7 @@ export async function proceedWithActivation(
       shouldSandbox: shouldSandbox,
       sandBoxAttributes: sandBoxAttributes,
       BATCH_execution: BATCH_execution,
+      batch_id: batch_id,
       triggerDownload: triggerDownload,
       skipHeaders: skipHeaders,
       hostname: hostname,
@@ -544,6 +548,8 @@ export async function proceedWithActivation(
       removeCSSselectors: eventData.removeCSSselectors,
       classNamesToBeRemoved: JSON.stringify(eventData.classNamesToBeRemoved),
       htmlTransformer: eventData.htmlTransformer,
+      BATCH_execution: BATCH_execution,
+      batch_id: batch_id,
     });
   } else if (GET_request) {
     await sendMessageToBackground({
@@ -559,6 +565,8 @@ export async function proceedWithActivation(
       removeCSSselectors: eventData.removeCSSselectors,
       classNamesToBeRemoved: JSON.stringify(eventData.classNamesToBeRemoved),
       htmlTransformer: eventData.htmlTransformer,
+      BATCH_execution: BATCH_execution,
+      batch_id: batch_id,
     });
   } else {
     if (triggerDownload) {
