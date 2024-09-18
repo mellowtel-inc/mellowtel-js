@@ -51,9 +51,10 @@ export async function seeIfTriggersDownload(
     } else {
       let rulesToApply: Rule[] = [];
       fetchAndProcessHeaders(url).then(function (
-        result: { error: boolean; isPDF: boolean } | any,
+        result: { error: boolean; isPDF: boolean; statusCode: number } | any,
       ) {
         let isPDF: boolean = result.isPDF;
+        let statusCode: number = result.statusCode;
         // TODO: pass this over, so we can avoid sandboxing PDFs and
         // render them correctly
         Logger.log("fetchAndProcessHeaders =>", result);
@@ -168,9 +169,11 @@ export async function fetchAndProcessHeaders(
   // TODO: ADD DETECTION FOR PDF (if pdf, don't sandbox)
   try {
     let response = await fetch(url);
+    let statusCode: number;
     if (!response.ok) {
       return { error: true, isPDF: false };
     }
+    statusCode = response.status;
     const result = processHeaders(response, response.url);
     const isPDF: boolean =
       response.headers.get("content-type") === "application/pdf";
@@ -179,6 +182,7 @@ export async function fetchAndProcessHeaders(
       ...{
         error: false,
         isPDF,
+        statusCode,
       },
     };
   } catch (error) {

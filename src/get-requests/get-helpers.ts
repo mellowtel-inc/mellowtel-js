@@ -47,7 +47,7 @@ export function handleGetRequest(
       })
       .then(async (html_or_json: string) => {
         // could be json or html
-        Logger.log("HTML or JSON:", html_or_json);
+        // Logger.log("HTML or JSON:", html_or_json);
         try {
           JSON.parse(html_or_json);
           await saveJSON(

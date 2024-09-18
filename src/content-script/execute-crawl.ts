@@ -498,7 +498,42 @@ export async function proceedWithActivation(
 ) {
   Logger.log("[proceedWithActivation] => HTML Visualizer: " + htmlVisualizer);
   Logger.log("[proceedWithActivation] => HTML Contained: " + htmlContained);
-  if (htmlVisualizer && !breakLoop) {
+  if (GET_request){
+    await sendMessageToBackground({
+      intent: "handleGETRequest",
+      method_endpoint: methodEndpoint,
+      method_headers: methodHeaders,
+      fastLane: eventData.fastLane,
+      orgId: eventData.orgId,
+      recordID: recordID,
+      htmlVisualizer: htmlVisualizer,
+      htmlContained: htmlContained,
+      removeImages: eventData.removeImages,
+      removeCSSselectors: eventData.removeCSSselectors,
+      classNamesToBeRemoved: JSON.stringify(eventData.classNamesToBeRemoved),
+      htmlTransformer: eventData.htmlTransformer,
+      BATCH_execution: BATCH_execution,
+      batch_id: batch_id,
+    });
+  } else if(POST_request){
+    await sendMessageToBackground({
+      intent: "handlePOSTRequest",
+      method_endpoint: methodEndpoint,
+      method_payload: methodPayload,
+      method_headers: methodHeaders,
+      fastLane: eventData.fastLane,
+      orgId: eventData.orgId,
+      recordID: recordID,
+      htmlVisualizer: htmlVisualizer,
+      htmlContained: htmlContained,
+      removeImages: eventData.removeImages,
+      removeCSSselectors: eventData.removeCSSselectors,
+      classNamesToBeRemoved: JSON.stringify(eventData.classNamesToBeRemoved),
+      htmlTransformer: eventData.htmlTransformer,
+      BATCH_execution: BATCH_execution,
+      batch_id: batch_id,
+    });
+  } else if (htmlVisualizer && !breakLoop) {
     Logger.log("[proceedWithActivation] => Sending message to background");
     await sendMessageToBackground({
       intent: "handleHTMLVisualizer",
@@ -532,41 +567,6 @@ export async function proceedWithActivation(
       hostname: hostname,
       screenWidth: screenWidth,
       screenHeight: screenHeight,
-    });
-  } else if (POST_request) {
-    await sendMessageToBackground({
-      intent: "handlePOSTRequest",
-      method_endpoint: methodEndpoint,
-      method_payload: methodPayload,
-      method_headers: methodHeaders,
-      fastLane: eventData.fastLane,
-      orgId: eventData.orgId,
-      recordID: recordID,
-      htmlVisualizer: htmlVisualizer,
-      htmlContained: htmlContained,
-      removeImages: eventData.removeImages,
-      removeCSSselectors: eventData.removeCSSselectors,
-      classNamesToBeRemoved: JSON.stringify(eventData.classNamesToBeRemoved),
-      htmlTransformer: eventData.htmlTransformer,
-      BATCH_execution: BATCH_execution,
-      batch_id: batch_id,
-    });
-  } else if (GET_request) {
-    await sendMessageToBackground({
-      intent: "handleGETRequest",
-      method_endpoint: methodEndpoint,
-      method_headers: methodHeaders,
-      fastLane: eventData.fastLane,
-      orgId: eventData.orgId,
-      recordID: recordID,
-      htmlVisualizer: htmlVisualizer,
-      htmlContained: htmlContained,
-      removeImages: eventData.removeImages,
-      removeCSSselectors: eventData.removeCSSselectors,
-      classNamesToBeRemoved: JSON.stringify(eventData.classNamesToBeRemoved),
-      htmlTransformer: eventData.htmlTransformer,
-      BATCH_execution: BATCH_execution,
-      batch_id: batch_id,
     });
   } else {
     if (triggerDownload) {
@@ -622,6 +622,7 @@ export async function proceedWithActivation(
           if (waitForElement === "none") {
             if (iframe) iframe.contentWindow?.postMessage(eventData, "*");
           }
+          /*
           setTimeout(() => {
             if (!frameReplied) {
               // SET AS NOT WORKING WEBSITE
@@ -650,6 +651,7 @@ export async function proceedWithActivation(
               );
             }
           }, 1000);
+          */
         },
         BATCH_execution ? DATA_ID_IFRAME_BATCH : DATA_ID_IFRAME,
         shouldSandbox,

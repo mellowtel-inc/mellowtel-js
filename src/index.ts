@@ -28,7 +28,7 @@ import {
   generateAndOpenUpdateLink,
 } from "./elements/generate-links";
 import { detectBrowser } from "./utils/utils";
-import { checkSwitch } from "./switch/check-switch";
+import { switchShouldContinue } from "./switch/check-switch";
 
 export default class M {
   private publishableKey: string;
@@ -62,8 +62,9 @@ export default class M {
     await setUpOnTabRemoveListeners();
     await setUpBackgroundListeners();
     await getOrGenerateIdentifier(this.publishableKey);
-    let shouldContinue: boolean = await checkSwitch();
+    let shouldContinue: boolean = await switchShouldContinue();
     if (shouldContinue) {
+      Logger.log("Switch is on. Continuing.");
       if (auto_start_if_opted_in === undefined || auto_start_if_opted_in) {
         let optInStatus: boolean = (await getOptInStatus()).boolean;
         if (optInStatus) {
@@ -79,8 +80,9 @@ export default class M {
     if (typeof window !== "undefined") {
       await setUpExternalMessageListeners();
     }
-    let shouldContinue: boolean = await checkSwitch();
+    let shouldContinue: boolean = await switchShouldContinue();
     if (shouldContinue) {
+      Logger.log("Switch is on. Continuing.");
       if (typeof window !== "undefined") {
         if (inIframe()) {
           const mutationObserverModule = await import(

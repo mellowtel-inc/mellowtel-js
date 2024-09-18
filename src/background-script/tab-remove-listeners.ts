@@ -14,15 +14,14 @@ export async function setUpOnTabRemoveListeners(): Promise<void> {
       function (result: { [key: string]: any }) {
         let webSocketConnected = result["webSocketConnected"];
         if (webSocketConnected === tabId) {
-          let sentMessage: boolean = false;
           chrome.tabs.query({}, async function (tabs: chrome.tabs.Tab[]) {
             for (let i: number = 0; i < tabs.length; i++) {
-              if (!tabs[i]?.url?.includes("chrome://") && !sentMessage) {
-                await sendMessageToContentScript(tabs[i].id!, {
-                  intent: "startConnectionM",
-                }).then(function (): void {
-                  sentMessage = true;
-                });
+              let response = await sendMessageToContentScript(tabs[i].id!, {
+                intent: "startConnectionM",
+              });
+              Logger.log("Response from startConnectionM:", response);
+              if (response !== null) {
+                break;
               }
             }
           });
