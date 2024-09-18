@@ -385,7 +385,12 @@ export function crawlP2P(
     }
     Promise.all([
       disableXFrameHeaders(hostname, skipHeaders),
-      sendToBackgroundToSeeIfTriggersDownload(url, triggersDownload, skipCheck),
+      sendToBackgroundToSeeIfTriggersDownload(
+        url,
+        triggersDownload,
+        skipCheck,
+        recordID,
+      ),
     ]).then(async () => {
       let eventData: { [key: string]: any } = {
         isMCrawl: true,
@@ -498,7 +503,7 @@ export async function proceedWithActivation(
 ) {
   Logger.log("[proceedWithActivation] => HTML Visualizer: " + htmlVisualizer);
   Logger.log("[proceedWithActivation] => HTML Contained: " + htmlContained);
-  if (GET_request){
+  if (GET_request) {
     await sendMessageToBackground({
       intent: "handleGETRequest",
       method_endpoint: methodEndpoint,
@@ -515,7 +520,7 @@ export async function proceedWithActivation(
       BATCH_execution: BATCH_execution,
       batch_id: batch_id,
     });
-  } else if(POST_request){
+  } else if (POST_request) {
     await sendMessageToBackground({
       intent: "handlePOSTRequest",
       method_endpoint: methodEndpoint,
@@ -574,6 +579,7 @@ export async function proceedWithActivation(
         url,
         triggerDownload,
         false,
+        recordID,
       );
     }
     if (skipHeaders) {

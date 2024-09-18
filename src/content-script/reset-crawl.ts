@@ -11,11 +11,13 @@ import { enableXFrameHeaders } from "../utils/dnr-helpers";
 import { Logger } from "../logger/logger";
 import { resetTriggersDownload } from "../utils/triggers-download-helpers";
 import { hideBadgeIfShould } from "../transparency/badge-settings";
+import { deleteFromRequestInfoStorage } from "../request-info/request-info-helpers";
 
 export async function resetAfterCrawl(
   recordID: string,
   BATCH_execution: boolean,
 ) {
+  await deleteFromRequestInfoStorage(recordID);
   let dataPacket = await getLastFromQueue(BATCH_execution);
   if (dataPacket && dataPacket.url !== "") {
     let frameCount = getFrameCount(BATCH_execution);
@@ -34,6 +36,7 @@ export async function resetAfterCrawl(
         dataPacket.shouldSandbox,
         dataPacket.sandBoxAttributes,
         BATCH_execution,
+        dataPacket.batch_id,
         dataPacket.triggerDownload,
         dataPacket.skipHeaders,
         dataPacket.hostname,

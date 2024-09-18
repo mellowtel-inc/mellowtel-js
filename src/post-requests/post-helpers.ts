@@ -4,6 +4,7 @@ import {
   enableHeadersForPOST,
 } from "../utils/dnr-helpers";
 import { sendMessageToContentScript } from "../utils/messaging-helpers";
+import { getFromRequestInfoStorage } from "../request-info/request-info-helpers";
 
 export function handlePostRequest(
   method_endpoint: string,
@@ -110,9 +111,10 @@ export async function saveJSON(
   BATCH_execution: boolean,
   batch_id: string,
 ) {
-  return new Promise(function (res) {
+  return new Promise(async function (res) {
     const targetUrl: string =
       "https://afcha2nmzsir4rr4zbta4tyy6e0fxjix.lambda-url.us-east-1.on.aws/";
+    let moreInfo: any = await getFromRequestInfoStorage(recordID);
     const requestOptions = {
       method: "POST",
       headers: {
@@ -128,6 +130,7 @@ export async function saveJSON(
         saveText: false,
         BATCH_execution: BATCH_execution,
         batch_id: batch_id,
+        statusCode: moreInfo.statusCode,
       }),
     };
     Logger.log("Request options => ");

@@ -92,9 +92,11 @@ export async function setUpBackgroundListeners() {
         getSharedMemoryBCK(request.key).then(sendResponse);
       }
       if (request.intent === "seeIfTriggersDownload") {
-        seeIfTriggersDownload(request.url, request.triggersDownload).then(
-          sendResponse,
-        );
+        seeIfTriggersDownload(
+          request.url,
+          request.triggersDownload,
+          request.recordID,
+        ).then(sendResponse);
       }
       if (request.intent === "deleteIframeM") {
         sendMessageToContentScript(sender.tab?.id!, {

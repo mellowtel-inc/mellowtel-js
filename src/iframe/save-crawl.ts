@@ -1,6 +1,7 @@
 import { tellToDeleteIframe } from "./message-background";
 import { getIdentifier } from "../utils/identity-helpers";
 import { Logger } from "../logger/logger";
+import { getFromRequestInfoStorage } from "../request-info/request-info-helpers";
 
 export function saveCrawl(
   recordID: string,
@@ -20,8 +21,10 @@ export function saveCrawl(
   const endpoint: string =
     "https://afcha2nmzsir4rr4zbta4tyy6e0fxjix.lambda-url.us-east-1.on.aws/";
 
-  getIdentifier().then((node_identifier: string) => {
+  getIdentifier().then(async (node_identifier: string) => {
     Logger.log("Node Identifier:", node_identifier);
+    let moreInfo: any = await getFromRequestInfoStorage(recordID);
+
     const bodyData = {
       content: content,
       markDown: markDown,
@@ -36,6 +39,7 @@ export function saveCrawl(
       batch_id: batch_id,
       final_url: window.location.href,
       website_unreachable: website_unreachable,
+      statusCode: moreInfo.statusCode,
     };
 
     const requestOptions = {

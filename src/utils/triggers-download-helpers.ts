@@ -10,6 +10,8 @@ import {
 } from "../constants";
 import { shouldDelegateDNR } from "./dnr-helpers";
 import { sendMessageToBackground } from "./messaging-helpers";
+import { addToRequestInfoStorage } from "../request-info/request-info-helpers";
+import request = chrome.permissions.request;
 interface Header {
   name: string;
   value: string;
@@ -26,6 +28,7 @@ export async function sendToBackgroundToSeeIfTriggersDownload(
   url: string,
   triggersDownload: boolean,
   skipCheck: boolean,
+  requestID: string,
 ): Promise<boolean> {
   return new Promise(function (res) {
     if (skipCheck) {
@@ -35,6 +38,7 @@ export async function sendToBackgroundToSeeIfTriggersDownload(
       intent: "seeIfTriggersDownload",
       url: url,
       triggersDownload: triggersDownload,
+      requestID: requestID,
     }).then((response) => {
       res(response);
     });
@@ -44,19 +48,26 @@ export async function sendToBackgroundToSeeIfTriggersDownload(
 export async function seeIfTriggersDownload(
   url: string,
   triggersDownload: boolean,
+  recordID: string,
 ): Promise<string> {
   return new Promise(function (res) {
     if (!triggersDownload) {
       res("done");
     } else {
       let rulesToApply: Rule[] = [];
-      fetchAndProcessHeaders(url).then(function (
+      fetchAndProcessHeaders(url).then(async function (
         result: { error: boolean; isPDF: boolean; statusCode: number } | any,
       ) {
         let isPDF: boolean = result.isPDF;
         let statusCode: number = result.statusCode;
         // TODO: pass this over, so we can avoid sandboxing PDFs and
         // render them correctly
+        // save in local storage as an array of objects with recordId as unique key
+        await addToRequestInfoStorage({
+          recordID: recordID,
+          isPDF: isPDF,
+          statusCode: statusCode,
+        });
         Logger.log("fetchAndProcessHeaders =>", result);
         if (result.error) {
           res("error");
