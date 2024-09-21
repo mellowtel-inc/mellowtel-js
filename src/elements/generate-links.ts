@@ -2,7 +2,7 @@ import {
   getExtensionIdentifier,
   getIdentifier,
 } from "../utils/identity-helpers";
-import { setLocalStorage, getLocalStorage } from "../utils/storage-helpers";
+import { setLocalStorage, getLocalStorage } from "../storage/storage-helpers";
 import { shouldDelegateTabsAPI } from "../utils/tabs-helpers";
 import { sendMessageToBackground } from "../utils/messaging-helpers";
 import { detectBrowser, openPopupWindow } from "../utils/utils";

@@ -2,7 +2,7 @@ import { Logger } from "../logger/logger";
 import {
   disableHeadersForPOST,
   enableHeadersForPOST,
-} from "../utils/dnr-helpers";
+} from "../dnr/dnr-helpers";
 import { sendMessageToContentScript } from "../utils/messaging-helpers";
 import { getFromRequestInfoStorage } from "../request-info/request-info-helpers";
 

@@ -7,7 +7,7 @@ import {
 } from "../constants";
 import { proceedWithActivation } from "./execute-crawl";
 import { getFrameCount } from "../utils/utils";
-import { enableXFrameHeaders } from "../utils/dnr-helpers";
+import { enableXFrameHeaders } from "../dnr/dnr-helpers";
 import { Logger } from "../logger/logger";
 import { resetTriggersDownload } from "../utils/triggers-download-helpers";
 import { hideBadgeIfShould } from "../transparency/badge-settings";

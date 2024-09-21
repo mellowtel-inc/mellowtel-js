@@ -14,7 +14,7 @@ import {
 import { isStarted } from "../utils/start-stop-helpers";
 import { RateLimiter } from "../local-rate-limiting/rate-limiter";
 import { Logger } from "../logger/logger";
-import { setLocalStorage } from "../utils/storage-helpers";
+import { setLocalStorage } from "../storage/storage-helpers";
 import { getExtensionIdentifier } from "../utils/identity-helpers";
 import {
   getEffectiveConnectionType,

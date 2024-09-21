@@ -3,7 +3,7 @@ import { DATA_ID_IFRAME } from "../constants";
 import { hideBadgeIfShould } from "../transparency/badge-settings";
 import { getSharedMemoryDOM } from "../content-script/shared-memory";
 import { getIfCurrentlyActiveDOM } from "../elements/elements-utils";
-import { getIdentifier } from "./identity-helpers";
+import { getIdentifier } from "../utils/identity-helpers";
 import { startConnectionWs } from "../content-script/websocket";
 import {
   preProcessCrawl,

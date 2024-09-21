@@ -1,7 +1,7 @@
 import HeaderOperation = chrome.declarativeNetRequest.HeaderOperation;
 import RuleActionType = chrome.declarativeNetRequest.RuleActionType;
 import ResourceType = chrome.declarativeNetRequest.ResourceType;
-import { sendMessageToBackground } from "./messaging-helpers";
+import { sendMessageToBackground } from "../utils/messaging-helpers";
 import { RULE_ID_POST_REQUEST, RULE_ID_XFRAME } from "../constants";
 import { Logger } from "../logger/logger";
 

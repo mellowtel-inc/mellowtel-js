@@ -3,7 +3,7 @@ import {
   getOrGenerateIdentifier,
 } from "./utils/identity-helpers";
 import { setUpOnTabRemoveListeners } from "./background-script/tab-remove-listeners";
-import { setUpBackgroundListeners } from "./utils/listener-helpers-SW";
+import { setUpBackgroundListeners } from "./listeners/listener-helpers-SW";
 import { inIframe } from "./utils/iframe-helpers";
 import { purgeOnStartup } from "./background-script/purge-on-startup";
 import { setUpStorageChangeListeners } from "./content-script/storage-change-listeners";
@@ -14,7 +14,7 @@ import {
   stop,
 } from "./utils/start-stop-helpers";
 import { getOptInStatus, optIn, optOut } from "./utils/opt-in-out-helpers";
-import { checkRequiredPermissions } from "./utils/permission-helpers";
+import { checkRequiredPermissions } from "./permissions/permission-helpers";
 import { MAX_DAILY_RATE as DEFAULT_MAX_DAILY_RATE, VERSION } from "./constants";
 import { Logger } from "./logger/logger";
 import { RateLimiter } from "./local-rate-limiting/rate-limiter";

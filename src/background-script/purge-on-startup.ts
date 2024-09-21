@@ -1,4 +1,4 @@
-import { deleteLocalStorage } from "../utils/storage-helpers";
+import { deleteLocalStorage } from "../storage/storage-helpers";
 
 export async function purgeOnStartup(): Promise<void> {
   chrome.runtime.onStartup.addListener(async function () {

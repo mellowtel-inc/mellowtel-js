@@ -1,4 +1,4 @@
-import { getLocalStorage, setLocalStorage } from "../utils/storage-helpers";
+import { getLocalStorage, setLocalStorage } from "../storage/storage-helpers";
 import { Logger } from "../logger/logger";
 import { MAX_QUEUE_SIZE } from "../constants";
 

@@ -2,7 +2,7 @@ import {
   REFRESH_INTERVAL,
   MAX_DAILY_RATE as DEFAULT_MAX_DAILY_RATE,
 } from "../constants";
-import { getLocalStorage, setLocalStorage } from "../utils/storage-helpers";
+import { getLocalStorage, setLocalStorage } from "../storage/storage-helpers";
 import { Logger } from "../logger/logger";
 
 export class RateLimiter {

@@ -2,13 +2,13 @@ import {
   deleteLocalStorage,
   getLocalStorage,
   setLocalStorage,
-} from "./storage-helpers";
+} from "../storage/storage-helpers";
 import {
   disableXFrameHeaders,
   enableXFrameHeaders,
   fixImageRenderHTMLVisualizer,
   resetImageRenderHTMLVisualizer,
-} from "./dnr-helpers";
+} from "../dnr/dnr-helpers";
 import {
   getSharedMemoryBCK,
   setSharedMemoryBCK,
@@ -16,20 +16,20 @@ import {
 import {
   resetTriggersDownload,
   seeIfTriggersDownload,
-} from "./triggers-download-helpers";
-import { sendMessageToContentScript } from "./messaging-helpers";
+} from "../utils/triggers-download-helpers";
+import { sendMessageToContentScript } from "../utils/messaging-helpers";
 import { handlePostRequest } from "../post-requests/post-helpers";
 import {
   generateAndOpenOptInLink,
   generateAndOpenUpdateLink,
 } from "../elements/generate-links";
-import { MeasureConnectionSpeed } from "./measure-connection-speed";
+import { MeasureConnectionSpeed } from "../utils/measure-connection-speed";
 import {
   putHTMLToSigned,
   putMarkdownToSigned,
   putHTMLVisualizerToSigned,
   putHTMLContainedToSigned,
-} from "./put-to-signed";
+} from "../utils/put-to-signed";
 import { getIfCurrentlyActiveBCK } from "../elements/elements-utils";
 import {
   getBadgeProperties,

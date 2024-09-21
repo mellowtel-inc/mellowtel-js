@@ -1,4 +1,4 @@
-import { setLocalStorage } from "./storage-helpers";
+import { setLocalStorage } from "../storage/storage-helpers";
 
 const optInKey: string = "mellowtelOptIn";
 

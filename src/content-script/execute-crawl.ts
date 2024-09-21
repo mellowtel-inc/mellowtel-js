@@ -6,7 +6,7 @@ import {
 } from "../constants";
 import { insertInQueue } from "./queue-crawl";
 import { setLifespanForIframe } from "./reset-crawl";
-import { disableXFrameHeaders } from "../utils/dnr-helpers";
+import { disableXFrameHeaders } from "../dnr/dnr-helpers";
 import { detectBrowser, getFrameCount } from "../utils/utils";
 import { insertIFrame } from "../utils/iframe-helpers";
 import { sendToBackgroundToSeeIfTriggersDownload } from "../utils/triggers-download-helpers";

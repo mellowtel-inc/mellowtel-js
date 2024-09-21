@@ -1,4 +1,4 @@
-import { getLocalStorage, setLocalStorage } from "../utils/storage-helpers";
+import { getLocalStorage, setLocalStorage } from "../storage/storage-helpers";
 import { getExtensionIdentifier } from "../utils/identity-helpers";
 import { Logger } from "../logger/logger";
 import { isInSW } from "../utils/utils";

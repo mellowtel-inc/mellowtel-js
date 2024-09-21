@@ -8,7 +8,7 @@ import {
   RULE_ID_CONTENT_TYPE,
   RULE_ID_VALUE_TO_MODIFY_CONTENT_TYPE_TO,
 } from "../constants";
-import { shouldDelegateDNR } from "./dnr-helpers";
+import { shouldDelegateDNR } from "../dnr/dnr-helpers";
 import { sendMessageToBackground } from "./messaging-helpers";
 import { addToRequestInfoStorage } from "../request-info/request-info-helpers";
 import request = chrome.permissions.request;
