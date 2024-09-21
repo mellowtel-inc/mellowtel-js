@@ -38,7 +38,7 @@ export async function sendToBackgroundToSeeIfTriggersDownload(
       intent: "seeIfTriggersDownload",
       url: url,
       triggersDownload: triggersDownload,
-      requestID: requestID,
+      recordID: requestID,
     }).then((response) => {
       res(response);
     });

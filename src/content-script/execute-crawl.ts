@@ -13,6 +13,7 @@ import { sendToBackgroundToSeeIfTriggersDownload } from "../utils/triggers-downl
 import { Logger } from "../logger/logger";
 import { sendMessageToBackground } from "../utils/messaging-helpers";
 import { saveCrawl } from "../iframe/save-crawl";
+import { getFromRequestInfoStorage } from "../request-info/request-info-helpers";
 
 function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
   Logger.log(
@@ -36,9 +37,10 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
     ? dataPacket.saveMarkdown.toString().toLowerCase() === "true"
     : false;
   let removeCSSselectors: string = dataPacket.removeCSSselectors;
-  let classNamesToBeRemoved: string[] = JSON.parse(
-    dataPacket.classNamesToBeRemoved,
-  );
+  let classNamesToBeRemoved: string[] =
+    dataPacket.classNamesToBeRemoved !== undefined
+      ? JSON.parse(dataPacket.classNamesToBeRemoved)
+      : [];
   let waitForElement: string = dataPacket.hasOwnProperty("waitForElement")
     ? dataPacket.waitForElement
     : "none";
@@ -613,7 +615,7 @@ export async function proceedWithActivation(
       insertIFrame(
         url,
         recordID,
-        function () {
+        async function () {
           // find a way to send a message to the content script inside this iframe
           // to check if it's ready
           // send message isContentScriptAlive
@@ -628,6 +630,36 @@ export async function proceedWithActivation(
           if (waitForElement === "none") {
             if (iframe) iframe.contentWindow?.postMessage(eventData, "*");
           }
+          let moreInfo: any = await getFromRequestInfoStorage(recordID);
+          Logger.log("More Info:", moreInfo);
+          // if status code starts with 5, set as website unreachable
+          if (moreInfo.statusCode.toString().startsWith("5")) {
+            // SET AS NOT WORKING WEBSITE
+            // hit endpoint to save result
+            Logger.log(
+              "[proceedWithActivation] => Website unreachable, saving it",
+            );
+            saveCrawl(
+              recordID,
+              "",
+              "",
+              eventData.hasOwnProperty("fastLane")
+                ? eventData.fastLane.toString() === "true"
+                : false,
+              url,
+              eventData.hasOwnProperty("htmlTransformer")
+                ? eventData.htmlTransformer
+                : "none",
+              eventData.hasOwnProperty("orgId") ? eventData.orgId : "",
+              eventData.hasOwnProperty("saveText")
+                ? eventData.saveText
+                : "false",
+              BATCH_execution,
+              eventData.hasOwnProperty("batch_id") ? eventData.batch_id : "",
+              true,
+            );
+          }
+
           /*
           setTimeout(() => {
             if (!frameReplied) {

@@ -16,7 +16,8 @@ export function addToRequestInfoStorage(record: any) {
         if (!recordExists) {
           records.push(record);
         }
-        chrome.storage.local.set({ records: records }, function () {
+        chrome.storage.local.set({ recordsRequestInfo: records }, function () {
+          Logger.log("[addToRequestInfoStorage]: added record", record);
           res("done");
         });
       });
@@ -63,7 +64,7 @@ export function getFromRequestInfoStorage(recordID: string) {
             return;
           }
         }
-        res(null);
+        res({ statusCode: 1000, isPDF: false });
       });
     } catch (e) {
       Logger.log("getFromRequestInfoStorage error", e);
