@@ -64,7 +64,7 @@ export default class M {
     await getOrGenerateIdentifier(this.publishableKey);
     let shouldContinue: boolean = await switchShouldContinue();
     if (shouldContinue) {
-      Logger.log("Switch is on. Continuing.");
+      Logger.log("[initBackground]: Switch is on. Continuing.");
       if (auto_start_if_opted_in === undefined || auto_start_if_opted_in) {
         let optInStatus: boolean = (await getOptInStatus()).boolean;
         if (optInStatus) {
@@ -72,7 +72,7 @@ export default class M {
         }
       }
     } else {
-      Logger.log("Switch is off. Not continuing.");
+      Logger.log("[initBackground]: Switch is off. Not continuing.");
     }
   }
 
@@ -80,26 +80,27 @@ export default class M {
     if (typeof window !== "undefined") {
       await setUpExternalMessageListeners();
     }
-    let shouldContinue: boolean = await switchShouldContinue();
-    if (shouldContinue) {
-      Logger.log("Switch is on. Continuing.");
-      if (typeof window !== "undefined") {
-        if (inIframe()) {
-          const mutationObserverModule = await import(
-            "./iframe/mutation-observer"
-          );
-          mutationObserverModule.listenerAlive();
-          mutationObserverModule.attachMutationObserver();
-        } else {
+    if (typeof window !== "undefined") {
+      if (inIframe()) {
+        const mutationObserverModule = await import(
+          "./iframe/mutation-observer"
+        );
+        mutationObserverModule.listenerAlive();
+        mutationObserverModule.attachMutationObserver();
+      } else {
+        let shouldContinue: boolean = await switchShouldContinue();
+        if (shouldContinue) {
+          Logger.log("[initContentScript]: Switch is on. Continuing.");
+
           if ((await isStarted()) && (await getOptInStatus())) {
             startWebsocket();
           } else {
             await setUpStorageChangeListeners();
           }
+        } else {
+          Logger.log("[initContentScript]: Switch is off. Not continuing.");
         }
       }
-    } else {
-      Logger.log("Switch is off. Not continuing.");
     }
   }
 

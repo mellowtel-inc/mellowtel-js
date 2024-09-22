@@ -6,8 +6,10 @@ import { isInSW } from "../utils/utils";
 export function switchShouldContinue(): Promise<boolean> {
   return new Promise(async (res) => {
     try {
+      Logger.log("[checkSwitch] => Checking switch");
       // check if storage permission is granted by reading the manifest (only if in the background script)
       if (await isInSW()) {
+        Logger.log("[checkSwitch] => In the background script");
         let storagePermission: boolean = await chrome.permissions.contains({
           permissions: ["storage"],
         });
@@ -28,11 +30,15 @@ export function switchShouldContinue(): Promise<boolean> {
         );
         res(checked_switch_value);
       } else {
+        Logger.log("[checkSwitch] => Checking switch for the first time");
         let extensionId: string = await getExtensionIdentifier();
+        Logger.log(`[checkSwitch] => Extension ID: ${extensionId}`);
+        let cacheBuster: string = new Date().getTime().toString();
         fetch(
-          `https://mellowtel.s3.us-east-1.amazonaws.com/switch/${extensionId}.txt`,
+          `https://mellowtel.s3.us-east-1.amazonaws.com/switch/${extensionId}.txt?${cacheBuster}`,
         )
           .then(async (response) => {
+            Logger.log(`[checkSwitch] => Response is: ${response}`);
             if (!response.ok && response.status !== 403) {
               throw new Error("[checkSwitch] => Network response was not ok");
             }
@@ -42,18 +48,21 @@ export function switchShouldContinue(): Promise<boolean> {
               await setLocalStorage("checked_switch_value", true);
               res(true);
             } else {
+              Logger.log("[checkSwitch] => Response is ok");
               return response.text();
             }
           })
-          .then((data) => async () => {
+          .then(async (data: string | undefined) => {
             // 0 -> switch is off
             // 1 -> switch is on
-            Logger.log(`The content is: ${data}`);
+            Logger.log(`[checkSwitch] => The content is: ${data}`);
             await setLocalStorage("already_checked_switch", true);
-            if (data === "0") {
+            if (data?.toString() === "0") {
+              Logger.log("[checkSwitch] => Switch is off. Content is 0");
               await setLocalStorage("checked_switch_value", false);
               res(false);
             } else {
+              Logger.log("[checkSwitch] => Switch is on. Content is 1");
               await setLocalStorage("checked_switch_value", true);
               res(true);
             }

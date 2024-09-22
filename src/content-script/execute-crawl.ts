@@ -615,7 +615,7 @@ export async function proceedWithActivation(
       insertIFrame(
         url,
         recordID,
-        async function () {
+        function () {
           // find a way to send a message to the content script inside this iframe
           // to check if it's ready
           // send message isContentScriptAlive
@@ -630,8 +630,8 @@ export async function proceedWithActivation(
           if (waitForElement === "none") {
             if (iframe) iframe.contentWindow?.postMessage(eventData, "*");
           }
-          let moreInfo: any = await getFromRequestInfoStorage(recordID);
-          Logger.log("More Info:", moreInfo);
+          let moreInfo: any = { statusCode: 1000 }; //await getFromRequestInfoStorage(recordID);
+          // Logger.log("More Info:", moreInfo);
           // if status code starts with 5, set as website unreachable
           if (moreInfo.statusCode.toString().startsWith("5")) {
             // SET AS NOT WORKING WEBSITE
