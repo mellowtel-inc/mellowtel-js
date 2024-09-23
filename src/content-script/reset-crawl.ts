@@ -31,7 +31,7 @@ export async function resetAfterCrawl(
     if (frameCount <= max_parallel_executions || BATCH_execution) {
       Logger.log("[🌐] getLastFromQueue : dataPacket => ");
       Logger.log(dataPacket);
-      if(BATCH_execution && dataPacket.methodEndpoint !== "") {
+      if (BATCH_execution && dataPacket.methodEndpoint !== "") {
         // wait for 1.5 seconds before proceeding with the next crawl
         setTimeout(() => {
           proceedWithActivation(
@@ -59,26 +59,26 @@ export async function resetAfterCrawl(
         }, 500);
       } else {
         await proceedWithActivation(
-            dataPacket.url,
-            dataPacket.recordID,
-            dataPacket.eventData,
-            dataPacket.waitForElement,
-            dataPacket.shouldSandbox,
-            dataPacket.sandBoxAttributes,
-            BATCH_execution,
-            dataPacket.batch_id,
-            dataPacket.triggerDownload,
-            dataPacket.skipHeaders,
-            dataPacket.hostname,
-            dataPacket.htmlVisualizer,
-            dataPacket.htmlContained,
-            dataPacket.screenWidth,
-            dataPacket.screenHeight,
-            dataPacket.POST_request,
-            dataPacket.GET_request,
-            dataPacket.methodEndpoint,
-            dataPacket.methodPayload,
-            dataPacket.methodHeaders,
+          dataPacket.url,
+          dataPacket.recordID,
+          dataPacket.eventData,
+          dataPacket.waitForElement,
+          dataPacket.shouldSandbox,
+          dataPacket.sandBoxAttributes,
+          BATCH_execution,
+          dataPacket.batch_id,
+          dataPacket.triggerDownload,
+          dataPacket.skipHeaders,
+          dataPacket.hostname,
+          dataPacket.htmlVisualizer,
+          dataPacket.htmlContained,
+          dataPacket.screenWidth,
+          dataPacket.screenHeight,
+          dataPacket.POST_request,
+          dataPacket.GET_request,
+          dataPacket.methodEndpoint,
+          dataPacket.methodPayload,
+          dataPacket.methodHeaders,
         );
       }
     }

@@ -65,7 +65,10 @@ export function handleGetRequest(
           );
         } catch (_) {
           Logger.log("[handleGetRequest]: Not JSON");
-          Logger.log("[handleGetRequest]: HTML:", html_or_json.substring(0,140));
+          Logger.log(
+            "[handleGetRequest]: HTML:",
+            html_or_json.substring(0, 140),
+          );
           Logger.log("[handleGetRequest]: BATCH_execution:", BATCH_execution);
           Logger.log("[handleGetRequest]: batch_id:", batch_id);
           await addToRequestInfoStorage({
