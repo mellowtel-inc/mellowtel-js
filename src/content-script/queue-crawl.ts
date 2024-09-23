@@ -1,4 +1,4 @@
-import { getLocalStorage, setLocalStorage } from "../utils/storage-helpers";
+import { getLocalStorage, setLocalStorage } from "../storage/storage-helpers";
 import { Logger } from "../logger/logger";
 import { MAX_QUEUE_SIZE } from "../constants";
 
@@ -9,7 +9,7 @@ export async function insertInQueue(dataPacket: any, BATCH_execution: boolean) {
       if (result === undefined || !result.hasOwnProperty(queueKey))
         result = { [queueKey]: [] };
       let queue = result[queueKey];
-      if (queue.length > MAX_QUEUE_SIZE) {
+      if (queue.length > MAX_QUEUE_SIZE && !BATCH_execution) {
         // ignore this packet
         Logger.log("[🌐] : queue is full. Ignoring this packet");
         resolve(false);
@@ -31,11 +31,19 @@ export async function getLastFromQueue(BATCH_execution: boolean): Promise<{
   waitForElement: string;
   shouldSandbox: boolean;
   sandBoxAttributes: string;
+  batch_id: string;
   triggerDownload: boolean;
   skipHeaders: boolean;
   hostname: string;
   htmlVisualizer: boolean;
   htmlContained: boolean;
+  screenWidth: string;
+  screenHeight: string;
+  POST_request: boolean;
+  GET_request: boolean;
+  methodEndpoint: string;
+  methodPayload: string;
+  methodHeaders: any;
 }> {
   return new Promise((resolve) => {
     let queueKey = BATCH_execution ? "queue_batch" : "queue";
@@ -51,11 +59,19 @@ export async function getLastFromQueue(BATCH_execution: boolean): Promise<{
           waitForElement: "none",
           shouldSandbox: false,
           sandBoxAttributes: "",
+          batch_id: "",
           triggerDownload: false,
           skipHeaders: false,
           hostname: "",
           htmlVisualizer: false,
           htmlContained: false,
+          screenWidth: "1024px",
+          screenHeight: "768px",
+          POST_request: false,
+          GET_request: false,
+          methodEndpoint: "",
+          methodPayload: "no_payload",
+          methodHeaders: "no_headers",
         });
       let last = queue.shift();
       setLocalStorage(queueKey, queue).then(() => {

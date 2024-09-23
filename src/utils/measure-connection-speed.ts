@@ -1,8 +1,8 @@
 import { Logger } from "../logger/logger";
 import SpeedTest from "@cloudflare/speedtest";
 import { sendMessageToBackground } from "./messaging-helpers";
-import { shouldRerouteToBackground } from "./listener-helpers-SW";
-import { getLocalStorage, setLocalStorage } from "./storage-helpers";
+import { shouldRerouteToBackground } from "../listeners/listener-helpers-SW";
+import { getLocalStorage, setLocalStorage } from "../storage/storage-helpers";
 import { SPEED_REFRESH_INTERVAL } from "../constants";
 
 export function MeasureConnectionSpeed(): Promise<number> {

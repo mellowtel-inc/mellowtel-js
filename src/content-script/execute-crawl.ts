@@ -6,41 +6,47 @@ import {
 } from "../constants";
 import { insertInQueue } from "./queue-crawl";
 import { setLifespanForIframe } from "./reset-crawl";
-import { disableXFrameHeaders } from "../utils/dnr-helpers";
+import { disableXFrameHeaders } from "../dnr/dnr-helpers";
 import { detectBrowser, getFrameCount } from "../utils/utils";
 import { insertIFrame } from "../utils/iframe-helpers";
 import { sendToBackgroundToSeeIfTriggersDownload } from "../utils/triggers-download-helpers";
 import { Logger } from "../logger/logger";
 import { sendMessageToBackground } from "../utils/messaging-helpers";
 import { saveCrawl } from "../iframe/save-crawl";
+import { getFromRequestInfoStorage } from "../request-info/request-info-helpers";
 
 function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
-  Logger.log(
-    "[fromDataPacketToNecessaryElements] : dataPacket => ",
-    dataPacket,
-  );
-  let fastLane = dataPacket.hasOwnProperty("fastLane")
+  Logger.log("[fromDPToNElements] => ", dataPacket);
+  let fastLane: boolean = dataPacket.hasOwnProperty("fastLane")
     ? dataPacket.fastLane.toString().toLowerCase() === "true"
     : false;
-  let orgId = dataPacket.hasOwnProperty("orgId") ? dataPacket.orgId : "";
-  let recordID = dataPacket.recordID;
-  let url = dataPacket.url;
-  let waitBeforeScraping = parseInt(dataPacket.waitBeforeScraping) * 1000;
-  let saveHtml = dataPacket.hasOwnProperty("saveHtml")
+  let orgId: string = dataPacket.hasOwnProperty("orgId")
+    ? dataPacket.orgId
+    : "";
+  let recordID: string = dataPacket.recordID;
+  let url: string = dataPacket.url;
+  let waitBeforeScraping: number =
+    parseInt(dataPacket.waitBeforeScraping) * 1000;
+  let saveHtml: boolean = dataPacket.hasOwnProperty("saveHtml")
     ? dataPacket.saveHtml.toString().toLowerCase() === "true"
     : false;
   let saveMarkdown = dataPacket.hasOwnProperty("saveMarkdown")
     ? dataPacket.saveMarkdown.toString().toLowerCase() === "true"
     : false;
-  let removeCSSselectors = dataPacket.removeCSSselectors;
-  let classNamesToBeRemoved = JSON.parse(dataPacket.classNamesToBeRemoved);
-  let waitForElement = dataPacket.hasOwnProperty("waitForElement")
+  let removeCSSselectors: string = dataPacket.removeCSSselectors;
+  let classNamesToBeRemoved: string[] =
+    dataPacket.classNamesToBeRemoved !== undefined
+      ? JSON.parse(dataPacket.classNamesToBeRemoved)
+      : [];
+  let waitForElement: string = dataPacket.hasOwnProperty("waitForElement")
     ? dataPacket.waitForElement
     : "none";
-  let waitForElementTime = dataPacket.hasOwnProperty("waitForElementTime")
+  let waitForElementTime: number = dataPacket.hasOwnProperty(
+    "waitForElementTime",
+  )
     ? parseInt(dataPacket.waitForElementTime)
     : 0;
-  let removeImages = dataPacket.hasOwnProperty("removeImages")
+  let removeImages: boolean = dataPacket.hasOwnProperty("removeImages")
     ? dataPacket.removeImages.toString().toLowerCase() === "true"
     : false;
   let htmlTransformer = dataPacket.hasOwnProperty("htmlTransformer")
@@ -71,6 +77,32 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
   let htmlContained = dataPacket.hasOwnProperty("htmlContained")
     ? dataPacket.htmlContained.toString().toLowerCase() === "true"
     : false;
+  let screenWidth: string = dataPacket.hasOwnProperty("screen_width")
+    ? dataPacket.screen_width
+    : "1024px";
+  let screenHeight: string = dataPacket.hasOwnProperty("screen_height")
+    ? dataPacket.screen_height
+    : "768px";
+  let method: string = dataPacket.hasOwnProperty("method")
+    ? dataPacket.method
+    : "NONE";
+  let POST_request = false;
+  let GET_request = false;
+  if (method === "POST") {
+    POST_request = true;
+  }
+  if (method === "GET") {
+    GET_request = true;
+  }
+  let methodEndpoint: string = dataPacket.hasOwnProperty("method_endpoint")
+    ? dataPacket.method_endpoint
+    : "";
+  let methodPayload: string = dataPacket.hasOwnProperty("method_payload")
+    ? dataPacket.method_payload
+    : "no_payload";
+  let methodHeaders: string = dataPacket.hasOwnProperty("method_headers")
+    ? dataPacket.method_headers
+    : "no_headers";
   return {
     fastLane,
     orgId,
@@ -94,72 +126,126 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
     fetchInstead,
     htmlVisualizer,
     htmlContained,
+    screenWidth,
+    screenHeight,
+    POST_request,
+    GET_request,
+    methodEndpoint,
+    methodPayload,
+    methodHeaders,
   };
 }
 
 export async function preProcessCrawl(
   dataPacket: { [key: string]: any },
-  POST_request: boolean = false,
-  GET_request: boolean = false,
   BATCH_execution: boolean = false,
   batch_id: string = "",
+  parallelExecutionsBatch: number = 4,
 ) {
   Logger.log("📋 Data Packet 📋");
   Logger.log(dataPacket);
   Logger.log("📋 ----------- 📋");
-  let fastLane: boolean = dataPacket.hasOwnProperty("fastLane")
-    ? dataPacket.fastLane.toString().toLowerCase() === "true"
-    : false;
-  let orgId: string = dataPacket.hasOwnProperty("orgId")
-    ? dataPacket.orgId
-    : "";
-  let recordID: string = dataPacket.recordID;
-  if (POST_request) {
-    await sendMessageToBackground({
-      intent: "handlePOSTRequest",
-      method_endpoint: dataPacket.method_endpoint,
-      method_payload: dataPacket.method_payload,
-      method_headers: dataPacket.method_headers,
-      fastLane: fastLane,
-      orgId: orgId,
-      recordID: recordID,
-    });
-  } else if (GET_request) {
-    await sendMessageToBackground({
-      intent: "handleGETRequest",
-      method_endpoint: dataPacket.method_endpoint,
-      method_headers: dataPacket.method_headers,
-      fastLane: fastLane,
-      orgId: orgId,
-      recordID: recordID,
-      htmlVisualizer: dataPacket.hasOwnProperty("htmlVisualizer")
-        ? dataPacket.htmlVisualizer.toString().toLowerCase() === "true"
-        : false,
-      htmlContained: dataPacket.hasOwnProperty("htmlContained")
-        ? dataPacket.htmlContained.toString().toLowerCase() === "true"
-        : false,
-    });
+
+  // if BATCH_execution is true:
+  // dataPacket has batch_array (which we have to JSON.parse) and batch_id.
+  // In that case Promise.all over all the batch_array elements
+  // + can avoid getting frameCount and just insert in queue (a different queue)
+  // Inject 4 at a time. Keep the rest in queue and slowly inject them as the
+  // previous ones finish.
+  let promiseArray: Promise<any>[] = [];
+  let dataPacketArray = [];
+  let index_to_arrive: number = 1;
+
+  if (BATCH_execution) {
+    Logger.log("📋 BATCH_execution 📋");
+    dataPacketArray = JSON.parse(dataPacket.batch_array);
+    Logger.log("📋 Data Packet Array 📋");
+    Logger.log(dataPacketArray);
+    Logger.log("📋 ----------- 📋");
+    index_to_arrive =
+      dataPacketArray.length > parallelExecutionsBatch
+        ? parallelExecutionsBatch
+        : dataPacketArray.length;
+    Logger.log("📋 Index to arrive 📋");
+    Logger.log(index_to_arrive);
+    Logger.log("📋 ----------- 📋");
   } else {
-    // if BATCH_execution is true:
-    // dataPacket has batch_array (which we have to JSON.parse) and batch_id.
-    // In that case Promise.all over all the batch_array elements
-    // + can avoid getting frameCount and just insert in queue (a different queue)
-    // Inject 4 at a time. Keep the rest in queue and slowly inject them as the
-    // previous ones finish.
-    let promiseArray: Promise<any>[] = [];
-    let dataPacketArray = [];
-    let index_to_arrive: number = 1;
+    dataPacketArray.push(dataPacket);
+  }
 
-    if (BATCH_execution) {
-      dataPacketArray = JSON.parse(dataPacket.batch_array);
-      index_to_arrive = dataPacketArray.length > 4 ? 4 : dataPacketArray.length;
-    } else {
-      dataPacketArray.push(dataPacket);
-    }
+  for (let i: number = 0; i < index_to_arrive; i++) {
+    let dataPacket = dataPacketArray[i];
 
-    for (let i = 0; i < index_to_arrive; i++) {
-      let dataPacket = dataPacketArray[i];
+    let {
+      fastLane,
+      orgId,
+      recordID,
+      url,
+      waitBeforeScraping,
+      saveHtml,
+      saveMarkdown,
+      removeCSSselectors,
+      classNamesToBeRemoved,
+      waitForElement,
+      waitForElementTime,
+      removeImages,
+      htmlTransformer,
+      isPDF,
+      saveText,
+      shouldSandbox,
+      sandBoxAttributes,
+      triggersDownload,
+      skipHeaders,
+      fetchInstead,
+      htmlVisualizer,
+      htmlContained,
+      screenWidth,
+      screenHeight,
+      POST_request,
+      GET_request,
+      methodEndpoint,
+      methodPayload,
+      methodHeaders,
+    } = fromDataPacketToNecessaryElements(dataPacket);
 
+    promiseArray.push(
+      crawlP2P(
+        url,
+        recordID,
+        waitBeforeScraping,
+        saveHtml,
+        saveMarkdown,
+        removeCSSselectors,
+        classNamesToBeRemoved,
+        fastLane,
+        waitForElement,
+        waitForElementTime,
+        removeImages,
+        htmlTransformer,
+        isPDF,
+        saveText,
+        orgId,
+        shouldSandbox,
+        sandBoxAttributes,
+        triggersDownload,
+        skipHeaders,
+        BATCH_execution,
+        batch_id,
+        fetchInstead,
+        htmlVisualizer,
+        htmlContained,
+        screenWidth,
+        screenHeight,
+        POST_request,
+        GET_request,
+        methodEndpoint,
+        methodPayload,
+        methodHeaders,
+      ),
+    );
+  }
+  if (BATCH_execution) {
+    for (let i = index_to_arrive; i < dataPacketArray.length; i++) {
       let {
         fastLane,
         orgId,
@@ -183,105 +269,74 @@ export async function preProcessCrawl(
         fetchInstead,
         htmlVisualizer,
         htmlContained,
-      } = fromDataPacketToNecessaryElements(dataPacket);
-
-      promiseArray.push(
-        crawlP2P(
-          url,
-          recordID,
-          waitBeforeScraping,
-          saveHtml,
-          saveMarkdown,
-          removeCSSselectors,
-          classNamesToBeRemoved,
-          fastLane,
-          waitForElement,
-          waitForElementTime,
-          removeImages,
-          htmlTransformer,
-          isPDF,
-          saveText,
-          orgId,
-          shouldSandbox,
-          sandBoxAttributes,
-          triggersDownload,
-          skipHeaders,
-          BATCH_execution,
-          batch_id,
-          fetchInstead,
-          htmlVisualizer,
-          htmlContained,
-        ),
-      );
+        screenWidth,
+        screenHeight,
+        POST_request,
+        GET_request,
+        methodEndpoint,
+        methodPayload,
+        methodHeaders,
+      } = fromDataPacketToNecessaryElements(dataPacketArray[i]);
+      let eventData: { [key: string]: any } = {
+        isMCrawl: true,
+        fastLane: fastLane,
+        url_to_crawl: url,
+        recordID: recordID,
+        removeCSSselectors: removeCSSselectors,
+        classNamesToBeRemoved: classNamesToBeRemoved,
+        saveHtml: saveHtml,
+        saveMarkdown: saveMarkdown,
+        waitBeforeScraping: waitBeforeScraping,
+        waitForElement: waitForElement,
+        waitForElementTime: waitForElementTime,
+        removeImages: removeImages,
+        htmlTransformer: htmlTransformer,
+        isPDF: isPDF,
+        saveText: saveText,
+        orgId: orgId,
+        BATCH_execution: BATCH_execution,
+        batch_id: batch_id,
+        fetchInstead: fetchInstead,
+        htmlVisualizer: htmlVisualizer,
+        htmlContained: htmlContained,
+        screenWidth: screenWidth,
+        screenHeight: screenHeight,
+        POST_request: POST_request,
+        GET_request: GET_request,
+        methodEndpoint: methodEndpoint,
+        methodPayload: methodPayload,
+        methodHeaders: methodHeaders,
+      };
+      let dataToBeQueued = {
+        url: dataPacketArray[i].url,
+        recordID: dataPacketArray[i].recordID,
+        eventData: eventData,
+        waitForElement: dataPacketArray[i].waitForElement,
+        shouldSandbox: shouldSandbox,
+        sandBoxAttributes: sandBoxAttributes,
+        triggersDownload: triggersDownload,
+        skipHeaders: skipHeaders,
+        hostname: "",
+        htmlVisualizer: htmlVisualizer,
+        htmlContained: htmlContained,
+        screenWidth: screenWidth,
+        screenHeight: screenHeight,
+        POST_request: POST_request,
+        GET_request: GET_request,
+        methodEndpoint: methodEndpoint,
+        methodPayload: methodPayload,
+        methodHeaders: methodHeaders,
+        BATCH_execution: BATCH_execution,
+        batch_id: batch_id,
+      };
+      Logger.log("📋 Data to be queued 📋");
+      Logger.log(dataToBeQueued);
+      Logger.log("methodEndpoint: " + methodEndpoint);
+      Logger.log("📋 ----------- 📋");
+      await insertInQueue(dataToBeQueued, BATCH_execution);
     }
-    if (BATCH_execution) {
-      for (let i = index_to_arrive; i < dataPacketArray.length; i++) {
-        let dataPacket = dataPacketArray[i];
-        let {
-          fastLane,
-          orgId,
-          recordID,
-          url,
-          waitBeforeScraping,
-          saveHtml,
-          saveMarkdown,
-          removeCSSselectors,
-          classNamesToBeRemoved,
-          waitForElement,
-          waitForElementTime,
-          removeImages,
-          htmlTransformer,
-          isPDF,
-          saveText,
-          shouldSandbox,
-          sandBoxAttributes,
-          triggersDownload,
-          skipHeaders,
-          fetchInstead,
-          htmlVisualizer,
-          htmlContained,
-        } = fromDataPacketToNecessaryElements(dataPacket);
-        let eventData: { [key: string]: any } = {
-          isMCrawl: true,
-          fastLane: fastLane,
-          url_to_crawl: url,
-          recordID: recordID,
-          removeCSSselectors: removeCSSselectors,
-          classNamesToBeRemoved: classNamesToBeRemoved,
-          saveHtml: saveHtml,
-          saveMarkdown: saveMarkdown,
-          waitBeforeScraping: waitBeforeScraping,
-          waitForElement: waitForElement,
-          waitForElementTime: waitForElementTime,
-          removeImages: removeImages,
-          htmlTransformer: htmlTransformer,
-          isPDF: isPDF,
-          saveText: saveText,
-          orgId: orgId,
-          BATCH_execution: BATCH_execution,
-          batch_id: batch_id,
-          fetchInstead: fetchInstead,
-          htmlVisualizer: htmlVisualizer,
-          htmlContained: htmlContained,
-        };
-        let dataToBeQueued = {
-          url: dataPacketArray[i].url,
-          recordID: dataPacketArray[i].recordID,
-          eventData: eventData,
-          waitForElement: dataPacketArray[i].waitForElement,
-          shouldSandbox: shouldSandbox,
-          sandBoxAttributes: sandBoxAttributes,
-          triggersDownload: triggersDownload,
-          skipHeaders: skipHeaders,
-          hostname: "",
-          htmlVisualizer: htmlVisualizer,
-          htmlContained: htmlContained,
-        };
-        await insertInQueue(dataToBeQueued, BATCH_execution);
-      }
-    }
-    await Promise.all(promiseArray);
   }
+  await Promise.all(promiseArray);
 }
 
 export function preProcessUrl(url: string, recordID: string): string[] {
@@ -322,14 +377,31 @@ export function crawlP2P(
   fetchInstead: boolean = false,
   htmlVisualizer: boolean = false,
   htmlContained: boolean = false,
+  screenWidth: string = "1024px",
+  screenHeight: string = "768px",
+  POST_request: boolean = false,
+  GET_request: boolean = false,
+  methodEndpoint: string = "",
+  methodPayload: string = "",
+  methodHeaders: string = "",
 ): Promise<string> {
   return new Promise((resolve) => {
     let [url_to_crawl, hostname] = preProcessUrl(url, recordID);
     Logger.log("[🌐 crawlP2P] : url_to_crawl => " + url_to_crawl);
     Logger.log("[🌐 crawlP2P] : hostname => " + hostname);
+    let skipCheck = false;
+    if (POST_request || GET_request) {
+      skipHeaders = true;
+      skipCheck = true;
+    }
     Promise.all([
       disableXFrameHeaders(hostname, skipHeaders),
-      sendToBackgroundToSeeIfTriggersDownload(url, triggersDownload),
+      sendToBackgroundToSeeIfTriggersDownload(
+        url,
+        triggersDownload,
+        skipCheck,
+        recordID,
+      ),
     ]).then(async () => {
       let eventData: { [key: string]: any } = {
         isMCrawl: true,
@@ -353,6 +425,13 @@ export function crawlP2P(
         fetchInstead: fetchInstead,
         htmlVisualizer: htmlVisualizer,
         htmlContained: htmlContained,
+        screenWidth: screenWidth,
+        screenHeight: screenHeight,
+        POST_request: POST_request,
+        GET_request: GET_request,
+        methodEndpoint: methodEndpoint,
+        methodPayload: methodPayload,
+        methodHeaders: methodHeaders,
       };
       let frameCount = getFrameCount(BATCH_execution);
       let max_parallel_executions = BATCH_execution
@@ -372,6 +451,13 @@ export function crawlP2P(
           hostname: hostname,
           htmlVisualizer: htmlVisualizer,
           htmlContained: htmlContained,
+          screenWidth: screenWidth,
+          screenHeight: screenHeight,
+          POST_request: POST_request,
+          GET_request: GET_request,
+          methodEndpoint: methodEndpoint,
+          methodPayload: methodPayload,
+          methodHeaders: methodHeaders,
         };
         await insertInQueue(dataToBeQueued, BATCH_execution);
       } else {
@@ -383,11 +469,19 @@ export function crawlP2P(
           shouldSandbox,
           sandBoxAttributes,
           BATCH_execution,
+          batch_id,
           triggersDownload,
           skipHeaders,
           hostname,
           htmlVisualizer,
           htmlContained,
+          screenWidth,
+          screenHeight,
+          POST_request,
+          GET_request,
+          methodEndpoint,
+          methodPayload,
+          methodHeaders,
         );
       }
       resolve("done");
@@ -403,16 +497,59 @@ export async function proceedWithActivation(
   shouldSandbox: boolean,
   sandBoxAttributes: string,
   BATCH_execution: boolean,
+  batch_id: string = "",
   triggerDownload: boolean = false,
   skipHeaders: boolean = false,
   hostname: string = "",
   htmlVisualizer: boolean = false,
   htmlContained: boolean = false,
+  screenWidth: string = "1024px",
+  screenHeight: string = "768px",
+  POST_request: boolean = false,
+  GET_request: boolean = false,
+  methodEndpoint: string = "",
+  methodPayload: string = "",
+  methodHeaders: string = "",
   breakLoop: boolean = false,
 ) {
   Logger.log("[proceedWithActivation] => HTML Visualizer: " + htmlVisualizer);
   Logger.log("[proceedWithActivation] => HTML Contained: " + htmlContained);
-  if (htmlVisualizer && !breakLoop) {
+  if (GET_request) {
+    await sendMessageToBackground({
+      intent: "handleGETRequest",
+      method_endpoint: methodEndpoint,
+      method_headers: methodHeaders,
+      fastLane: eventData.fastLane,
+      orgId: eventData.orgId,
+      recordID: recordID,
+      htmlVisualizer: htmlVisualizer,
+      htmlContained: htmlContained,
+      removeImages: eventData.removeImages,
+      removeCSSselectors: eventData.removeCSSselectors,
+      classNamesToBeRemoved: JSON.stringify(eventData.classNamesToBeRemoved),
+      htmlTransformer: eventData.htmlTransformer,
+      BATCH_execution: BATCH_execution,
+      batch_id: batch_id,
+    });
+  } else if (POST_request) {
+    await sendMessageToBackground({
+      intent: "handlePOSTRequest",
+      method_endpoint: methodEndpoint,
+      method_payload: methodPayload,
+      method_headers: methodHeaders,
+      fastLane: eventData.fastLane,
+      orgId: eventData.orgId,
+      recordID: recordID,
+      htmlVisualizer: htmlVisualizer,
+      htmlContained: htmlContained,
+      removeImages: eventData.removeImages,
+      removeCSSselectors: eventData.removeCSSselectors,
+      classNamesToBeRemoved: JSON.stringify(eventData.classNamesToBeRemoved),
+      htmlTransformer: eventData.htmlTransformer,
+      BATCH_execution: BATCH_execution,
+      batch_id: batch_id,
+    });
+  } else if (htmlVisualizer && !breakLoop) {
     Logger.log("[proceedWithActivation] => Sending message to background");
     await sendMessageToBackground({
       intent: "handleHTMLVisualizer",
@@ -423,9 +560,12 @@ export async function proceedWithActivation(
       shouldSandbox: shouldSandbox,
       sandBoxAttributes: sandBoxAttributes,
       BATCH_execution: BATCH_execution,
+      batch_id: batch_id,
       triggerDownload: triggerDownload,
       skipHeaders: skipHeaders,
       hostname: hostname,
+      screenWidth: screenWidth,
+      screenHeight: screenHeight,
     });
   } else if (htmlContained && !breakLoop) {
     await sendMessageToBackground({
@@ -437,13 +577,21 @@ export async function proceedWithActivation(
       shouldSandbox: shouldSandbox,
       sandBoxAttributes: sandBoxAttributes,
       BATCH_execution: BATCH_execution,
+      batch_id: batch_id,
       triggerDownload: triggerDownload,
       skipHeaders: skipHeaders,
       hostname: hostname,
+      screenWidth: screenWidth,
+      screenHeight: screenHeight,
     });
   } else {
     if (triggerDownload) {
-      await sendToBackgroundToSeeIfTriggersDownload(url, triggerDownload);
+      await sendToBackgroundToSeeIfTriggersDownload(
+        url,
+        triggerDownload,
+        false,
+        recordID,
+      );
     }
     if (skipHeaders) {
       await disableXFrameHeaders(hostname, skipHeaders);
@@ -472,61 +620,63 @@ export async function proceedWithActivation(
         safeToProceed = false;
       }
     }
-    if(safeToProceed) {
+    if (safeToProceed) {
       insertIFrame(
-          url,
-          recordID,
-          function () {
-            // find a way to send a message to the content script inside this iframe
-            // to check if it's ready
-            // send message isContentScriptAlive
-            let iframe: HTMLIFrameElement | null = document.getElementById(
-                recordID,
-            ) as HTMLIFrameElement | null;
-            if (iframe)
-              iframe.contentWindow?.postMessage(
-                  {isContentScriptAlive: true, recordID: recordID},
-                  "*",
-              );
-            if (waitForElement === "none") {
-              if (iframe) iframe.contentWindow?.postMessage(eventData, "*");
-            }
-            setTimeout(() => {
-              if (!frameReplied) {
-                // SET AS NOT WORKING WEBSITE
-                // hit endpoint to save result
-                Logger.log(
-                    "[proceedWithActivation] => Website unreachable, saving it",
-                );
-                saveCrawl(
-                    recordID,
-                    "",
-                    "",
-                    eventData.hasOwnProperty("fastLane")
-                        ? eventData.fastLane.toString() === "true"
-                        : false,
-                    url,
-                    eventData.hasOwnProperty("htmlTransformer")
-                        ? eventData.htmlTransformer
-                        : "none",
-                    eventData.hasOwnProperty("orgId") ? eventData.orgId : "",
-                    eventData.hasOwnProperty("saveText")
-                        ? eventData.saveText
-                        : "false",
-                    BATCH_execution,
-                    eventData.hasOwnProperty("batch_id") ? eventData.batch_id : "",
-                    true,
-                );
-              }
-            }, 1000);
-          },
-          "800px",
-          BATCH_execution ? DATA_ID_IFRAME_BATCH : DATA_ID_IFRAME,
-          shouldSandbox,
-          sandBoxAttributes,
-          htmlVisualizer,
-          htmlContained,
+        url,
+        recordID,
+        function () {
+          // find a way to send a message to the content script inside this iframe
+          // to check if it's ready
+          // send message isContentScriptAlive
+          let iframe: HTMLIFrameElement | null = document.getElementById(
+            recordID,
+          ) as HTMLIFrameElement | null;
+          if (iframe)
+            iframe.contentWindow?.postMessage(
+              { isContentScriptAlive: true, recordID: recordID },
+              "*",
+            );
+          if (waitForElement === "none") {
+            if (iframe) iframe.contentWindow?.postMessage(eventData, "*");
+          }
+        },
+        BATCH_execution ? DATA_ID_IFRAME_BATCH : DATA_ID_IFRAME,
+        shouldSandbox,
+        sandBoxAttributes,
+        htmlVisualizer,
+        htmlContained,
+        screenWidth,
+        screenHeight,
       );
+      setTimeout(async () => {
+        let moreInfo: any = await getFromRequestInfoStorage(recordID);
+        Logger.log("[proceedWithActivation] => More Info:", moreInfo);
+        // if status code starts with 5, set as website unreachable
+        if (moreInfo.statusCode.toString().startsWith("5")) {
+          // SET AS NOT WORKING WEBSITE
+          // hit endpoint to save result
+          Logger.log(
+            "[proceedWithActivation] => Website unreachable, saving it",
+          );
+          saveCrawl(
+            recordID,
+            "",
+            "",
+            eventData.hasOwnProperty("fastLane")
+              ? eventData.fastLane.toString() === "true"
+              : false,
+            url,
+            eventData.hasOwnProperty("htmlTransformer")
+              ? eventData.htmlTransformer
+              : "none",
+            eventData.hasOwnProperty("orgId") ? eventData.orgId : "",
+            eventData.hasOwnProperty("saveText") ? eventData.saveText : "false",
+            BATCH_execution,
+            batch_id,
+            true,
+          );
+        }
+      }, 500);
       // if waitForElement isn't none, don't
       // wait to load the iframe, but keep
       // sending message until iframe replies.
@@ -538,7 +688,7 @@ export async function proceedWithActivation(
         });
         let timer = setInterval(function () {
           let iframe: HTMLIFrameElement | null = document.getElementById(
-              recordID,
+            recordID,
           ) as HTMLIFrameElement | null;
           if (iFrameReplied) {
             clearInterval(timer);

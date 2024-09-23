@@ -1,10 +1,10 @@
 import { isCSPEnabled } from "../content-script/test-csp";
-import { setUpContentScriptListeners } from "./listener-helpers-CS";
+import { setUpContentScriptListeners } from "../listeners/listener-helpers-CS";
 import { getIdentifier } from "./identity-helpers";
 import { executeFunctionIfOrWhenBodyExists } from "./document-body-observer";
 import { DATA_ID_IFRAME } from "../constants";
-import { checkRequiredPermissions } from "./permission-helpers";
-import { setLocalStorage } from "./storage-helpers";
+import { checkRequiredPermissions } from "../permissions/permission-helpers";
+import { setLocalStorage } from "../storage/storage-helpers";
 import { getOptInStatus, optOut } from "./opt-in-out-helpers";
 
 export function start(metadata_id?: string | undefined): Promise<boolean> {

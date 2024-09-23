@@ -7,6 +7,7 @@ import {
   getS3SignedUrls,
 } from "./contained-visualizer-helpers";
 import { capture, OutputType } from "../htmlVisualizer/src";
+import { getFromRequestInfoStorage } from "../request-info/request-info-helpers";
 
 async function tellEC2ToRender(
   recordID: string,
@@ -22,7 +23,9 @@ async function tellEC2ToRender(
   const endpoint: string =
     "https://mjkrxoav2cqz3dtgn6ttcyxeua0mqpul.lambda-url.us-east-1.on.aws/";
 
-  getIdentifier().then((node_identifier: string) => {
+  getIdentifier().then(async (node_identifier: string) => {
+    let moreInfo: any = await getFromRequestInfoStorage(recordID);
+    Logger.log("[tellEC2ToRender] => More Info:", moreInfo);
     const bodyData = {
       recordID: recordID,
       url: url,
@@ -30,6 +33,7 @@ async function tellEC2ToRender(
       orgId: orgId,
       node_identifier: node_identifier,
       final_url: window.location.href,
+      statusCode: moreInfo.statusCode,
     };
 
     const requestOptions = {

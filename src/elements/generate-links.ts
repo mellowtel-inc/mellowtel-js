@@ -2,10 +2,10 @@ import {
   getExtensionIdentifier,
   getIdentifier,
 } from "../utils/identity-helpers";
-import { setLocalStorage, getLocalStorage } from "../utils/storage-helpers";
+import { setLocalStorage, getLocalStorage } from "../storage/storage-helpers";
 import { shouldDelegateTabsAPI } from "../utils/tabs-helpers";
 import { sendMessageToBackground } from "../utils/messaging-helpers";
-import { openPopupWindow } from "../utils/utils";
+import { detectBrowser, openPopupWindow } from "../utils/utils";
 import { Logger } from "../logger/logger";
 const BASE_DOMAIN: string = "https://www.mellow.tel/";
 const BASE_LINK_SETTING: string = BASE_DOMAIN + "settings/";
@@ -71,7 +71,7 @@ export function generateAndOpenOptInLink(): Promise<string> {
       let extension_id = await getExtensionIdentifier();
       getIdentifier().then(async (nodeId) => {
         let configuration_key = nodeId.split("_")[1];
-        let link = `${BASE_LINK_OPT_IN}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}`;
+        let link = `${BASE_LINK_OPT_IN}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}&browser=${detectBrowser()}`;
         await setAlreadyOpened("optIn");
         chrome.tabs.create({ url: link });
         resolve(link);
@@ -95,7 +95,7 @@ export function generateAndOpenUpdateLink(): Promise<string> {
       let extension_id = await getExtensionIdentifier();
       getIdentifier().then(async (nodeId) => {
         let configuration_key = nodeId.split("_")[1];
-        let link = `${BASE_LINK_UPDATE}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}`;
+        let link = `${BASE_LINK_UPDATE}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}&browser=${detectBrowser()}`;
         await setAlreadyOpened("update");
         chrome.tabs.create({ url: link }, (tab) => {
           resolve(link);
@@ -113,7 +113,7 @@ export function generateOptInLink(): Promise<string> {
     getIdentifier().then((nodeId) => {
       let configuration_key = nodeId.split("_")[1];
       resolve(
-        `${BASE_LINK_OPT_IN}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}`,
+        `${BASE_LINK_OPT_IN}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}&browser=${detectBrowser()}`,
       );
     });
   });
@@ -125,7 +125,7 @@ export function generateUpdateLink(): Promise<string> {
     getIdentifier().then((nodeId) => {
       let configuration_key = nodeId.split("_")[1];
       resolve(
-        `${BASE_LINK_UPDATE}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}`,
+        `${BASE_LINK_UPDATE}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}&browser=${detectBrowser()}`,
       );
     });
   });
@@ -137,7 +137,7 @@ export function generateSettingsLink(): Promise<string> {
     getIdentifier().then((nodeId) => {
       let configuration_key = nodeId.split("_")[1];
       resolve(
-        `${BASE_LINK_SETTING}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}`,
+        `${BASE_LINK_SETTING}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}&browser=${detectBrowser()}`,
       );
     });
   });

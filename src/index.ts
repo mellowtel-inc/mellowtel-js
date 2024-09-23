@@ -3,7 +3,7 @@ import {
   getOrGenerateIdentifier,
 } from "./utils/identity-helpers";
 import { setUpOnTabRemoveListeners } from "./background-script/tab-remove-listeners";
-import { setUpBackgroundListeners } from "./utils/listener-helpers-SW";
+import { setUpBackgroundListeners } from "./listeners/listener-helpers-SW";
 import { inIframe } from "./utils/iframe-helpers";
 import { purgeOnStartup } from "./background-script/purge-on-startup";
 import { setUpStorageChangeListeners } from "./content-script/storage-change-listeners";
@@ -14,7 +14,7 @@ import {
   stop,
 } from "./utils/start-stop-helpers";
 import { getOptInStatus, optIn, optOut } from "./utils/opt-in-out-helpers";
-import { checkRequiredPermissions } from "./utils/permission-helpers";
+import { checkRequiredPermissions } from "./permissions/permission-helpers";
 import { MAX_DAILY_RATE as DEFAULT_MAX_DAILY_RATE, VERSION } from "./constants";
 import { Logger } from "./logger/logger";
 import { RateLimiter } from "./local-rate-limiting/rate-limiter";
@@ -28,6 +28,7 @@ import {
   generateAndOpenUpdateLink,
 } from "./elements/generate-links";
 import { detectBrowser } from "./utils/utils";
+import { switchShouldContinue } from "./switch/check-switch";
 
 export default class M {
   private publishableKey: string;
@@ -61,17 +62,25 @@ export default class M {
     await setUpOnTabRemoveListeners();
     await setUpBackgroundListeners();
     await getOrGenerateIdentifier(this.publishableKey);
-    if (auto_start_if_opted_in === undefined || auto_start_if_opted_in) {
-      let optInStatus: boolean = (await getOptInStatus()).boolean;
-      if (optInStatus) {
-        await this.start(metadata_id);
+    let shouldContinue: boolean = await switchShouldContinue();
+    if (shouldContinue) {
+      Logger.log("[initBackground]: Switch is on. Continuing.");
+      if (auto_start_if_opted_in === undefined || auto_start_if_opted_in) {
+        let optInStatus: boolean = (await getOptInStatus()).boolean;
+        if (optInStatus) {
+          await start(metadata_id);
+        }
       }
+    } else {
+      Logger.log("[initBackground]: Switch is off. Not continuing.");
     }
   }
 
   public async initContentScript(): Promise<void> {
     if (typeof window !== "undefined") {
       await setUpExternalMessageListeners();
+    }
+    if (typeof window !== "undefined") {
       if (inIframe()) {
         const mutationObserverModule = await import(
           "./iframe/mutation-observer"
@@ -79,10 +88,17 @@ export default class M {
         mutationObserverModule.listenerAlive();
         mutationObserverModule.attachMutationObserver();
       } else {
-        if ((await isStarted()) && (await getOptInStatus())) {
-          startWebsocket();
+        let shouldContinue: boolean = await switchShouldContinue();
+        if (shouldContinue) {
+          Logger.log("[initContentScript]: Switch is on. Continuing.");
+
+          if ((await isStarted()) && (await getOptInStatus())) {
+            startWebsocket();
+          } else {
+            await setUpStorageChangeListeners();
+          }
         } else {
-          await setUpStorageChangeListeners();
+          Logger.log("[initContentScript]: Switch is off. Not continuing.");
         }
       }
     }

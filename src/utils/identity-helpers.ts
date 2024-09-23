@@ -1,4 +1,4 @@
-import { getLocalStorage, setLocalStorage } from "./storage-helpers";
+import { getLocalStorage, setLocalStorage } from "../storage/storage-helpers";
 
 export async function getOrGenerateIdentifier(
   configuration_key: string,

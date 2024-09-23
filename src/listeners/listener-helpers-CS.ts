@@ -3,7 +3,7 @@ import { DATA_ID_IFRAME } from "../constants";
 import { hideBadgeIfShould } from "../transparency/badge-settings";
 import { getSharedMemoryDOM } from "../content-script/shared-memory";
 import { getIfCurrentlyActiveDOM } from "../elements/elements-utils";
-import { getIdentifier } from "./identity-helpers";
+import { getIdentifier } from "../utils/identity-helpers";
 import { startConnectionWs } from "../content-script/websocket";
 import {
   preProcessCrawl,
@@ -48,11 +48,19 @@ export async function setUpContentScriptListeners() {
             request.shouldSandbox,
             request.sandBoxAttributes,
             request.BATCH_execution,
+            request.batch_id,
             request.triggerDownload,
             request.skipHeaders,
             request.hostname,
             true,
             false,
+            request.screenWidth,
+            request.screenHeight,
+            request.POST_request,
+            request.GET_request,
+            request.method_endpoint,
+            request.method_payload,
+            request.method_headers,
             true, // to break the loop
           );
         }
@@ -65,11 +73,19 @@ export async function setUpContentScriptListeners() {
             request.shouldSandbox,
             request.sandBoxAttributes,
             request.BATCH_execution,
+            request.batch_id,
             request.triggerDownload,
             request.skipHeaders,
             request.hostname,
             false,
             true,
+            request.screenWidth,
+            request.screenHeight,
+            request.POST_request,
+            request.GET_request,
+            request.method_endpoint,
+            request.method_payload,
+            request.method_headers,
             true, // to break the loop
           );
         }
@@ -84,28 +100,28 @@ export async function setUpContentScriptListeners() {
             request.orgId,
             request.fastLane,
             "false",
-            "",
-            [],
+            request.removeCSSselectors,
+            JSON.parse(request.classNamesToBeRemoved),
             request.html_string,
             request.htmlVisualizer,
             request.htmlContained,
-            false,
+            request.removeImages.toString() === "true",
+            request.BATCH_execution.toString() === "true",
+            request.batch_id,
           );
         }
         if (request.intent === "preProcessCrawl") {
           sendResponse("success");
           Logger.log("[setUpContentScriptListeners] : preProcessCrawl");
           let data = JSON.parse(request.data);
-          let POST_request = request.POST_request;
-          let GET_request = request.GET_request;
           let BATCH_execution = request.BATCH_execution;
           let batch_id = request.batch_id;
+          let parallelExecutionsBatch = request.parallelExecutionsBatch;
           await preProcessCrawl(
             data,
-            POST_request,
-            GET_request,
             BATCH_execution,
             batch_id,
+            parallelExecutionsBatch,
           );
         }
       })();
@@ -130,6 +146,8 @@ async function processCrawl(
   htmlVisualizer: boolean,
   htmlContained: boolean,
   removeImages: boolean,
+  BATCH_execution: boolean,
+  batch_id: string,
 ) {
   const saveCrawlModule = await import("../iframe/save-crawl");
   const {
@@ -228,10 +246,8 @@ async function processCrawl(
           htmlTransformer,
           orgId,
           saveText,
-          event.data.hasOwnProperty("BATCH_execution")
-            ? event.data.BATCH_execution
-            : false,
-          event.data.hasOwnProperty("batch_id") ? event.data.batch_id : "",
+          BATCH_execution,
+          batch_id,
         );
       }
     }
@@ -272,10 +288,8 @@ async function processCrawl(
         htmlTransformer,
         orgId,
         saveText,
-        event.data.hasOwnProperty("BATCH_execution")
-          ? event.data.BATCH_execution
-          : false,
-        event.data.hasOwnProperty("batch_id") ? event.data.batch_id : "",
+        BATCH_execution,
+        batch_id,
       );
     }
   }

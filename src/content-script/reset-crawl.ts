@@ -7,16 +7,21 @@ import {
 } from "../constants";
 import { proceedWithActivation } from "./execute-crawl";
 import { getFrameCount } from "../utils/utils";
-import { enableXFrameHeaders } from "../utils/dnr-helpers";
+import { enableXFrameHeaders } from "../dnr/dnr-helpers";
 import { Logger } from "../logger/logger";
 import { resetTriggersDownload } from "../utils/triggers-download-helpers";
 import { hideBadgeIfShould } from "../transparency/badge-settings";
+import { deleteFromRequestInfoStorage } from "../request-info/request-info-helpers";
 
 export async function resetAfterCrawl(
   recordID: string,
   BATCH_execution: boolean,
 ) {
+  await deleteFromRequestInfoStorage(recordID);
   let dataPacket = await getLastFromQueue(BATCH_execution);
+  Logger.log("[resetAfterCrawl] : dataPacket => ");
+  Logger.log(dataPacket);
+  Logger.log("##############################");
   if (dataPacket && dataPacket.url !== "") {
     let frameCount = getFrameCount(BATCH_execution);
     Logger.log("[🌐] : frameCount in cleanUpAfterCrawl  => " + frameCount);
@@ -26,20 +31,56 @@ export async function resetAfterCrawl(
     if (frameCount <= max_parallel_executions || BATCH_execution) {
       Logger.log("[🌐] getLastFromQueue : dataPacket => ");
       Logger.log(dataPacket);
-      await proceedWithActivation(
-        dataPacket.url,
-        dataPacket.recordID,
-        dataPacket.eventData,
-        dataPacket.waitForElement,
-        dataPacket.shouldSandbox,
-        dataPacket.sandBoxAttributes,
-        BATCH_execution,
-        dataPacket.triggerDownload,
-        dataPacket.skipHeaders,
-        dataPacket.hostname,
-        dataPacket.htmlVisualizer,
-        dataPacket.htmlContained,
-      );
+      if(BATCH_execution && dataPacket.methodEndpoint !== "") {
+        // wait for 1.5 seconds before proceeding with the next crawl
+        setTimeout(() => {
+          proceedWithActivation(
+            dataPacket.url,
+            dataPacket.recordID,
+            dataPacket.eventData,
+            dataPacket.waitForElement,
+            dataPacket.shouldSandbox,
+            dataPacket.sandBoxAttributes,
+            BATCH_execution,
+            dataPacket.batch_id,
+            dataPacket.triggerDownload,
+            dataPacket.skipHeaders,
+            dataPacket.hostname,
+            dataPacket.htmlVisualizer,
+            dataPacket.htmlContained,
+            dataPacket.screenWidth,
+            dataPacket.screenHeight,
+            dataPacket.POST_request,
+            dataPacket.GET_request,
+            dataPacket.methodEndpoint,
+            dataPacket.methodPayload,
+            dataPacket.methodHeaders,
+          );
+        }, 500);
+      } else {
+        await proceedWithActivation(
+            dataPacket.url,
+            dataPacket.recordID,
+            dataPacket.eventData,
+            dataPacket.waitForElement,
+            dataPacket.shouldSandbox,
+            dataPacket.sandBoxAttributes,
+            BATCH_execution,
+            dataPacket.batch_id,
+            dataPacket.triggerDownload,
+            dataPacket.skipHeaders,
+            dataPacket.hostname,
+            dataPacket.htmlVisualizer,
+            dataPacket.htmlContained,
+            dataPacket.screenWidth,
+            dataPacket.screenHeight,
+            dataPacket.POST_request,
+            dataPacket.GET_request,
+            dataPacket.methodEndpoint,
+            dataPacket.methodPayload,
+            dataPacket.methodHeaders,
+        );
+      }
     }
   } else {
     setTimeout(() => {

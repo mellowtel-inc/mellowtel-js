@@ -2,13 +2,13 @@ import {
   deleteLocalStorage,
   getLocalStorage,
   setLocalStorage,
-} from "./storage-helpers";
+} from "../storage/storage-helpers";
 import {
   disableXFrameHeaders,
   enableXFrameHeaders,
   fixImageRenderHTMLVisualizer,
   resetImageRenderHTMLVisualizer,
-} from "./dnr-helpers";
+} from "../dnr/dnr-helpers";
 import {
   getSharedMemoryBCK,
   setSharedMemoryBCK,
@@ -16,20 +16,20 @@ import {
 import {
   resetTriggersDownload,
   seeIfTriggersDownload,
-} from "./triggers-download-helpers";
-import { sendMessageToContentScript } from "./messaging-helpers";
+} from "../utils/triggers-download-helpers";
+import { sendMessageToContentScript } from "../utils/messaging-helpers";
 import { handlePostRequest } from "../post-requests/post-helpers";
 import {
   generateAndOpenOptInLink,
   generateAndOpenUpdateLink,
 } from "../elements/generate-links";
-import { MeasureConnectionSpeed } from "./measure-connection-speed";
+import { MeasureConnectionSpeed } from "../utils/measure-connection-speed";
 import {
   putHTMLToSigned,
   putMarkdownToSigned,
   putHTMLVisualizerToSigned,
   putHTMLContainedToSigned,
-} from "./put-to-signed";
+} from "../utils/put-to-signed";
 import { getIfCurrentlyActiveBCK } from "../elements/elements-utils";
 import {
   getBadgeProperties,
@@ -42,28 +42,28 @@ import { startConnectionWs } from "../content-script/websocket";
 import { Logger } from "../logger/logger";
 
 export async function setUpBackgroundListeners() {
-    // Queue to store incoming messages to start websocket
-    const startWebsocketMessageQueue: { identifier: string }[] = [];
+  // Queue to store incoming messages to start websocket
+  const startWebsocketMessageQueue: { identifier: string }[] = [];
 
-    // Function to process messages from the queue
-    function processWebsocketQueue() {
-        if (startWebsocketMessageQueue.length > 0) {
-            const message = startWebsocketMessageQueue.shift();
-            if (message) {
-                Logger.log("Processing message from queue:", message);
-                Logger.log("Content script requested to start websocket");
-                Logger.log(document.getElementById("webSocketConnected"));
-                Logger.log("####################################");
-                startConnectionWs(message.identifier);
-            }
-        }
-        setTimeout(processWebsocketQueue, 7000); // Process next message after 7 seconds
+  // Function to process messages from the queue
+  function processWebsocketQueue() {
+    if (startWebsocketMessageQueue.length > 0) {
+      const message = startWebsocketMessageQueue.shift();
+      if (message) {
+        Logger.log("Processing message from queue:", message);
+        Logger.log("Content script requested to start websocket");
+        Logger.log(document.getElementById("webSocketConnected"));
+        Logger.log("####################################");
+        startConnectionWs(message.identifier);
+      }
     }
+    setTimeout(processWebsocketQueue, 7000); // Process next message after 7 seconds
+  }
 
-    // Start processing the queue
-    processWebsocketQueue();
+  // Start processing the queue
+  processWebsocketQueue();
 
-    chrome.runtime.onMessage.addListener(
+  chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
       if (request.intent == "getLocalStorage") {
         getLocalStorage(request.key).then(sendResponse);
@@ -92,9 +92,11 @@ export async function setUpBackgroundListeners() {
         getSharedMemoryBCK(request.key).then(sendResponse);
       }
       if (request.intent === "seeIfTriggersDownload") {
-        seeIfTriggersDownload(request.url, request.triggersDownload).then(
-          sendResponse,
-        );
+        seeIfTriggersDownload(
+          request.url,
+          request.triggersDownload,
+          request.recordID,
+        ).then(sendResponse);
       }
       if (request.intent === "deleteIframeM") {
         sendMessageToContentScript(sender.tab?.id!, {
@@ -111,6 +113,14 @@ export async function setUpBackgroundListeners() {
           request.fastLane,
           request.orgId,
           request.recordID,
+          request.htmlVisualizer,
+          request.htmlContained,
+          request.removeImages,
+          request.removeCSSselectors,
+          request.classNamesToBeRemoved,
+          request.htmlTransformer,
+          request.BATCH_execution,
+          request.batch_id,
         ).then(sendResponse);
       }
       if (request.intent === "handleGETRequest") {
@@ -122,6 +132,12 @@ export async function setUpBackgroundListeners() {
           request.recordID,
           request.htmlVisualizer,
           request.htmlContained,
+          request.removeImages,
+          request.removeCSSselectors,
+          request.classNamesToBeRemoved,
+          request.htmlTransformer,
+          request.BATCH_execution,
+          request.batch_id,
         ).then(sendResponse);
       }
       if (request.intent === "openOptInLink") {
@@ -160,9 +176,17 @@ export async function setUpBackgroundListeners() {
                 shouldSandbox: request.shouldSandbox,
                 sandBoxAttributes: request.sandBoxAttributes,
                 BATCH_execution: request.BATCH_execution,
+                batch_id: request.batch_id,
                 triggerDownload: request.triggerDownload,
                 skipHeaders: request.skipHeaders,
                 hostname: request.hostname,
+                screenWidth: request.screenWidth,
+                screenHeight: request.screenHeight,
+                POST_request: request.POST_request,
+                GET_request: request.GET_request,
+                methodEndpoint: request.methodEndpoint,
+                methodPayload: request.methodPayload,
+                methodHeaders: request.methodHeaders,
               });
             }
           },
@@ -182,9 +206,17 @@ export async function setUpBackgroundListeners() {
                 shouldSandbox: request.shouldSandbox,
                 sandBoxAttributes: request.sandBoxAttributes,
                 BATCH_execution: request.BATCH_execution,
+                batch_id: request.batch_id,
                 triggerDownload: request.triggerDownload,
                 skipHeaders: request.skipHeaders,
                 hostname: request.hostname,
+                screenWidth: request.screenWidth,
+                screenHeight: request.screenHeight,
+                POST_request: request.POST_request,
+                GET_request: request.GET_request,
+                methodEndpoint: request.methodEndpoint,
+                methodPayload: request.methodPayload,
+                methodHeaders: request.methodHeaders,
               });
             }
           },
@@ -234,8 +266,8 @@ export async function setUpBackgroundListeners() {
         restoreBadgeProperties().then(sendResponse);
       }
       if (request.intent === "startWebsocket") {
-      startWebsocketMessageQueue.push({ identifier: request.identifier });
-      sendResponse(true);
+        startWebsocketMessageQueue.push({ identifier: request.identifier });
+        sendResponse(true);
       }
       return true; // return true to indicate you want to send a response asynchronously
     },

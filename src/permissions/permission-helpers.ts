@@ -1,5 +1,5 @@
 import { Logger } from "../logger/logger";
-import { detectBrowser } from "./utils";
+import { detectBrowser } from "../utils/utils";
 
 // The following permissions have to be either in permissions or optional_permissions in manifest.json
 // declarativeNetRequest is the exception, as it can't be specified in optional_permissions:

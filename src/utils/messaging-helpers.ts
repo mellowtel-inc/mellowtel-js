@@ -4,9 +4,23 @@ export async function sendMessageToContentScript(
 ): Promise<any> {
   return new Promise((resolve) => {
     message.target = "contentScriptM";
-    chrome.tabs.sendMessage(tabId, message, function (response) {
-      resolve(response);
-    });
+    try {
+      chrome.tabs.sendMessage(tabId, message, function (response) {
+        if (chrome.runtime.lastError) {
+          /*
+          Logger.log(
+            "[sendMessageToContentScript] => Error:",
+            chrome.runtime.lastError,
+          );
+          */
+          resolve(null);
+        }
+        resolve(response);
+      });
+    } catch (e) {
+      // Logger.log("[sendMessageToContentScript] => Error:", e);
+      resolve(null);
+    }
   });
 }
 

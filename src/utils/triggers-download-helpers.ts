@@ -8,8 +8,10 @@ import {
   RULE_ID_CONTENT_TYPE,
   RULE_ID_VALUE_TO_MODIFY_CONTENT_TYPE_TO,
 } from "../constants";
-import { shouldDelegateDNR } from "./dnr-helpers";
+import { shouldDelegateDNR } from "../dnr/dnr-helpers";
 import { sendMessageToBackground } from "./messaging-helpers";
+import { addToRequestInfoStorage } from "../request-info/request-info-helpers";
+import request = chrome.permissions.request;
 interface Header {
   name: string;
   value: string;
@@ -25,30 +27,48 @@ interface ProcessHeadersResult {
 export async function sendToBackgroundToSeeIfTriggersDownload(
   url: string,
   triggersDownload: boolean,
+  skipCheck: boolean,
+  requestID: string,
 ): Promise<boolean> {
   return new Promise(function (res) {
-    sendMessageToBackground({
-      intent: "seeIfTriggersDownload",
-      url: url,
-      triggersDownload: triggersDownload,
-    }).then((response) => {
-      res(response);
-    });
+    if (skipCheck) {
+      res(false);
+    } else {
+      sendMessageToBackground({
+        intent: "seeIfTriggersDownload",
+        url: url,
+        triggersDownload: triggersDownload,
+        recordID: requestID,
+      }).then((response) => {
+        res(response);
+      });
+    }
   });
 }
 
 export async function seeIfTriggersDownload(
   url: string,
   triggersDownload: boolean,
+  recordID: string,
 ): Promise<string> {
   return new Promise(function (res) {
     if (!triggersDownload) {
       res("done");
     } else {
       let rulesToApply: Rule[] = [];
-      fetchAndProcessHeaders(url).then(function (
-        result: { error: boolean } | ProcessHeadersResult,
+      fetchAndProcessHeaders(url).then(async function (
+        result: { error: boolean; isPDF: boolean; statusCode: number } | any,
       ) {
+        let isPDF: boolean = result.isPDF;
+        let statusCode: number = result.statusCode;
+        // TODO: pass this over, so we can avoid sandboxing PDFs and
+        // render them correctly
+        // save in local storage as an array of objects with recordId as unique key
+        await addToRequestInfoStorage({
+          recordID: recordID,
+          isPDF: isPDF,
+          statusCode: statusCode,
+        });
         Logger.log("fetchAndProcessHeaders =>", result);
         if (result.error) {
           res("error");
@@ -154,26 +174,39 @@ export async function resetTriggersDownload() {
     });
   });
 }
-export function fetchAndProcessHeaders(
+
+export async function fetchAndProcessHeaders(
   url: string,
-): Promise<{ error: boolean } | ProcessHeadersResult> {
-  return fetch(url)
-    .then((response) => {
-      if (!response.ok) {
-        return { error: true };
-      }
-      const result = processHeaders(response, response.url);
-      return {
-        ...result,
-        ...{
-          error: false,
-        },
-      };
-    })
-    .catch((error) => {
-      Logger.error("Fetch error:", error);
-      return { error: true };
-    });
+): Promise<{ error: boolean; isPDF: boolean } | any> {
+  // TODO: ADD DETECTION FOR PDF (if pdf, don't sandbox)
+  let response: Response = new Response();
+  try {
+    response = await fetch(url);
+  } catch (error) {
+    Logger.log("[fetchAndProcessHeaders] => Fetch error:", error);
+    return { error: true, isPDF: false, statusCode: 599 };
+  }
+  try {
+    let statusCode: number;
+    if (!response.ok) {
+      return { error: true, isPDF: false, statusCode: response.status };
+    }
+    statusCode = response.status;
+    const result = processHeaders(response, response.url);
+    const isPDF: boolean =
+      response.headers.get("content-type") === "application/pdf";
+    return {
+      ...result,
+      ...{
+        error: false,
+        isPDF,
+        statusCode,
+      },
+    };
+  } catch (error) {
+    Logger.error("Fetch error:", error);
+    return { error: true, isPDF: false, statusCode: 599 };
+  }
 }
 
 export function processHeaders(

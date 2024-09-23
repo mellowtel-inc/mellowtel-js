@@ -1,4 +1,4 @@
-import { deleteLocalStorage } from "../utils/storage-helpers";
+import { deleteLocalStorage } from "../storage/storage-helpers";
 
 export async function purgeOnStartup(): Promise<void> {
   chrome.runtime.onStartup.addListener(async function () {
@@ -6,6 +6,9 @@ export async function purgeOnStartup(): Promise<void> {
       "webSocketConnected",
       "queue_batch",
       "queue",
+      "already_checked_switch",
+      "checked_switch_value",
+      "recordsRequestInfo",
     ];
     await deleteLocalStorage(keysToPurge);
   });

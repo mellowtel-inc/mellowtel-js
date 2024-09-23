@@ -1,5 +1,10 @@
 import WebSocket from "isomorphic-ws";
-import { VERSION, REFRESH_INTERVAL } from "../constants";
+import {
+  VERSION,
+  REFRESH_INTERVAL,
+  MAX_PARALLEL_EXECUTIONS_BATCH,
+  MAX_PARALLEL_EXECUTIONS_BATCH_FETCH,
+} from "../constants";
 import { preProcessCrawl } from "./execute-crawl";
 import {
   getSharedMemory,
@@ -9,7 +14,7 @@ import {
 import { isStarted } from "../utils/start-stop-helpers";
 import { RateLimiter } from "../local-rate-limiting/rate-limiter";
 import { Logger } from "../logger/logger";
-import { setLocalStorage } from "../utils/storage-helpers";
+import { setLocalStorage } from "../storage/storage-helpers";
 import { getExtensionIdentifier } from "../utils/identity-helpers";
 import {
   getEffectiveConnectionType,
@@ -135,14 +140,26 @@ export async function startConnectionWs(identifier: string): WebSocket {
               GET_request = true;
             }
 
-            let BATCH_execution = false;
-            let batch_id = "";
+            let BATCH_execution: boolean = false;
+            let batch_id: string = "";
+            let parallelExecutionsBatch: number = 4;
             if (
               data.hasOwnProperty("type_event") &&
               data.type_event === "batch"
             ) {
               BATCH_execution = true;
               batch_id = data.batch_id;
+              let type_batch: string = "request"; // request or fetch
+              if (data.hasOwnProperty("type_batch"))
+                type_batch = data.type_batch;
+              if (data.hasOwnProperty("parallel_executions_batch")) {
+                parallelExecutionsBatch = Math.min(
+                  parseInt(data.parallel_executions_batch),
+                  type_batch === "request"
+                    ? MAX_PARALLEL_EXECUTIONS_BATCH
+                    : MAX_PARALLEL_EXECUTIONS_BATCH_FETCH,
+                );
+              }
             }
 
             let { shouldContinue, isLastCount } =
@@ -179,10 +196,9 @@ export async function startConnectionWs(identifier: string): WebSocket {
                     await sendMessageToContentScript(tab.id!, {
                       intent: "preProcessCrawl",
                       data: JSON.stringify(data),
-                      POST_request: POST_request,
-                      GET_request: GET_request,
                       BATCH_execution: BATCH_execution,
                       batch_id: batch_id,
+                      parallelExecutionsBatch: parallelExecutionsBatch,
                     }).then((response) => {
                       if (response === "success") {
                         Logger.log(
@@ -196,10 +212,9 @@ export async function startConnectionWs(identifier: string): WebSocket {
               } else {
                 await preProcessCrawl(
                   data,
-                  POST_request,
-                  GET_request,
                   BATCH_execution,
                   batch_id,
+                  parallelExecutionsBatch,
                 );
               }
             } else {

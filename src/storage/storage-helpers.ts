@@ -1,4 +1,4 @@
-import { sendMessageToBackground } from "./messaging-helpers";
+import { sendMessageToBackground } from "../utils/messaging-helpers";
 
 export function getLocalStorage(
   key: string,
