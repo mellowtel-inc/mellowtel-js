@@ -9,7 +9,7 @@ export async function insertInQueue(dataPacket: any, BATCH_execution: boolean) {
       if (result === undefined || !result.hasOwnProperty(queueKey))
         result = { [queueKey]: [] };
       let queue = result[queueKey];
-      if (queue.length > MAX_QUEUE_SIZE) {
+      if (queue.length > MAX_QUEUE_SIZE && !BATCH_execution) {
         // ignore this packet
         Logger.log("[🌐] : queue is full. Ignoring this packet");
         resolve(false);

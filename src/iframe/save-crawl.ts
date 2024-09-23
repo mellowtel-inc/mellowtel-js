@@ -24,7 +24,7 @@ export function saveCrawl(
   getIdentifier().then(async (node_identifier: string) => {
     Logger.log("Node Identifier:", node_identifier);
     let moreInfo: any = await getFromRequestInfoStorage(recordID);
-    Logger.log("More Info:", moreInfo);
+    Logger.log("[saveCrawl] => More Info:", moreInfo);
 
     const bodyData = {
       content: content,

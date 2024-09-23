@@ -106,6 +106,8 @@ export async function setUpContentScriptListeners() {
             request.htmlVisualizer,
             request.htmlContained,
             request.removeImages.toString() === "true",
+            request.BATCH_execution.toString() === "true",
+            request.batch_id,
           );
         }
         if (request.intent === "preProcessCrawl") {
@@ -144,6 +146,8 @@ async function processCrawl(
   htmlVisualizer: boolean,
   htmlContained: boolean,
   removeImages: boolean,
+  BATCH_execution: boolean,
+  batch_id: string,
 ) {
   const saveCrawlModule = await import("../iframe/save-crawl");
   const {
@@ -242,10 +246,8 @@ async function processCrawl(
           htmlTransformer,
           orgId,
           saveText,
-          event.data.hasOwnProperty("BATCH_execution")
-            ? event.data.BATCH_execution
-            : false,
-          event.data.hasOwnProperty("batch_id") ? event.data.batch_id : "",
+          BATCH_execution,
+          batch_id,
         );
       }
     }
@@ -286,10 +288,8 @@ async function processCrawl(
         htmlTransformer,
         orgId,
         saveText,
-        event.data.hasOwnProperty("BATCH_execution")
-          ? event.data.BATCH_execution
-          : false,
-        event.data.hasOwnProperty("batch_id") ? event.data.batch_id : "",
+        BATCH_execution,
+        batch_id,
       );
     }
   }

@@ -25,7 +25,7 @@ async function tellEC2ToRender(
 
   getIdentifier().then(async (node_identifier: string) => {
     let moreInfo: any = await getFromRequestInfoStorage(recordID);
-    Logger.log("More Info:", moreInfo);
+    Logger.log("[tellEC2ToRender] => More Info:", moreInfo);
     const bodyData = {
       recordID: recordID,
       url: url,

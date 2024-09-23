@@ -33,15 +33,16 @@ export async function sendToBackgroundToSeeIfTriggersDownload(
   return new Promise(function (res) {
     if (skipCheck) {
       res(false);
+    } else {
+      sendMessageToBackground({
+        intent: "seeIfTriggersDownload",
+        url: url,
+        triggersDownload: triggersDownload,
+        recordID: requestID,
+      }).then((response) => {
+        res(response);
+      });
     }
-    sendMessageToBackground({
-      intent: "seeIfTriggersDownload",
-      url: url,
-      triggersDownload: triggersDownload,
-      recordID: requestID,
-    }).then((response) => {
-      res(response);
-    });
   });
 }
 
@@ -178,11 +179,17 @@ export async function fetchAndProcessHeaders(
   url: string,
 ): Promise<{ error: boolean; isPDF: boolean } | any> {
   // TODO: ADD DETECTION FOR PDF (if pdf, don't sandbox)
+  let response: Response = new Response();
   try {
-    let response = await fetch(url);
+    response = await fetch(url);
+  } catch (error) {
+    Logger.log("[fetchAndProcessHeaders] => Fetch error:", error);
+    return { error: true, isPDF: false, statusCode: 599 };
+  }
+  try {
     let statusCode: number;
     if (!response.ok) {
-      return { error: true, isPDF: false };
+      return { error: true, isPDF: false, statusCode: response.status };
     }
     statusCode = response.status;
     const result = processHeaders(response, response.url);
@@ -198,7 +205,7 @@ export async function fetchAndProcessHeaders(
     };
   } catch (error) {
     Logger.error("Fetch error:", error);
-    return { error: true, isPDF: false };
+    return { error: true, isPDF: false, statusCode: 599 };
   }
 }
 

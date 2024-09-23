@@ -8,6 +8,7 @@ export async function purgeOnStartup(): Promise<void> {
       "queue",
       "already_checked_switch",
       "checked_switch_value",
+      "recordsRequestInfo",
     ];
     await deleteLocalStorage(keysToPurge);
   });

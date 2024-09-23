@@ -4,7 +4,10 @@ import {
   enableHeadersForPOST,
 } from "../dnr/dnr-helpers";
 import { sendMessageToContentScript } from "../utils/messaging-helpers";
-import { getFromRequestInfoStorage } from "../request-info/request-info-helpers";
+import {
+  addToRequestInfoStorage,
+  getFromRequestInfoStorage,
+} from "../request-info/request-info-helpers";
 
 export function handlePostRequest(
   method_endpoint: string,
@@ -48,8 +51,10 @@ export function handlePostRequest(
         requestOptions["headers"] = method_headers;
       } catch (e) {}
     }
+    let statusCode: number = 1000;
     fetch(method_endpoint, requestOptions)
       .then((response) => {
+        statusCode = response.status;
         return response.text();
       })
       .then(async (html_or_json: string) => {
@@ -64,10 +69,16 @@ export function handlePostRequest(
             method_endpoint,
             BATCH_execution,
             batch_id,
+            statusCode,
           );
           res(html_or_json);
         } catch (_) {
-          Logger.log("Not JSON");
+          Logger.log("[handlePostRequest]: Not JSON");
+          await addToRequestInfoStorage({
+            recordID: recordID,
+            isPDF: false,
+            statusCode: statusCode,
+          });
           // not json
           // query a tab and send a message
           // then save the message to the server
@@ -88,6 +99,7 @@ export function handlePostRequest(
                 htmlTransformer: htmlTransformer,
                 BATCH_execution: BATCH_execution,
                 batch_id: batch_id,
+                statusCode: statusCode,
               });
               if (response !== null) {
                 break;
@@ -110,11 +122,11 @@ export async function saveJSON(
   endpoint: string,
   BATCH_execution: boolean,
   batch_id: string,
+  statusCode: number,
 ) {
   return new Promise(async function (res) {
     const targetUrl: string =
       "https://afcha2nmzsir4rr4zbta4tyy6e0fxjix.lambda-url.us-east-1.on.aws/";
-    let moreInfo: any = await getFromRequestInfoStorage(recordID);
     const requestOptions = {
       method: "POST",
       headers: {
@@ -130,7 +142,7 @@ export async function saveJSON(
         saveText: false,
         BATCH_execution: BATCH_execution,
         batch_id: batch_id,
-        statusCode: moreInfo.statusCode,
+        statusCode: statusCode,
       }),
     };
     Logger.log("Request options => ");

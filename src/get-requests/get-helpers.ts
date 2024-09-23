@@ -5,6 +5,7 @@ import {
 } from "../dnr/dnr-helpers";
 import { sendMessageToContentScript } from "../utils/messaging-helpers";
 import { saveJSON } from "../post-requests/post-helpers";
+import { addToRequestInfoStorage } from "../request-info/request-info-helpers";
 
 export function handleGetRequest(
   method_endpoint: string,
@@ -41,8 +42,10 @@ export function handleGetRequest(
         requestOptions["headers"] = method_headers;
       } catch (e) {}
     }
+    let statusCode: number = 1000;
     fetch(method_endpoint, requestOptions)
       .then((response) => {
+        statusCode = response.status;
         return response.text();
       })
       .then(async (html_or_json: string) => {
@@ -58,9 +61,18 @@ export function handleGetRequest(
             method_endpoint,
             BATCH_execution,
             batch_id,
+            statusCode,
           );
         } catch (_) {
-          Logger.log("Not JSON");
+          Logger.log("[handleGetRequest]: Not JSON");
+          Logger.log("[handleGetRequest]: HTML:", html_or_json.substring(0,140));
+          Logger.log("[handleGetRequest]: BATCH_execution:", BATCH_execution);
+          Logger.log("[handleGetRequest]: batch_id:", batch_id);
+          await addToRequestInfoStorage({
+            recordID: recordID,
+            isPDF: false,
+            statusCode: statusCode,
+          });
           // not json
           // query a tab and send a message
           // then save the message to the server
@@ -81,6 +93,7 @@ export function handleGetRequest(
                 htmlTransformer: htmlTransformer,
                 BATCH_execution: BATCH_execution,
                 batch_id: batch_id,
+                statusCode: statusCode,
               });
               if (response !== null) {
                 break;

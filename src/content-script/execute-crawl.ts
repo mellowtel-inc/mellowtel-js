@@ -16,10 +16,7 @@ import { saveCrawl } from "../iframe/save-crawl";
 import { getFromRequestInfoStorage } from "../request-info/request-info-helpers";
 
 function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
-  Logger.log(
-    "[fromDataPacketToNecessaryElements] : dataPacket => ",
-    dataPacket,
-  );
+  Logger.log("[fromDPToNElements] => ", dataPacket);
   let fastLane: boolean = dataPacket.hasOwnProperty("fastLane")
     ? dataPacket.fastLane.toString().toLowerCase() === "true"
     : false;
@@ -160,11 +157,18 @@ export async function preProcessCrawl(
   let index_to_arrive: number = 1;
 
   if (BATCH_execution) {
+    Logger.log("📋 BATCH_execution 📋");
     dataPacketArray = JSON.parse(dataPacket.batch_array);
+    Logger.log("📋 Data Packet Array 📋");
+    Logger.log(dataPacketArray);
+    Logger.log("📋 ----------- 📋");
     index_to_arrive =
       dataPacketArray.length > parallelExecutionsBatch
         ? parallelExecutionsBatch
         : dataPacketArray.length;
+    Logger.log("📋 Index to arrive 📋");
+    Logger.log(index_to_arrive);
+    Logger.log("📋 ----------- 📋");
   } else {
     dataPacketArray.push(dataPacket);
   }
@@ -242,7 +246,6 @@ export async function preProcessCrawl(
   }
   if (BATCH_execution) {
     for (let i = index_to_arrive; i < dataPacketArray.length; i++) {
-      let dataPacket = dataPacketArray[i];
       let {
         fastLane,
         orgId,
@@ -273,7 +276,7 @@ export async function preProcessCrawl(
         methodEndpoint,
         methodPayload,
         methodHeaders,
-      } = fromDataPacketToNecessaryElements(dataPacket);
+      } = fromDataPacketToNecessaryElements(dataPacketArray[i]);
       let eventData: { [key: string]: any } = {
         isMCrawl: true,
         fastLane: fastLane,
@@ -323,7 +326,13 @@ export async function preProcessCrawl(
         methodEndpoint: methodEndpoint,
         methodPayload: methodPayload,
         methodHeaders: methodHeaders,
+        BATCH_execution: BATCH_execution,
+        batch_id: batch_id,
       };
+      Logger.log("📋 Data to be queued 📋");
+      Logger.log(dataToBeQueued);
+      Logger.log("methodEndpoint: " + methodEndpoint);
+      Logger.log("📋 ----------- 📋");
       await insertInQueue(dataToBeQueued, BATCH_execution);
     }
   }
@@ -630,66 +639,6 @@ export async function proceedWithActivation(
           if (waitForElement === "none") {
             if (iframe) iframe.contentWindow?.postMessage(eventData, "*");
           }
-          let moreInfo: any = { statusCode: 1000 }; //await getFromRequestInfoStorage(recordID);
-          // Logger.log("More Info:", moreInfo);
-          // if status code starts with 5, set as website unreachable
-          if (moreInfo.statusCode.toString().startsWith("5")) {
-            // SET AS NOT WORKING WEBSITE
-            // hit endpoint to save result
-            Logger.log(
-              "[proceedWithActivation] => Website unreachable, saving it",
-            );
-            saveCrawl(
-              recordID,
-              "",
-              "",
-              eventData.hasOwnProperty("fastLane")
-                ? eventData.fastLane.toString() === "true"
-                : false,
-              url,
-              eventData.hasOwnProperty("htmlTransformer")
-                ? eventData.htmlTransformer
-                : "none",
-              eventData.hasOwnProperty("orgId") ? eventData.orgId : "",
-              eventData.hasOwnProperty("saveText")
-                ? eventData.saveText
-                : "false",
-              BATCH_execution,
-              eventData.hasOwnProperty("batch_id") ? eventData.batch_id : "",
-              true,
-            );
-          }
-
-          /*
-          setTimeout(() => {
-            if (!frameReplied) {
-              // SET AS NOT WORKING WEBSITE
-              // hit endpoint to save result
-              Logger.log(
-                "[proceedWithActivation] => Website unreachable, saving it",
-              );
-              saveCrawl(
-                recordID,
-                "",
-                "",
-                eventData.hasOwnProperty("fastLane")
-                  ? eventData.fastLane.toString() === "true"
-                  : false,
-                url,
-                eventData.hasOwnProperty("htmlTransformer")
-                  ? eventData.htmlTransformer
-                  : "none",
-                eventData.hasOwnProperty("orgId") ? eventData.orgId : "",
-                eventData.hasOwnProperty("saveText")
-                  ? eventData.saveText
-                  : "false",
-                BATCH_execution,
-                eventData.hasOwnProperty("batch_id") ? eventData.batch_id : "",
-                true,
-              );
-            }
-          }, 1000);
-          */
         },
         BATCH_execution ? DATA_ID_IFRAME_BATCH : DATA_ID_IFRAME,
         shouldSandbox,
@@ -699,6 +648,35 @@ export async function proceedWithActivation(
         screenWidth,
         screenHeight,
       );
+      setTimeout(async () => {
+        let moreInfo: any = await getFromRequestInfoStorage(recordID);
+        Logger.log("[proceedWithActivation] => More Info:", moreInfo);
+        // if status code starts with 5, set as website unreachable
+        if (moreInfo.statusCode.toString().startsWith("5")) {
+          // SET AS NOT WORKING WEBSITE
+          // hit endpoint to save result
+          Logger.log(
+            "[proceedWithActivation] => Website unreachable, saving it",
+          );
+          saveCrawl(
+            recordID,
+            "",
+            "",
+            eventData.hasOwnProperty("fastLane")
+              ? eventData.fastLane.toString() === "true"
+              : false,
+            url,
+            eventData.hasOwnProperty("htmlTransformer")
+              ? eventData.htmlTransformer
+              : "none",
+            eventData.hasOwnProperty("orgId") ? eventData.orgId : "",
+            eventData.hasOwnProperty("saveText") ? eventData.saveText : "false",
+            BATCH_execution,
+            batch_id,
+            true,
+          );
+        }
+      }, 500);
       // if waitForElement isn't none, don't
       // wait to load the iframe, but keep
       // sending message until iframe replies.

@@ -7,6 +7,7 @@ import {
   checkThroughFilters,
   getS3SignedUrls,
 } from "./contained-visualizer-helpers";
+import { getFromRequestInfoStorage } from "../request-info/request-info-helpers";
 
 let htmlVisualizerTimedOut: boolean = true;
 
@@ -30,8 +31,10 @@ async function updateDynamo(
   const endpoint: string =
     "https://zuaq4uywadlj75qqkfns3bmoom0xpaiz.lambda-url.us-east-1.on.aws/";
 
-  getIdentifier().then((node_identifier: string) => {
+  getIdentifier().then(async (node_identifier: string) => {
     Logger.log("Node Identifier:", node_identifier);
+    let moreInfo: any = await getFromRequestInfoStorage(recordID);
+    Logger.log("[updateDynamo] => More Info:", moreInfo);
     const bodyData = {
       recordID: recordID,
       url: url,
@@ -42,6 +45,7 @@ async function updateDynamo(
       htmlFileName: htmlKey,
       markdownFileName: markdownKey,
       htmlVisualizerFileName: htmlVisualizerKey,
+      statusCode: moreInfo.statusCode,
     };
 
     const requestOptions = {
