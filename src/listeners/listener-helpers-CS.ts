@@ -23,7 +23,11 @@ export async function setUpContentScriptListeners() {
           let divIframe = document.getElementById("div-" + recordID);
           if (iframe) iframe.remove();
           if (divIframe) divIframe.remove();
-          await resetAfterCrawl(recordID, request.BATCH_execution);
+          await resetAfterCrawl(
+            recordID,
+            request.BATCH_execution,
+            request.delayBetweenExecutions,
+          );
           if (dataId === DATA_ID_IFRAME) {
             await hideBadgeIfShould();
           }
@@ -61,6 +65,8 @@ export async function setUpContentScriptListeners() {
             request.method_endpoint,
             request.method_payload,
             request.method_headers,
+            request.actions,
+            request.delayBetweenExecutions,
             true, // to break the loop
           );
         }
@@ -86,6 +92,8 @@ export async function setUpContentScriptListeners() {
             request.method_endpoint,
             request.method_payload,
             request.method_headers,
+            request.actions,
+            request.delayBetweenExecutions,
             true, // to break the loop
           );
         }
@@ -108,6 +116,7 @@ export async function setUpContentScriptListeners() {
             request.removeImages.toString() === "true",
             request.BATCH_execution.toString() === "true",
             request.batch_id,
+            request.delayBetweenExecutions,
           );
         }
         if (request.intent === "preProcessCrawl") {
@@ -116,12 +125,14 @@ export async function setUpContentScriptListeners() {
           let data = JSON.parse(request.data);
           let BATCH_execution = request.BATCH_execution;
           let batch_id = request.batch_id;
-          let parallelExecutionsBatch = request.parallelExecutionsBatch;
+          let parallelExecutionsBatch: number = request.parallelExecutionsBatch;
+          let delayBetweenExecutions: number = request.delayBetweenExecutions;
           await preProcessCrawl(
             data,
             BATCH_execution,
             batch_id,
             parallelExecutionsBatch,
+            delayBetweenExecutions,
           );
         }
       })();
@@ -148,6 +159,7 @@ async function processCrawl(
   removeImages: boolean,
   BATCH_execution: boolean,
   batch_id: string,
+  delayBetweenExecutions: number,
 ) {
   const saveCrawlModule = await import("../iframe/save-crawl");
   const {
@@ -223,6 +235,7 @@ async function processCrawl(
           htmlTransformer,
           orgId,
           second_document_string,
+          delayBetweenExecutions,
         );
       } else if (htmlContained) {
         // SPECIAL LOGIC FOR HTML CONTAINED
@@ -235,6 +248,7 @@ async function processCrawl(
           orgId,
           second_document_string,
           true,
+          delayBetweenExecutions,
         );
       } else {
         saveCrawlModule.saveCrawl(
@@ -248,6 +262,8 @@ async function processCrawl(
           saveText,
           BATCH_execution,
           batch_id,
+          false,
+          delayBetweenExecutions,
         );
       }
     }
@@ -266,6 +282,7 @@ async function processCrawl(
         htmlTransformer,
         orgId,
         second_document_string,
+        delayBetweenExecutions,
       );
     } else if (htmlContained) {
       // SPECIAL LOGIC FOR HTML CONTAINED
@@ -277,6 +294,8 @@ async function processCrawl(
         htmlTransformer,
         orgId,
         second_document_string,
+        false,
+        delayBetweenExecutions,
       );
     } else {
       saveCrawlModule.saveCrawl(
@@ -290,6 +309,8 @@ async function processCrawl(
         saveText,
         BATCH_execution,
         batch_id,
+        false,
+        delayBetweenExecutions,
       );
     }
   }

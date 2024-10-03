@@ -8,22 +8,34 @@ import {
 } from "./contained-visualizer-helpers";
 import { capture, OutputType } from "../htmlVisualizer/src";
 import { getFromRequestInfoStorage } from "../request-info/request-info-helpers";
+import { getFromRequestMessageStorage } from "../request-message/request-message-helpers";
 
 async function tellEC2ToRender(
   recordID: string,
   url: string,
   htmlTransformer: string,
   orgId: string,
+  delayBetweenExecutions: number = 500,
 ) {
   Logger.log("📋 tellEC2ToRender - Rendering 📋");
   Logger.log("RecordID:", recordID);
   Logger.log("URL:", url);
   Logger.log("HTML Transformer:", htmlTransformer);
   Logger.log("OrgID:", orgId);
-  const endpoint: string =
-    "https://mjkrxoav2cqz3dtgn6ttcyxeua0mqpul.lambda-url.us-east-1.on.aws/";
+  Logger.log("Delay Between Executions:", delayBetweenExecutions);
 
   getIdentifier().then(async (node_identifier: string) => {
+    let endpoint: string =
+      "https://mjkrxoav2cqz3dtgn6ttcyxeua0mqpul.lambda-url.us-east-1.on.aws/";
+    let requestMessageInfo = await getFromRequestMessageStorage(recordID);
+    if (requestMessageInfo && requestMessageInfo.ec2_render_endpoint) {
+      Logger.log(
+        "Using ec2_render_endpoint from requestMessageInfo:",
+        requestMessageInfo.ec2_render_endpoint,
+      );
+      endpoint = requestMessageInfo.ec2_render_endpoint;
+    }
+
     let moreInfo: any = await getFromRequestInfoStorage(recordID);
     Logger.log("[tellEC2ToRender] => More Info:", moreInfo);
     const bodyData = {
@@ -51,11 +63,11 @@ async function tellEC2ToRender(
       })
       .then((data) => {
         Logger.log("[tellEC2ToRender]: Response from server:", data);
-        return tellToDeleteIframe(recordID, false);
+        return tellToDeleteIframe(recordID, false, delayBetweenExecutions);
       })
       .catch((error) => {
         Logger.error("[tellEC2ToRender]: Error:", error);
-        return tellToDeleteIframe(recordID, false);
+        return tellToDeleteIframe(recordID, false, delayBetweenExecutions);
       });
   });
 }
@@ -69,13 +81,14 @@ export async function saveWithContained(
   orgId: string,
   second_document_string: string,
   not_in_iframe: boolean = false,
+  delayBetweenExecutions: number = 500,
 ) {
   Logger.log("📋  saveWithContained - Saving Crawl 📋. RecordID:", recordID);
   // first pass through filters
   let isValid = await checkThroughFilters(url, second_document_string, orgId);
   if (!isValid) {
     Logger.log("URL did not pass through filters");
-    return tellToDeleteIframe(recordID, false);
+    return tellToDeleteIframe(recordID, false, delayBetweenExecutions);
   }
   let signedUrls = await getS3SignedUrls(recordID);
   let htmlContainedURL = signedUrls.uploadURL_html_contained;
@@ -129,5 +142,11 @@ export async function saveWithContained(
   await sendMessageToBackground({
     intent: "resetImageRenderHTMLVisualizer",
   });
-  await tellEC2ToRender(recordID, url, htmlTransformer, orgId);
+  await tellEC2ToRender(
+    recordID,
+    url,
+    htmlTransformer,
+    orgId,
+    delayBetweenExecutions,
+  );
 }

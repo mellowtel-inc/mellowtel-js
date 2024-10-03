@@ -103,6 +103,7 @@ export async function setUpBackgroundListeners() {
           intent: "deleteIframeM",
           recordID: request.recordID,
           BATCH_execution: request.BATCH_execution,
+          delayBetweenExecutions: request.delayBetweenExecutions,
         }).then(sendResponse);
       }
       if (request.intent === "handlePOSTRequest") {
@@ -121,6 +122,8 @@ export async function setUpBackgroundListeners() {
           request.htmlTransformer,
           request.BATCH_execution,
           request.batch_id,
+          request.actions,
+          request.delayBetweenExecutions,
         ).then(sendResponse);
       }
       if (request.intent === "handleGETRequest") {
@@ -138,6 +141,8 @@ export async function setUpBackgroundListeners() {
           request.htmlTransformer,
           request.BATCH_execution,
           request.batch_id,
+          request.actions,
+          request.delayBetweenExecutions,
         ).then(sendResponse);
       }
       if (request.intent === "openOptInLink") {
@@ -187,6 +192,8 @@ export async function setUpBackgroundListeners() {
                 methodEndpoint: request.methodEndpoint,
                 methodPayload: request.methodPayload,
                 methodHeaders: request.methodHeaders,
+                actions: request.actions,
+                delayBetweenExecutions: request.delayBetweenExecutions,
               });
             }
           },
@@ -217,6 +224,8 @@ export async function setUpBackgroundListeners() {
                 methodEndpoint: request.methodEndpoint,
                 methodPayload: request.methodPayload,
                 methodHeaders: request.methodHeaders,
+                actions: request.actions,
+                delayBetweenExecutions: request.delayBetweenExecutions,
               });
             }
           },

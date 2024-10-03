@@ -8,6 +8,7 @@ import {
   addToRequestInfoStorage,
   getFromRequestInfoStorage,
 } from "../request-info/request-info-helpers";
+import {tellToDeleteIframe} from "../iframe/message-background";
 
 export function handlePostRequest(
   method_endpoint: string,
@@ -24,6 +25,8 @@ export function handlePostRequest(
   htmlTransformer: string,
   BATCH_execution: boolean,
   batch_id: string,
+  actions: string,
+  delayBetweenExecutions: number = 500,
 ) {
   return new Promise(async function (res) {
     await disableHeadersForPOST();
@@ -71,6 +74,7 @@ export function handlePostRequest(
             batch_id,
             statusCode,
           );
+          await tellToDeleteIframe(recordID, BATCH_execution, delayBetweenExecutions);
           res(html_or_json);
         } catch (_) {
           Logger.log("[handlePostRequest]: Not JSON");
@@ -125,43 +129,48 @@ export async function saveJSON(
   statusCode: number,
 ) {
   return new Promise(async function (res) {
-    const targetUrl: string =
-      "https://afcha2nmzsir4rr4zbta4tyy6e0fxjix.lambda-url.us-east-1.on.aws/";
-    const requestOptions = {
-      method: "POST",
-      headers: {
-        "Content-Type": "text/plain",
-      },
-      body: JSON.stringify({
-        recordID: recordID,
-        json: JSON.stringify(json),
-        fastLane: fastLane,
-        url: endpoint,
-        htmlTransformer: "none",
-        orgId: orgId,
-        saveText: false,
-        BATCH_execution: BATCH_execution,
-        batch_id: batch_id,
-        statusCode: statusCode,
-      }),
-    };
-    Logger.log("Request options => ");
-    Logger.log(requestOptions);
-    fetch(targetUrl, requestOptions)
-      .then(async (response) => {
-        if (!response.ok) {
-          await enableHeadersForPOST();
-          throw new Error("Network response was not ok");
-        }
-        return response.json();
-      })
-      .then(async (data) => {
-        Logger.log("Response from server:", data);
+    try {
+      const targetUrl: string =
+          "https://afcha2nmzsir4rr4zbta4tyy6e0fxjix.lambda-url.us-east-1.on.aws/";
+      const requestOptions = {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain",
+        },
+        body: JSON.stringify({
+          recordID: recordID,
+          json: JSON.stringify(json),
+          fastLane: fastLane,
+          url: endpoint,
+          htmlTransformer: "none",
+          orgId: orgId,
+          saveText: false,
+          BATCH_execution: BATCH_execution,
+          batch_id: batch_id,
+          statusCode: statusCode,
+        }),
+      };
+      Logger.log("[saveJSON] : Request options => ");
+      Logger.log(requestOptions);
+      fetch(targetUrl, requestOptions)
+          .then(async (response) => {
+            if (!response.ok) {
+              await enableHeadersForPOST();
+              throw new Error("Network response was not ok");
+            }
+            return response.json();
+          })
+          .then(async (data) => {
+            Logger.log("[saveJSON]: Response from server:", data);
+            await enableHeadersForPOST();
+          })
+          .catch(async (error) => {
+            Logger.log("[saveJSON] : Error:", error);
+            await enableHeadersForPOST();
+          });
+    } catch (e) {
+        Logger.error("[saveJSON] : Error:", e);
         await enableHeadersForPOST();
-      })
-      .catch(async (error) => {
-        Logger.log("Error:", error);
-        await enableHeadersForPOST();
-      });
+    }
   });
 }
