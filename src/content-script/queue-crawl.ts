@@ -75,7 +75,7 @@ export async function getLastFromQueue(BATCH_execution: boolean): Promise<{
           methodPayload: "no_payload",
           methodHeaders: "no_headers",
           actions: "[]",
-            delayBetweenExecutions: 500
+          delayBetweenExecutions: 500,
         });
       let last = queue.shift();
       setLocalStorage(queueKey, queue).then(() => {

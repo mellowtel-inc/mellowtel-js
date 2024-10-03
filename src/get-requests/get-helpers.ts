@@ -6,7 +6,7 @@ import {
 import { sendMessageToContentScript } from "../utils/messaging-helpers";
 import { saveJSON } from "../post-requests/post-helpers";
 import { addToRequestInfoStorage } from "../request-info/request-info-helpers";
-import {tellToDeleteIframe} from "../iframe/message-background";
+import { tellToDeleteIframe } from "../iframe/message-background";
 
 export function handleGetRequest(
   method_endpoint: string,
@@ -66,7 +66,11 @@ export function handleGetRequest(
             batch_id,
             statusCode,
           );
-          await tellToDeleteIframe(recordID, BATCH_execution, delayBetweenExecutions);
+          await tellToDeleteIframe(
+            recordID,
+            BATCH_execution,
+            delayBetweenExecutions,
+          );
         } catch (_) {
           Logger.log("[handleGetRequest]: Not JSON");
           Logger.log(

@@ -1,6 +1,9 @@
-import {sendMessageToBackground, sendMessageToContentScript} from "../utils/messaging-helpers";
+import {
+  sendMessageToBackground,
+  sendMessageToContentScript,
+} from "../utils/messaging-helpers";
 import { Logger } from "../logger/logger";
-import {isInSW} from "../utils/utils";
+import { isInSW } from "../utils/utils";
 
 export function tellToDeleteIframe(
   recordID: string,
@@ -10,10 +13,12 @@ export function tellToDeleteIframe(
   return new Promise(async (resolve) => {
     try {
       Logger.log("[tellToDeleteIframe] : recordID => " + recordID);
-      Logger.log("[tellToDeleteIframe] : BATCH_execution => " + BATCH_execution);
+      Logger.log(
+        "[tellToDeleteIframe] : BATCH_execution => " + BATCH_execution,
+      );
       // if in background already, avoid relaying message to background
       // directly call the function
-      if(await isInSW()){
+      if (await isInSW()) {
         Logger.log("[tellToDeleteIframe] : isInSW => true");
         chrome.tabs.query({}, async function (tabs) {
           for (let i = 0; i < tabs.length; i++) {
@@ -40,8 +45,8 @@ export function tellToDeleteIframe(
         });
       }
     } catch (e) {
-        Logger.error("[tellToDeleteIframe] : error => " + e);
-        resolve(false);
+      Logger.error("[tellToDeleteIframe] : error => " + e);
+      resolve(false);
     }
   });
 }

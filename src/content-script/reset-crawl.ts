@@ -69,7 +69,7 @@ export async function resetAfterCrawl(
             dataPacket.methodPayload,
             dataPacket.methodHeaders,
             dataPacket.actions,
-              dataPacket.delayBetweenExecutions
+            dataPacket.delayBetweenExecutions,
           );
         }, delayBetweenExecutions);
       } else {

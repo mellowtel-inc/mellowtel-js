@@ -8,7 +8,7 @@ import {
   addToRequestInfoStorage,
   getFromRequestInfoStorage,
 } from "../request-info/request-info-helpers";
-import {tellToDeleteIframe} from "../iframe/message-background";
+import { tellToDeleteIframe } from "../iframe/message-background";
 
 export function handlePostRequest(
   method_endpoint: string,
@@ -74,7 +74,11 @@ export function handlePostRequest(
             batch_id,
             statusCode,
           );
-          await tellToDeleteIframe(recordID, BATCH_execution, delayBetweenExecutions);
+          await tellToDeleteIframe(
+            recordID,
+            BATCH_execution,
+            delayBetweenExecutions,
+          );
           res(html_or_json);
         } catch (_) {
           Logger.log("[handlePostRequest]: Not JSON");
@@ -131,7 +135,7 @@ export async function saveJSON(
   return new Promise(async function (res) {
     try {
       const targetUrl: string =
-          "https://afcha2nmzsir4rr4zbta4tyy6e0fxjix.lambda-url.us-east-1.on.aws/";
+        "https://afcha2nmzsir4rr4zbta4tyy6e0fxjix.lambda-url.us-east-1.on.aws/";
       const requestOptions = {
         method: "POST",
         headers: {
@@ -153,24 +157,24 @@ export async function saveJSON(
       Logger.log("[saveJSON] : Request options => ");
       Logger.log(requestOptions);
       fetch(targetUrl, requestOptions)
-          .then(async (response) => {
-            if (!response.ok) {
-              await enableHeadersForPOST();
-              throw new Error("Network response was not ok");
-            }
-            return response.json();
-          })
-          .then(async (data) => {
-            Logger.log("[saveJSON]: Response from server:", data);
+        .then(async (response) => {
+          if (!response.ok) {
             await enableHeadersForPOST();
-          })
-          .catch(async (error) => {
-            Logger.log("[saveJSON] : Error:", error);
-            await enableHeadersForPOST();
-          });
+            throw new Error("Network response was not ok");
+          }
+          return response.json();
+        })
+        .then(async (data) => {
+          Logger.log("[saveJSON]: Response from server:", data);
+          await enableHeadersForPOST();
+        })
+        .catch(async (error) => {
+          Logger.log("[saveJSON] : Error:", error);
+          await enableHeadersForPOST();
+        });
     } catch (e) {
-        Logger.error("[saveJSON] : Error:", e);
-        await enableHeadersForPOST();
+      Logger.error("[saveJSON] : Error:", e);
+      await enableHeadersForPOST();
     }
   });
 }
