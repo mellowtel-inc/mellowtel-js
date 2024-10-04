@@ -26,6 +26,7 @@ import {
   sendMessageToBackground,
   sendMessageToContentScript,
 } from "../utils/messaging-helpers";
+import { addToRequestMessageStorage } from "../request-message/request-message-helpers";
 
 const ws_url: string =
   "wss://7joy2r59rf.execute-api.us-east-1.amazonaws.com/production/";
@@ -143,6 +144,7 @@ export async function startConnectionWs(identifier: string): WebSocket {
             let BATCH_execution: boolean = false;
             let batch_id: string = "";
             let parallelExecutionsBatch: number = 4;
+            let delayBetweenExecutions: number = 500; // in ms
             if (
               data.hasOwnProperty("type_event") &&
               data.type_event === "batch"
@@ -158,6 +160,11 @@ export async function startConnectionWs(identifier: string): WebSocket {
                   type_batch === "request"
                     ? MAX_PARALLEL_EXECUTIONS_BATCH
                     : MAX_PARALLEL_EXECUTIONS_BATCH_FETCH,
+                );
+              }
+              if (data.hasOwnProperty("delay_between_executions")) {
+                delayBetweenExecutions = parseInt(
+                  data.delay_between_executions,
                 );
               }
             }
@@ -180,6 +187,9 @@ export async function startConnectionWs(identifier: string): WebSocket {
                 await setLocalStorage("mllwtl_rate_limit_reached", true);
                 ws.close();
               }
+              if (data.hasOwnProperty("recordID")) {
+                await addToRequestMessageStorage(data);
+              }
               if (manifestVersion.toString() === "2") {
                 Logger.log(
                   "[🌐]: MV2 Sending message to a viable content script...",
@@ -199,6 +209,7 @@ export async function startConnectionWs(identifier: string): WebSocket {
                       BATCH_execution: BATCH_execution,
                       batch_id: batch_id,
                       parallelExecutionsBatch: parallelExecutionsBatch,
+                      delayBetweenExecutions: delayBetweenExecutions,
                     }).then((response) => {
                       if (response === "success") {
                         Logger.log(
@@ -215,6 +226,7 @@ export async function startConnectionWs(identifier: string): WebSocket {
                   BATCH_execution,
                   batch_id,
                   parallelExecutionsBatch,
+                  delayBetweenExecutions,
                 );
               }
             } else {

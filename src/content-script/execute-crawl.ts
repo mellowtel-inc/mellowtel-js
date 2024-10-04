@@ -103,6 +103,9 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
   let methodHeaders: string = dataPacket.hasOwnProperty("method_headers")
     ? dataPacket.method_headers
     : "no_headers";
+  let actions: string = dataPacket.hasOwnProperty("actions")
+    ? dataPacket.actions
+    : JSON.stringify([]);
   return {
     fastLane,
     orgId,
@@ -133,6 +136,7 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
     methodEndpoint,
     methodPayload,
     methodHeaders,
+    actions,
   };
 }
 
@@ -141,6 +145,7 @@ export async function preProcessCrawl(
   BATCH_execution: boolean = false,
   batch_id: string = "",
   parallelExecutionsBatch: number = 4,
+  delayBetweenExecutions: number = 500, // in ms
 ) {
   Logger.log("📋 Data Packet 📋");
   Logger.log(dataPacket);
@@ -206,6 +211,7 @@ export async function preProcessCrawl(
       methodEndpoint,
       methodPayload,
       methodHeaders,
+      actions,
     } = fromDataPacketToNecessaryElements(dataPacket);
 
     promiseArray.push(
@@ -241,6 +247,8 @@ export async function preProcessCrawl(
         methodEndpoint,
         methodPayload,
         methodHeaders,
+        actions,
+        delayBetweenExecutions,
       ),
     );
   }
@@ -276,6 +284,7 @@ export async function preProcessCrawl(
         methodEndpoint,
         methodPayload,
         methodHeaders,
+        actions,
       } = fromDataPacketToNecessaryElements(dataPacketArray[i]);
       let eventData: { [key: string]: any } = {
         isMCrawl: true,
@@ -306,6 +315,8 @@ export async function preProcessCrawl(
         methodEndpoint: methodEndpoint,
         methodPayload: methodPayload,
         methodHeaders: methodHeaders,
+        actions: actions,
+        delayBetweenExecutions: delayBetweenExecutions,
       };
       let dataToBeQueued = {
         url: dataPacketArray[i].url,
@@ -328,6 +339,8 @@ export async function preProcessCrawl(
         methodHeaders: methodHeaders,
         BATCH_execution: BATCH_execution,
         batch_id: batch_id,
+        actions: actions,
+        delayBetweenExecutions: delayBetweenExecutions,
       };
       Logger.log("📋 Data to be queued 📋");
       Logger.log(dataToBeQueued);
@@ -384,6 +397,8 @@ export function crawlP2P(
   methodEndpoint: string = "",
   methodPayload: string = "",
   methodHeaders: string = "",
+  actions: string = "",
+  delayBetweenExecutions: number = 500,
 ): Promise<string> {
   return new Promise((resolve) => {
     let [url_to_crawl, hostname] = preProcessUrl(url, recordID);
@@ -432,6 +447,8 @@ export function crawlP2P(
         methodEndpoint: methodEndpoint,
         methodPayload: methodPayload,
         methodHeaders: methodHeaders,
+        actions: actions,
+        delayBetweenExecutions: delayBetweenExecutions,
       };
       let frameCount = getFrameCount(BATCH_execution);
       let max_parallel_executions = BATCH_execution
@@ -458,6 +475,8 @@ export function crawlP2P(
           methodEndpoint: methodEndpoint,
           methodPayload: methodPayload,
           methodHeaders: methodHeaders,
+          actions: actions,
+          delayBetweenExecutions: delayBetweenExecutions,
         };
         await insertInQueue(dataToBeQueued, BATCH_execution);
       } else {
@@ -482,6 +501,8 @@ export function crawlP2P(
           methodEndpoint,
           methodPayload,
           methodHeaders,
+          actions,
+          delayBetweenExecutions,
         );
       }
       resolve("done");
@@ -498,7 +519,7 @@ export async function proceedWithActivation(
   sandBoxAttributes: string,
   BATCH_execution: boolean,
   batch_id: string = "",
-  triggerDownload: boolean = false,
+  triggersDownload: boolean = false,
   skipHeaders: boolean = false,
   hostname: string = "",
   htmlVisualizer: boolean = false,
@@ -510,6 +531,8 @@ export async function proceedWithActivation(
   methodEndpoint: string = "",
   methodPayload: string = "",
   methodHeaders: string = "",
+  actions: string = "",
+  delayBetweenExecutions: number = 500,
   breakLoop: boolean = false,
 ) {
   Logger.log("[proceedWithActivation] => HTML Visualizer: " + htmlVisualizer);
@@ -530,6 +553,8 @@ export async function proceedWithActivation(
       htmlTransformer: eventData.htmlTransformer,
       BATCH_execution: BATCH_execution,
       batch_id: batch_id,
+      actions: actions,
+      delayBetweenExecutions: delayBetweenExecutions,
     });
   } else if (POST_request) {
     await sendMessageToBackground({
@@ -548,6 +573,8 @@ export async function proceedWithActivation(
       htmlTransformer: eventData.htmlTransformer,
       BATCH_execution: BATCH_execution,
       batch_id: batch_id,
+      actions: actions,
+      delayBetweenExecutions: delayBetweenExecutions,
     });
   } else if (htmlVisualizer && !breakLoop) {
     Logger.log("[proceedWithActivation] => Sending message to background");
@@ -561,11 +588,13 @@ export async function proceedWithActivation(
       sandBoxAttributes: sandBoxAttributes,
       BATCH_execution: BATCH_execution,
       batch_id: batch_id,
-      triggerDownload: triggerDownload,
+      triggersDownload: triggersDownload,
       skipHeaders: skipHeaders,
       hostname: hostname,
       screenWidth: screenWidth,
       screenHeight: screenHeight,
+      actions: actions,
+      delayBetweenExecutions: delayBetweenExecutions,
     });
   } else if (htmlContained && !breakLoop) {
     await sendMessageToBackground({
@@ -578,17 +607,19 @@ export async function proceedWithActivation(
       sandBoxAttributes: sandBoxAttributes,
       BATCH_execution: BATCH_execution,
       batch_id: batch_id,
-      triggerDownload: triggerDownload,
+      triggersDownload: triggersDownload,
       skipHeaders: skipHeaders,
       hostname: hostname,
       screenWidth: screenWidth,
       screenHeight: screenHeight,
+      actions: actions,
+      delayBetweenExecutions: delayBetweenExecutions,
     });
   } else {
-    if (triggerDownload) {
+    if (triggersDownload) {
       await sendToBackgroundToSeeIfTriggersDownload(
         url,
-        triggerDownload,
+        triggersDownload,
         false,
         recordID,
       );
@@ -600,14 +631,8 @@ export async function proceedWithActivation(
       recordID,
       parseInt(eventData.waitBeforeScraping),
       BATCH_execution,
+      delayBetweenExecutions,
     );
-    // add listener on window
-    let frameReplied = false;
-    window.addEventListener("message", (event) => {
-      if (event.data.isIframeAlive && event.data.recordID === recordID) {
-        frameReplied = true;
-      }
-    });
     let browser = detectBrowser();
     let safeToProceed: boolean = true;
     if (browser === "firefox" || browser === "safari") {

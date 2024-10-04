@@ -11,6 +11,7 @@ import { extractTextFromPDF } from "../pdf/pdf-getter";
 import { Logger } from "../logger/logger";
 import { saveWithVisualizer } from "./save-with-visualizer";
 import { saveWithContained } from "./save-with-contained";
+import { Action, executeActions } from "./actions";
 export async function initCrawl(event: MessageEvent, shouldDispatch: boolean) {
   window.addEventListener("message", async function (event) {
     initCrawlHelper(event, 0);
@@ -48,6 +49,9 @@ function initCrawlHelper(event: MessageEvent, numTries: number) {
     let htmlContained: boolean = event.data.hasOwnProperty("htmlContained")
       ? event.data.htmlContained.toString().toLowerCase() === "true"
       : false;
+    let actions: Action[] = event.data.hasOwnProperty("actions")
+      ? JSON.parse(event.data.actions)
+      : [];
 
     let waitBeforeScraping = parseInt(event.data.waitBeforeScraping);
     Logger.log("[initCrawl]: waitBeforeScraping " + waitBeforeScraping);
@@ -71,6 +75,9 @@ function initCrawlHelper(event: MessageEvent, numTries: number) {
         let html = await response.text();
         let parser = new DOMParser();
         document_to_use = parser.parseFromString(html, "text/html");
+      }
+      if (actions.length > 0) {
+        await executeActions(actions, document_to_use);
       }
 
       await processCrawl(

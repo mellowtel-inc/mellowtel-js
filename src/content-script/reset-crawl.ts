@@ -12,12 +12,21 @@ import { Logger } from "../logger/logger";
 import { resetTriggersDownload } from "../utils/triggers-download-helpers";
 import { hideBadgeIfShould } from "../transparency/badge-settings";
 import { deleteFromRequestInfoStorage } from "../request-info/request-info-helpers";
+import { deleteFromRequestMessageStorage } from "../request-message/request-message-helpers";
 
 export async function resetAfterCrawl(
   recordID: string,
   BATCH_execution: boolean,
+  delayBetweenExecutions: number = 500,
 ) {
+  if (delayBetweenExecutions === undefined || delayBetweenExecutions === null) {
+    Logger.log(
+      "[resetAfterCrawl] : delayBetweenExecutions is undefined or null. Setting it to 500",
+    );
+    delayBetweenExecutions = 500;
+  }
   await deleteFromRequestInfoStorage(recordID);
+  await deleteFromRequestMessageStorage(recordID);
   let dataPacket = await getLastFromQueue(BATCH_execution);
   Logger.log("[resetAfterCrawl] : dataPacket => ");
   Logger.log(dataPacket);
@@ -32,7 +41,11 @@ export async function resetAfterCrawl(
       Logger.log("[🌐] getLastFromQueue : dataPacket => ");
       Logger.log(dataPacket);
       if (BATCH_execution && dataPacket.methodEndpoint !== "") {
-        // wait for 1.5 seconds before proceeding with the next crawl
+        Logger.log(
+          "[🌐] : Waiting for delayBetweenExecutions => " +
+            delayBetweenExecutions,
+        );
+        // if fetching during batch execution, wait delayBetweenExecutions before proceeding
         setTimeout(() => {
           proceedWithActivation(
             dataPacket.url,
@@ -43,7 +56,7 @@ export async function resetAfterCrawl(
             dataPacket.sandBoxAttributes,
             BATCH_execution,
             dataPacket.batch_id,
-            dataPacket.triggerDownload,
+            dataPacket.triggersDownload,
             dataPacket.skipHeaders,
             dataPacket.hostname,
             dataPacket.htmlVisualizer,
@@ -55,8 +68,10 @@ export async function resetAfterCrawl(
             dataPacket.methodEndpoint,
             dataPacket.methodPayload,
             dataPacket.methodHeaders,
+            dataPacket.actions,
+            dataPacket.delayBetweenExecutions,
           );
-        }, 500);
+        }, delayBetweenExecutions);
       } else {
         await proceedWithActivation(
           dataPacket.url,
@@ -67,7 +82,7 @@ export async function resetAfterCrawl(
           dataPacket.sandBoxAttributes,
           BATCH_execution,
           dataPacket.batch_id,
-          dataPacket.triggerDownload,
+          dataPacket.triggersDownload,
           dataPacket.skipHeaders,
           dataPacket.hostname,
           dataPacket.htmlVisualizer,
@@ -79,6 +94,7 @@ export async function resetAfterCrawl(
           dataPacket.methodEndpoint,
           dataPacket.methodPayload,
           dataPacket.methodHeaders,
+          dataPacket.actions,
         );
       }
     }
@@ -113,6 +129,7 @@ export function setLifespanForIframe(
   recordID: string,
   waitBeforeScraping: number,
   BATCH_execution: boolean,
+  delayBetweenExecutions: number = 500,
 ) {
   Logger.log(
     "Setting lifespan for iframe => " +
@@ -126,7 +143,7 @@ export function setLifespanForIframe(
     let divIframe = document.getElementById("div-" + recordID);
     if (iframe) iframe.remove();
     if (divIframe) divIframe.remove();
-    await resetAfterCrawl(recordID, BATCH_execution);
+    await resetAfterCrawl(recordID, BATCH_execution, delayBetweenExecutions);
     if (dataId === DATA_ID_IFRAME) {
       await hideBadgeIfShould();
     }

@@ -32,7 +32,7 @@ export async function getLastFromQueue(BATCH_execution: boolean): Promise<{
   shouldSandbox: boolean;
   sandBoxAttributes: string;
   batch_id: string;
-  triggerDownload: boolean;
+  triggersDownload: boolean;
   skipHeaders: boolean;
   hostname: string;
   htmlVisualizer: boolean;
@@ -44,6 +44,8 @@ export async function getLastFromQueue(BATCH_execution: boolean): Promise<{
   methodEndpoint: string;
   methodPayload: string;
   methodHeaders: any;
+  actions: string;
+  delayBetweenExecutions: number;
 }> {
   return new Promise((resolve) => {
     let queueKey = BATCH_execution ? "queue_batch" : "queue";
@@ -60,7 +62,7 @@ export async function getLastFromQueue(BATCH_execution: boolean): Promise<{
           shouldSandbox: false,
           sandBoxAttributes: "",
           batch_id: "",
-          triggerDownload: false,
+          triggersDownload: false,
           skipHeaders: false,
           hostname: "",
           htmlVisualizer: false,
@@ -72,6 +74,8 @@ export async function getLastFromQueue(BATCH_execution: boolean): Promise<{
           methodEndpoint: "",
           methodPayload: "no_payload",
           methodHeaders: "no_headers",
+          actions: "[]",
+          delayBetweenExecutions: 500,
         });
       let last = queue.shift();
       setLocalStorage(queueKey, queue).then(() => {

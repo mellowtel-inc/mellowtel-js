@@ -8,6 +8,7 @@ import {
   getS3SignedUrls,
 } from "./contained-visualizer-helpers";
 import { getFromRequestInfoStorage } from "../request-info/request-info-helpers";
+import { getFromRequestMessageStorage } from "../request-message/request-message-helpers";
 
 let htmlVisualizerTimedOut: boolean = true;
 
@@ -19,6 +20,7 @@ async function updateDynamo(
   htmlKey: string = "--",
   markdownKey: string = "--",
   htmlVisualizerKey: string = "--",
+  delayBetweenExecutions: number = 500,
 ) {
   Logger.log("📋  updateDynamo - Saving Crawl 📋");
   Logger.log("RecordID:", recordID);
@@ -28,10 +30,20 @@ async function updateDynamo(
   Logger.log("HTML Key:", htmlKey);
   Logger.log("Markdown Key:", markdownKey);
   Logger.log("HTML Visualizer Key:", htmlVisualizerKey);
-  const endpoint: string =
-    "https://zuaq4uywadlj75qqkfns3bmoom0xpaiz.lambda-url.us-east-1.on.aws/";
+  Logger.log("Delay Between Executions:", delayBetweenExecutions);
 
   getIdentifier().then(async (node_identifier: string) => {
+    let endpoint: string =
+      "https://zuaq4uywadlj75qqkfns3bmoom0xpaiz.lambda-url.us-east-1.on.aws/";
+    let requestMessageInfo = await getFromRequestMessageStorage(recordID);
+    if (requestMessageInfo && requestMessageInfo.update_dynamo_endpoint) {
+      Logger.log(
+        "Using update_dynamo_endpoint from requestMessageInfo:",
+        requestMessageInfo.update_dynamo_endpoint,
+      );
+      endpoint = requestMessageInfo.update_dynamo_endpoint;
+    }
+
     Logger.log("Node Identifier:", node_identifier);
     let moreInfo: any = await getFromRequestInfoStorage(recordID);
     Logger.log("[updateDynamo] => More Info:", moreInfo);
@@ -46,6 +58,7 @@ async function updateDynamo(
       markdownFileName: markdownKey,
       htmlVisualizerFileName: htmlVisualizerKey,
       statusCode: moreInfo.statusCode,
+      requestMessageInfo: requestMessageInfo,
     };
 
     const requestOptions = {
@@ -66,11 +79,11 @@ async function updateDynamo(
       })
       .then((data) => {
         Logger.log("Response from server:", data);
-        return tellToDeleteIframe(recordID, false);
+        return tellToDeleteIframe(recordID, false, delayBetweenExecutions);
       })
       .catch((error) => {
         Logger.error("Error:", error);
-        return tellToDeleteIframe(recordID, false);
+        return tellToDeleteIframe(recordID, false, delayBetweenExecutions);
       });
   });
 }
@@ -83,6 +96,7 @@ export async function saveWithVisualizer(
   htmlTransformer: string,
   orgId: string,
   second_document_string: string,
+  delayBetweenExecutions: number = 500,
 ) {
   Logger.log("📋  saveWithVisualizer - Saving Crawl 📋");
   Logger.log("RecordID:", recordID);
@@ -120,7 +134,7 @@ export async function saveWithVisualizer(
         "text_" + recordID + ".txt",
         "markDown_" + recordID + ".txt",
       );
-      return tellToDeleteIframe(recordID, false);
+      return tellToDeleteIframe(recordID, false, delayBetweenExecutions);
     } else {
       Logger.log("HTML Visualizer Completed Correctly");
       htmlVisualizerTimedOut = true;
@@ -133,7 +147,7 @@ export async function saveWithVisualizer(
   await sendMessageToBackground({
     intent: "fixImageRenderHTMLVisualizer",
   });
-  window.scrollTo(0, 0);
+  // window.scrollTo(0, 0);
   let base64image = await htmlVisualizer(document.body, {
     useCORS: true,
     // allowTaint: true,
@@ -166,6 +180,7 @@ export async function saveWithVisualizer(
     "text_" + recordID + ".txt",
     "markDown_" + recordID + ".txt",
     "image_" + recordID + ".png",
+    delayBetweenExecutions,
   );
   htmlVisualizerTimedOut = false;
 }
