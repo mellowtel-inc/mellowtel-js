@@ -519,7 +519,7 @@ export async function proceedWithActivation(
   sandBoxAttributes: string,
   BATCH_execution: boolean,
   batch_id: string = "",
-  triggerDownload: boolean = false,
+  triggersDownload: boolean = false,
   skipHeaders: boolean = false,
   hostname: string = "",
   htmlVisualizer: boolean = false,
@@ -588,7 +588,7 @@ export async function proceedWithActivation(
       sandBoxAttributes: sandBoxAttributes,
       BATCH_execution: BATCH_execution,
       batch_id: batch_id,
-      triggerDownload: triggerDownload,
+      triggersDownload: triggersDownload,
       skipHeaders: skipHeaders,
       hostname: hostname,
       screenWidth: screenWidth,
@@ -607,7 +607,7 @@ export async function proceedWithActivation(
       sandBoxAttributes: sandBoxAttributes,
       BATCH_execution: BATCH_execution,
       batch_id: batch_id,
-      triggerDownload: triggerDownload,
+      triggersDownload: triggersDownload,
       skipHeaders: skipHeaders,
       hostname: hostname,
       screenWidth: screenWidth,
@@ -616,10 +616,10 @@ export async function proceedWithActivation(
       delayBetweenExecutions: delayBetweenExecutions,
     });
   } else {
-    if (triggerDownload) {
+    if (triggersDownload) {
       await sendToBackgroundToSeeIfTriggersDownload(
         url,
-        triggerDownload,
+        triggersDownload,
         false,
         recordID,
       );

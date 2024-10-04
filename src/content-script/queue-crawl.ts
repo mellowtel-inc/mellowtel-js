@@ -32,7 +32,7 @@ export async function getLastFromQueue(BATCH_execution: boolean): Promise<{
   shouldSandbox: boolean;
   sandBoxAttributes: string;
   batch_id: string;
-  triggerDownload: boolean;
+  triggersDownload: boolean;
   skipHeaders: boolean;
   hostname: string;
   htmlVisualizer: boolean;
@@ -62,7 +62,7 @@ export async function getLastFromQueue(BATCH_execution: boolean): Promise<{
           shouldSandbox: false,
           sandBoxAttributes: "",
           batch_id: "",
-          triggerDownload: false,
+          triggersDownload: false,
           skipHeaders: false,
           hostname: "",
           htmlVisualizer: false,
