@@ -10,7 +10,7 @@
 <span> · </span>
 <a href="https://discord.gg/GC8vwpDWC9">Discord</a>
 <span> · </span>
-<a href="https://docs.mellowtel.it/get-started/quickstart">Documentation</a>
+<a href="https://docs.mellowtel.com/get-started/quickstart">Documentation</a>
 </div>
 
 <br/>
