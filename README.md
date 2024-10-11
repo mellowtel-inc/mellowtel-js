@@ -66,11 +66,11 @@ And a highlight from the article 😰:
 
 # Getting started 🚀
 
-We have moved our documentation to a dedicated website: [docs.mellowtel.it](https://docs.mellowtel.it).
+We have moved our documentation to a dedicated website: [docs.mellowtel.com](https://docs.mellowtel.com).
 
 # Quickstart
 
-[Here](https://docs.mellowtel.it/get-started/quickstart) is a detailed guide on how to get started with Mellowtel.
+[Here](https://docs.mellowtel.com/get-started/quickstart) is a detailed guide on how to get started with Mellowtel.
 
 # Contributing 🫶
 
