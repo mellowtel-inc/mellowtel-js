@@ -4,7 +4,7 @@
 <div align="center">Monetize your Browser plugin.<br />Open-Source, Consensual, Transparent.</div>
 <br />
 <div align="center">
-<a href="https://www.mellowtel.it/">Website</a>
+<a href="https://www.mellowtel.com/">Website</a>
 <span> · </span>
 <a href="https://github.com/mellowtel-inc/mellowtel-js">GitHub</a>
 <span> · </span>
