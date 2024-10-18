@@ -13,14 +13,16 @@ import { safeRenderIframe } from "./safe-render";
 let alreadyReplied: boolean = false;
 
 export function listenerAlive() {
-  window.addEventListener("message", (event) => {
-    if (event.data.isContentScriptAlive) {
-      window.parent.postMessage(
-        { isIframeAlive: true, recordID: event.data.recordID },
-        "*",
-      );
-    }
-  });
+  if (typeof window !== "undefined") {
+    window.addEventListener("message", (event) => {
+      if (event.data.isContentScriptAlive) {
+        window.parent.postMessage(
+          { isIframeAlive: true, recordID: event.data.recordID },
+          "*",
+        );
+      }
+    });
+  }
 }
 
 export function attachMutationObserver() {
@@ -30,14 +32,15 @@ export function attachMutationObserver() {
 }
 
 function initIframeListeners() {
+  if (typeof window === "undefined") return;
+  muteIframe();
+  safeRenderIframe();
   if (inIframe()) {
-    muteIframe();
-    safeRenderIframe();
     window.addEventListener("message", initialEventListener);
   }
 }
 
-async function initialEventListener(event: MessageEvent) {
+export async function initialEventListener(event: MessageEvent) {
   let isMCrawl = event.data.isMCrawl;
   if (isMCrawl && !alreadyReplied) {
     window.parent.postMessage(

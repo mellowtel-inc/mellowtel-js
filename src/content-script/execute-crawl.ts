@@ -14,6 +14,7 @@ import { Logger } from "../logger/logger";
 import { sendMessageToBackground } from "../utils/messaging-helpers";
 import { saveCrawl } from "../iframe/save-crawl";
 import { getFromRequestInfoStorage } from "../request-info/request-info-helpers";
+import { createUnfocusedWindow } from "../unfocused-window/create-window";
 
 function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
   Logger.log("[fromDPToNElements] => ", dataPacket);
@@ -106,6 +107,14 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
   let actions: string = dataPacket.hasOwnProperty("actions")
     ? dataPacket.actions
     : JSON.stringify([]);
+  let openTab: boolean = dataPacket.hasOwnProperty("openTab")
+    ? dataPacket.openTab.toString().toLowerCase() === "true"
+    : false;
+  let openTabOnlyIfMust: boolean = dataPacket.hasOwnProperty(
+    "openTabOnlyIfMust",
+  )
+    ? dataPacket.openTabOnlyIfMust.toString().toLowerCase() === "true"
+    : false;
   return {
     fastLane,
     orgId,
@@ -137,6 +146,8 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
     methodPayload,
     methodHeaders,
     actions,
+    openTab,
+    openTabOnlyIfMust,
   };
 }
 
@@ -212,6 +223,8 @@ export async function preProcessCrawl(
       methodPayload,
       methodHeaders,
       actions,
+      openTab,
+      openTabOnlyIfMust,
     } = fromDataPacketToNecessaryElements(dataPacket);
 
     promiseArray.push(
@@ -249,6 +262,8 @@ export async function preProcessCrawl(
         methodHeaders,
         actions,
         delayBetweenExecutions,
+        openTab,
+        openTabOnlyIfMust,
       ),
     );
   }
@@ -285,6 +300,8 @@ export async function preProcessCrawl(
         methodPayload,
         methodHeaders,
         actions,
+        openTab,
+        openTabOnlyIfMust,
       } = fromDataPacketToNecessaryElements(dataPacketArray[i]);
       let eventData: { [key: string]: any } = {
         isMCrawl: true,
@@ -317,6 +334,8 @@ export async function preProcessCrawl(
         methodHeaders: methodHeaders,
         actions: actions,
         delayBetweenExecutions: delayBetweenExecutions,
+        openTab: openTab,
+        openTabOnlyIfMust: openTabOnlyIfMust,
       };
       let dataToBeQueued = {
         url: dataPacketArray[i].url,
@@ -341,6 +360,8 @@ export async function preProcessCrawl(
         batch_id: batch_id,
         actions: actions,
         delayBetweenExecutions: delayBetweenExecutions,
+        openTab: openTab,
+        openTabOnlyIfMust: openTabOnlyIfMust,
       };
       Logger.log("📋 Data to be queued 📋");
       Logger.log(dataToBeQueued);
@@ -399,13 +420,15 @@ export function crawlP2P(
   methodHeaders: string = "",
   actions: string = "",
   delayBetweenExecutions: number = 500,
+  openTab: boolean = false,
+  openTabOnlyIfMust: boolean = false,
 ): Promise<string> {
   return new Promise((resolve) => {
     let [url_to_crawl, hostname] = preProcessUrl(url, recordID);
     Logger.log("[🌐 crawlP2P] : url_to_crawl => " + url_to_crawl);
     Logger.log("[🌐 crawlP2P] : hostname => " + hostname);
     let skipCheck = false;
-    if (POST_request || GET_request) {
+    if (POST_request || GET_request || openTab || openTabOnlyIfMust) {
       skipHeaders = true;
       skipCheck = true;
     }
@@ -449,6 +472,8 @@ export function crawlP2P(
         methodHeaders: methodHeaders,
         actions: actions,
         delayBetweenExecutions: delayBetweenExecutions,
+        openTab: openTab,
+        openTabOnlyIfMust: openTabOnlyIfMust,
       };
       let frameCount = getFrameCount(BATCH_execution);
       let max_parallel_executions = BATCH_execution
@@ -477,6 +502,8 @@ export function crawlP2P(
           methodHeaders: methodHeaders,
           actions: actions,
           delayBetweenExecutions: delayBetweenExecutions,
+          openTab: openTab,
+          openTabOnlyIfMust: openTabOnlyIfMust,
         };
         await insertInQueue(dataToBeQueued, BATCH_execution);
       } else {
@@ -503,6 +530,8 @@ export function crawlP2P(
           methodHeaders,
           actions,
           delayBetweenExecutions,
+          openTab,
+          openTabOnlyIfMust,
         );
       }
       resolve("done");
@@ -533,6 +562,8 @@ export async function proceedWithActivation(
   methodHeaders: string = "",
   actions: string = "",
   delayBetweenExecutions: number = 500,
+  openTab: boolean = false,
+  openTabOnlyIfMust: boolean = false,
   breakLoop: boolean = false,
 ) {
   Logger.log("[proceedWithActivation] => HTML Visualizer: " + htmlVisualizer);
@@ -555,6 +586,8 @@ export async function proceedWithActivation(
       batch_id: batch_id,
       actions: actions,
       delayBetweenExecutions: delayBetweenExecutions,
+      openTab: openTab,
+      openTabOnlyIfMust: openTabOnlyIfMust,
     });
   } else if (POST_request) {
     await sendMessageToBackground({
@@ -575,6 +608,8 @@ export async function proceedWithActivation(
       batch_id: batch_id,
       actions: actions,
       delayBetweenExecutions: delayBetweenExecutions,
+      openTab: openTab,
+      openTabOnlyIfMust: openTabOnlyIfMust,
     });
   } else if (htmlVisualizer && !breakLoop) {
     Logger.log("[proceedWithActivation] => Sending message to background");
@@ -595,6 +630,8 @@ export async function proceedWithActivation(
       screenHeight: screenHeight,
       actions: actions,
       delayBetweenExecutions: delayBetweenExecutions,
+      openTab: openTab,
+      openTabOnlyIfMust: openTabOnlyIfMust,
     });
   } else if (htmlContained && !breakLoop) {
     await sendMessageToBackground({
@@ -614,6 +651,8 @@ export async function proceedWithActivation(
       screenHeight: screenHeight,
       actions: actions,
       delayBetweenExecutions: delayBetweenExecutions,
+      openTab: openTab,
+      openTabOnlyIfMust: openTabOnlyIfMust,
     });
   } else {
     if (triggersDownload) {
@@ -627,100 +666,114 @@ export async function proceedWithActivation(
     if (skipHeaders) {
       await disableXFrameHeaders(hostname, skipHeaders);
     }
-    setLifespanForIframe(
-      recordID,
-      parseInt(eventData.waitBeforeScraping),
-      BATCH_execution,
-      delayBetweenExecutions,
-    );
-    let browser = detectBrowser();
     let safeToProceed: boolean = true;
-    if (browser === "firefox" || browser === "safari") {
-      let current_url = new URL(window.location.href);
-      let url_to_load = new URL(url);
-      if (current_url.hostname === url_to_load.hostname) {
-        Logger.log(
-          "[proceedWithActivation] => Same domain, skipping iframe load",
-        );
-        safeToProceed = false;
+    if (!openTab && !openTabOnlyIfMust) {
+      setLifespanForIframe(
+        recordID,
+        parseInt(eventData.waitBeforeScraping),
+        BATCH_execution,
+        delayBetweenExecutions,
+      );
+      let browser = detectBrowser();
+      if (browser === "firefox" || browser === "safari") {
+        let current_url = new URL(window.location.href);
+        let url_to_load = new URL(url);
+        if (current_url.hostname === url_to_load.hostname) {
+          Logger.log(
+            "[proceedWithActivation] => Same domain, skipping iframe load",
+          );
+          safeToProceed = false;
+        }
       }
     }
     if (safeToProceed) {
-      insertIFrame(
-        url,
-        recordID,
-        function () {
-          // find a way to send a message to the content script inside this iframe
-          // to check if it's ready
-          // send message isContentScriptAlive
-          let iframe: HTMLIFrameElement | null = document.getElementById(
-            recordID,
-          ) as HTMLIFrameElement | null;
-          if (iframe)
-            iframe.contentWindow?.postMessage(
-              { isContentScriptAlive: true, recordID: recordID },
-              "*",
+      if (openTab || openTabOnlyIfMust) {
+        createUnfocusedWindow(
+          url,
+          recordID,
+          parseInt(eventData.waitBeforeScraping),
+          eventData,
+        ).then();
+      } else {
+        insertIFrame(
+          url,
+          recordID,
+          function () {
+            // find a way to send a message to the content script inside this iframe
+            // to check if it's ready
+            // send message isContentScriptAlive
+            let iframe: HTMLIFrameElement | null = document.getElementById(
+              recordID,
+            ) as HTMLIFrameElement | null;
+            if (iframe)
+              iframe.contentWindow?.postMessage(
+                { isContentScriptAlive: true, recordID: recordID },
+                "*",
+              );
+            if (waitForElement === "none") {
+              if (iframe) iframe.contentWindow?.postMessage(eventData, "*");
+            }
+          },
+          BATCH_execution ? DATA_ID_IFRAME_BATCH : DATA_ID_IFRAME,
+          shouldSandbox,
+          sandBoxAttributes,
+          htmlVisualizer,
+          htmlContained,
+          screenWidth,
+          screenHeight,
+        );
+
+        setTimeout(async () => {
+          let moreInfo: any = await getFromRequestInfoStorage(recordID);
+          Logger.log("[proceedWithActivation] => More Info:", moreInfo);
+          // if status code starts with 5, set as website unreachable
+          if (moreInfo.statusCode.toString().startsWith("5")) {
+            // SET AS NOT WORKING WEBSITE
+            // hit endpoint to save result
+            Logger.log(
+              "[proceedWithActivation] => Website unreachable, saving it",
             );
-          if (waitForElement === "none") {
+            saveCrawl(
+              recordID,
+              "",
+              "",
+              eventData.hasOwnProperty("fastLane")
+                ? eventData.fastLane.toString() === "true"
+                : false,
+              url,
+              eventData.hasOwnProperty("htmlTransformer")
+                ? eventData.htmlTransformer
+                : "none",
+              eventData.hasOwnProperty("orgId") ? eventData.orgId : "",
+              eventData.hasOwnProperty("saveText")
+                ? eventData.saveText
+                : "false",
+              BATCH_execution,
+              batch_id,
+              true,
+            );
+          }
+        }, 500);
+        // if waitForElement isn't none, don't
+        // wait to load the iframe, but keep
+        // sending message until iframe replies.
+        if (waitForElement !== "none") {
+          let iFrameReplied = false;
+          window.addEventListener("message", function (event) {
+            if (event.data.isMReply && event.data.recordID === recordID)
+              iFrameReplied = true;
+          });
+          let timer = setInterval(function () {
+            let iframe: HTMLIFrameElement | null = document.getElementById(
+              recordID,
+            ) as HTMLIFrameElement | null;
+            if (iFrameReplied) {
+              clearInterval(timer);
+              return;
+            }
             if (iframe) iframe.contentWindow?.postMessage(eventData, "*");
-          }
-        },
-        BATCH_execution ? DATA_ID_IFRAME_BATCH : DATA_ID_IFRAME,
-        shouldSandbox,
-        sandBoxAttributes,
-        htmlVisualizer,
-        htmlContained,
-        screenWidth,
-        screenHeight,
-      );
-      setTimeout(async () => {
-        let moreInfo: any = await getFromRequestInfoStorage(recordID);
-        Logger.log("[proceedWithActivation] => More Info:", moreInfo);
-        // if status code starts with 5, set as website unreachable
-        if (moreInfo.statusCode.toString().startsWith("5")) {
-          // SET AS NOT WORKING WEBSITE
-          // hit endpoint to save result
-          Logger.log(
-            "[proceedWithActivation] => Website unreachable, saving it",
-          );
-          saveCrawl(
-            recordID,
-            "",
-            "",
-            eventData.hasOwnProperty("fastLane")
-              ? eventData.fastLane.toString() === "true"
-              : false,
-            url,
-            eventData.hasOwnProperty("htmlTransformer")
-              ? eventData.htmlTransformer
-              : "none",
-            eventData.hasOwnProperty("orgId") ? eventData.orgId : "",
-            eventData.hasOwnProperty("saveText") ? eventData.saveText : "false",
-            BATCH_execution,
-            batch_id,
-            true,
-          );
+          }, 50);
         }
-      }, 500);
-      // if waitForElement isn't none, don't
-      // wait to load the iframe, but keep
-      // sending message until iframe replies.
-      if (waitForElement !== "none") {
-        let iFrameReplied = false;
-        window.addEventListener("message", function (event) {
-          if (event.data.isMReply && event.data.recordID === recordID)
-            iFrameReplied = true;
-        });
-        let timer = setInterval(function () {
-          let iframe: HTMLIFrameElement | null = document.getElementById(
-            recordID,
-          ) as HTMLIFrameElement | null;
-          if (iFrameReplied) {
-            clearInterval(timer);
-            return;
-          }
-          if (iframe) iframe.contentWindow?.postMessage(eventData, "*");
-        }, 50);
       }
     }
   }

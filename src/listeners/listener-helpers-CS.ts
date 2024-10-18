@@ -10,6 +10,12 @@ import {
   proceedWithActivation,
 } from "../content-script/execute-crawl";
 import { Logger } from "../logger/logger";
+import { getFromRequestMessageStorage } from "../request-message/request-message-helpers";
+import {
+  deleteLocalStorage,
+  getLocalStorage,
+} from "../storage/storage-helpers";
+import { deleteUnfocusedWindow } from "../unfocused-window/create-window";
 
 export async function setUpContentScriptListeners() {
   chrome.runtime.onMessage.addListener(
@@ -18,11 +24,24 @@ export async function setUpContentScriptListeners() {
         if (request.target !== "contentScriptM") return false;
         if (request.intent === "deleteIframeM") {
           let recordID = request.recordID;
-          let iframe = document.getElementById(recordID);
-          let dataId = iframe?.getAttribute("data-id") || "";
-          let divIframe = document.getElementById("div-" + recordID);
+          let iframe: HTMLElement | null = document.getElementById(recordID);
+          let dataId: string = iframe?.getAttribute("data-id") || "";
+          let divIframe: HTMLElement | null = document.getElementById(
+            "div-" + recordID,
+          );
           if (iframe) iframe.remove();
           if (divIframe) divIframe.remove();
+          // get unfocusedWindowId from storage
+          let unfocusedWindowId = await getLocalStorage(
+            "unfocusedWindowId",
+            true,
+          );
+          if (unfocusedWindowId !== undefined) {
+            // remove the window with this id.
+            await deleteUnfocusedWindow(unfocusedWindowId);
+            // remove unfocusedWindowId from storage
+            await deleteLocalStorage(["unfocusedWindowId"]);
+          }
           await resetAfterCrawl(
             recordID,
             request.BATCH_execution,
@@ -67,6 +86,8 @@ export async function setUpContentScriptListeners() {
             request.method_headers,
             request.actions,
             request.delayBetweenExecutions,
+            request.openTab,
+            request.openTabOnlyIfMust,
             true, // to break the loop
           );
         }
@@ -94,6 +115,8 @@ export async function setUpContentScriptListeners() {
             request.method_headers,
             request.actions,
             request.delayBetweenExecutions,
+            request.openTab,
+            request.openTabOnlyIfMust,
             true, // to break the loop
           );
         }
@@ -134,6 +157,16 @@ export async function setUpContentScriptListeners() {
             parallelExecutionsBatch,
             delayBetweenExecutions,
           );
+        }
+        if (request.intent === "triggerEventListener") {
+          Logger.log("[🌐] : triggerEventListener...");
+          const initialEventListenerModule = await import(
+            "../iframe/mutation-observer"
+          );
+          let event = new MessageEvent("message", {
+            data: JSON.parse(request.data),
+          });
+          await initialEventListenerModule.initialEventListener(event);
         }
       })();
       return true; // return true to indicate you want to send a response asynchronously

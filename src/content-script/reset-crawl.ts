@@ -70,6 +70,8 @@ export async function resetAfterCrawl(
             dataPacket.methodHeaders,
             dataPacket.actions,
             dataPacket.delayBetweenExecutions,
+            dataPacket.openTab,
+            dataPacket.openTabOnlyIfMust,
           );
         }, delayBetweenExecutions);
       } else {
@@ -95,6 +97,8 @@ export async function resetAfterCrawl(
           dataPacket.methodPayload,
           dataPacket.methodHeaders,
           dataPacket.actions,
+          dataPacket.delayBetweenExecutions,
+          dataPacket.openTab,
         );
       }
     }
