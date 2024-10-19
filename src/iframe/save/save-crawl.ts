@@ -1,8 +1,9 @@
-import { tellToDeleteIframe } from "./message-background";
-import { getIdentifier } from "../utils/identity-helpers";
-import { Logger } from "../logger/logger";
-import { getFromRequestInfoStorage } from "../request-info/request-info-helpers";
-import { getFromRequestMessageStorage } from "../request-message/request-message-helpers";
+import { tellToDeleteIframe } from "../message-background";
+import { getIdentifier } from "../../utils/identity-helpers";
+import { Logger } from "../../logger/logger";
+import { getFromRequestInfoStorage } from "../../request-info/request-info-helpers";
+import { getFromRequestMessageStorage } from "../../request-message/request-message-helpers";
+import { checkIfOpenTabIfMustAndShould } from "./save-utils";
 
 export function saveCrawl(
   recordID: string,
@@ -17,6 +18,7 @@ export function saveCrawl(
   batch_id: string,
   website_unreachable: boolean = false,
   delayBetweenExecutions: number = 500,
+  openTabOnlyIfMust: boolean = false,
 ) {
   Logger.log("📋 Saving Crawl 📋");
   Logger.log("RecordID:", recordID);
@@ -72,21 +74,29 @@ export function saveCrawl(
         }
         return response.json();
       })
-      .then((data) => {
+      .then(async (data) => {
         Logger.log("Response from server:", data);
-        return tellToDeleteIframe(
+        await tellToDeleteIframe(
           recordID,
           BATCH_execution,
           delayBetweenExecutions,
         );
+        // if response contain special instructions and openTabOnlyIfMust is true
+        // then open the tab
+        await checkIfOpenTabIfMustAndShould(recordID, data);
+        return data;
       })
-      .catch((error) => {
+      .catch(async (error) => {
         Logger.error("Error:", error);
-        return tellToDeleteIframe(
+        await tellToDeleteIframe(
           recordID,
           BATCH_execution,
           delayBetweenExecutions,
         );
+        // if response contain special instructions and openTabOnlyIfMust is true
+        // then open the tab
+        await checkIfOpenTabIfMustAndShould(recordID, "shouldOpen");
+        return error;
       });
   });
 }

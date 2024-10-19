@@ -5,12 +5,12 @@ import {
   removeImagesDOM,
   removeSelectorsFromDocument,
 } from "./dom-processing";
-import { saveCrawl } from "./save-crawl";
+import { saveCrawl } from "./save/save-crawl";
 import { TurndownService } from "../turndown/turndown";
 import { extractTextFromPDF } from "../pdf/pdf-getter";
 import { Logger } from "../logger/logger";
-import { saveWithVisualizer } from "./save-with-visualizer";
-import { saveWithContained } from "./save-with-contained";
+import { saveWithVisualizer } from "./save/save-with-visualizer";
+import { saveWithContained } from "./save/save-with-contained";
 import { Action, executeActions } from "./actions";
 export async function initCrawl(event: MessageEvent, shouldDispatch: boolean) {
   window.addEventListener("message", async function (event) {

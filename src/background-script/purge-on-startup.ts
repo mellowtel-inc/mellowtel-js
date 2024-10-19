@@ -11,6 +11,7 @@ export async function purgeOnStartup(): Promise<void> {
       "recordsRequestInfo",
       "recordsMessageInfo",
       "unfocusedWindowId",
+      "onlyIfMustArray",
     ];
     await deleteLocalStorage(keysToPurge);
   });

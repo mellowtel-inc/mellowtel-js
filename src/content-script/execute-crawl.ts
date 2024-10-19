@@ -12,9 +12,10 @@ import { insertIFrame } from "../utils/iframe-helpers";
 import { sendToBackgroundToSeeIfTriggersDownload } from "../utils/triggers-download-helpers";
 import { Logger } from "../logger/logger";
 import { sendMessageToBackground } from "../utils/messaging-helpers";
-import { saveCrawl } from "../iframe/save-crawl";
+import { saveCrawl } from "../iframe/save/save-crawl";
 import { getFromRequestInfoStorage } from "../request-info/request-info-helpers";
 import { createUnfocusedWindow } from "../unfocused-window/create-window";
+import { saveToOnlyIfMustStorage } from "../unfocused-window/only-if-must-storage";
 
 function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
   Logger.log("[fromDPToNElements] => ", dataPacket);
@@ -428,7 +429,7 @@ export function crawlP2P(
     Logger.log("[🌐 crawlP2P] : url_to_crawl => " + url_to_crawl);
     Logger.log("[🌐 crawlP2P] : hostname => " + hostname);
     let skipCheck = false;
-    if (POST_request || GET_request || openTab || openTabOnlyIfMust) {
+    if (POST_request || GET_request || openTab) {
       skipHeaders = true;
       skipCheck = true;
     }
@@ -667,7 +668,7 @@ export async function proceedWithActivation(
       await disableXFrameHeaders(hostname, skipHeaders);
     }
     let safeToProceed: boolean = true;
-    if (!openTab && !openTabOnlyIfMust) {
+    if (!openTab) {
       setLifespanForIframe(
         recordID,
         parseInt(eventData.waitBeforeScraping),
@@ -687,7 +688,14 @@ export async function proceedWithActivation(
       }
     }
     if (safeToProceed) {
-      if (openTab || openTabOnlyIfMust) {
+      if (openTabOnlyIfMust) {
+        await saveToOnlyIfMustStorage(
+          recordID,
+          parseInt(eventData.waitBeforeScraping),
+          eventData,
+        );
+      }
+      if (openTab) {
         createUnfocusedWindow(
           url,
           recordID,

@@ -128,9 +128,7 @@ export async function setUpBackgroundListeners() {
           request.batch_id,
           request.actions,
           request.delayBetweenExecutions,
-          // openTab
           request.openTab,
-          // openTabOnlyIfMust
           request.openTabOnlyIfMust,
         ).then(sendResponse);
       }
@@ -151,9 +149,7 @@ export async function setUpBackgroundListeners() {
           request.batch_id,
           request.actions,
           request.delayBetweenExecutions,
-          // openTab
           request.openTab,
-          // openTabOnlyIfMust
           request.openTabOnlyIfMust,
         ).then(sendResponse);
       }
@@ -206,8 +202,8 @@ export async function setUpBackgroundListeners() {
                 methodHeaders: request.methodHeaders,
                 actions: request.actions,
                 delayBetweenExecutions: request.delayBetweenExecutions,
-                openInTab: request.openInTab,
-                openInTabOnlyIfMust: request.openInTabOnlyIfMust,
+                openTab: request.openTab,
+                openTabOnlyIfMust: request.openTabOnlyIfMust,
               });
             }
           },
@@ -240,8 +236,8 @@ export async function setUpBackgroundListeners() {
                 methodHeaders: request.methodHeaders,
                 actions: request.actions,
                 delayBetweenExecutions: request.delayBetweenExecutions,
-                openInTab: request.openInTab,
-                openInTabOnlyIfMust: request.openInTabOnlyIfMust,
+                openTab: request.openTab,
+                openTabOnlyIfMust: request.openTabOnlyIfMust,
               });
             }
           },

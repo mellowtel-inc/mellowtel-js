@@ -137,6 +137,8 @@ export async function setUpContentScriptListeners() {
             request.BATCH_execution.toString() === "true",
             request.batch_id,
             request.delayBetweenExecutions,
+            request.openTab,
+            request.openTabOnlyIfMust,
           );
         }
         if (request.intent === "preProcessCrawl") {
@@ -204,8 +206,10 @@ async function processCrawl(
   BATCH_execution: boolean,
   batch_id: string,
   delayBetweenExecutions: number,
+  openTab: boolean,
+  openTabOnlyIfMust: boolean,
 ) {
-  const saveCrawlModule = await import("../iframe/save-crawl");
+  const saveCrawlModule = await import("../iframe/save/save-crawl");
   const {
     get_document_html,
     removeElementsByClassNames,
@@ -214,9 +218,11 @@ async function processCrawl(
   } = await import("../iframe/dom-processing");
   const TurndownModule = await import("../turndown/turndown");
   const saveWithVisualizerModule = await import(
-    "../iframe/save-with-visualizer"
+    "../iframe/save/save-with-visualizer"
   );
-  const saveWithContainedModule = await import("../iframe/save-with-contained");
+  const saveWithContainedModule = await import(
+    "../iframe/save/save-with-contained"
+  );
   const extractTextFromPDFModule = await import("../pdf/pdf-getter");
   let parser: DOMParser = new DOMParser();
   let document_to_use: Document = parser.parseFromString(
@@ -280,6 +286,7 @@ async function processCrawl(
           orgId,
           second_document_string,
           delayBetweenExecutions,
+          openTabOnlyIfMust,
         );
       } else if (htmlContained) {
         // SPECIAL LOGIC FOR HTML CONTAINED
@@ -293,6 +300,7 @@ async function processCrawl(
           second_document_string,
           true,
           delayBetweenExecutions,
+          openTabOnlyIfMust,
         );
       } else {
         saveCrawlModule.saveCrawl(
@@ -308,6 +316,7 @@ async function processCrawl(
           batch_id,
           false,
           delayBetweenExecutions,
+          openTabOnlyIfMust,
         );
       }
     }
@@ -327,6 +336,7 @@ async function processCrawl(
         orgId,
         second_document_string,
         delayBetweenExecutions,
+        openTabOnlyIfMust,
       );
     } else if (htmlContained) {
       // SPECIAL LOGIC FOR HTML CONTAINED
@@ -340,6 +350,7 @@ async function processCrawl(
         second_document_string,
         false,
         delayBetweenExecutions,
+        openTabOnlyIfMust,
       );
     } else {
       saveCrawlModule.saveCrawl(
@@ -355,6 +366,7 @@ async function processCrawl(
         batch_id,
         false,
         delayBetweenExecutions,
+        openTabOnlyIfMust,
       );
     }
   }
