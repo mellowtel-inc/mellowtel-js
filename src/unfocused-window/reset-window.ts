@@ -1,6 +1,7 @@
 import { Logger } from "../logger/logger";
 import { LIFESPAN_TAB } from "../constants";
 import { resetAfterCrawl } from "../content-script/reset-crawl";
+import { deleteUnfocusedWindow } from "./create-window";
 
 export function setLifespanForWindow(
   windowID: number,
@@ -16,7 +17,8 @@ export function setLifespanForWindow(
       recordID,
   );
   setTimeout(async () => {
-    chrome.windows.remove(windowID).then();
+    Logger.log("[setLifespanForTab] : Lifespan over for Window => " + windowID);
+    await deleteUnfocusedWindow(windowID);
     await resetAfterCrawl(recordID, false, 500);
   }, LIFESPAN_TAB + waitBeforeScraping);
 }

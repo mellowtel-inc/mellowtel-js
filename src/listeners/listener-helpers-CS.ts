@@ -31,15 +31,12 @@ export async function setUpContentScriptListeners() {
           );
           if (iframe) iframe.remove();
           if (divIframe) divIframe.remove();
-          // get unfocusedWindowId from storage
           let unfocusedWindowId = await getLocalStorage(
             "unfocusedWindowId",
             true,
           );
           if (unfocusedWindowId !== undefined) {
-            // remove the window with this id.
             await deleteUnfocusedWindow(unfocusedWindowId);
-            // remove unfocusedWindowId from storage
             await deleteLocalStorage(["unfocusedWindowId"]);
           }
           await resetAfterCrawl(
@@ -158,6 +155,12 @@ export async function setUpContentScriptListeners() {
             delayBetweenExecutions,
           );
         }
+        if (request.intent === "ping") {
+          Logger.log("[🌐] : ping received, replying...");
+          sendResponse({
+            status: "ready",
+          });
+        }
         if (request.intent === "triggerEventListener") {
           Logger.log("[🌐] : triggerEventListener...");
           const initialEventListenerModule = await import(
@@ -167,6 +170,14 @@ export async function setUpContentScriptListeners() {
             data: JSON.parse(request.data),
           });
           await initialEventListenerModule.initialEventListener(event);
+        }
+        if (request.intent === "resetAfterCrawl") {
+          sendResponse("success");
+          await resetAfterCrawl(
+            request.recordID,
+            request.BATCH_execution,
+            request.delayBetweenExecutions,
+          );
         }
       })();
       return true; // return true to indicate you want to send a response asynchronously

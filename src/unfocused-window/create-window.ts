@@ -6,6 +6,9 @@ import {
   sendMessageToContentScript,
 } from "../utils/messaging-helpers";
 import { getLocalStorage, setLocalStorage } from "../storage/storage-helpers";
+const MAX_RETRIES: number = 50;
+const HEARTBEAT_INTERVAL: number = 500; // 500ms between checks
+const DELAY_BEFORE_SENDING_MESSAGE: number = 1500; // 1.5s before sending message to tab
 
 export function deleteUnfocusedWindow(windowId: number): Promise<boolean> {
   return new Promise(async (resolve) => {
@@ -20,7 +23,12 @@ export function deleteUnfocusedWindow(windowId: number): Promise<boolean> {
       });
       resolve(response);
     } else {
-      chrome.windows.remove(windowId).then(() => {});
+      try {
+        chrome.windows.remove(windowId).then(() => {});
+        setLocalStorage("unfocusedWindowId", null).then();
+      } catch (error) {
+        Logger.log("Failed to delete window", error);
+      }
       resolve(true);
     }
   });
@@ -95,11 +103,11 @@ export function createUnfocusedWindow(
                 },
                 async function (newWindow: chrome.windows.Window | undefined) {
                   if (newWindow?.id && currentWindow.id) {
-                    /*setLifespanForWindow(
-                                          newWindow?.id,
-                                          recordID,
-                                          waitBeforeScraping,
-                                        );*/
+                    setLifespanForWindow(
+                      newWindow?.id,
+                      recordID,
+                      waitBeforeScraping,
+                    );
                     const newWindowId: number = newWindow.id;
                     const currentWindowId: number = currentWindow.id;
 
@@ -139,33 +147,18 @@ export function createUnfocusedWindow(
                                         });
                                         */
 
-                    // when window loaded, send message to the tab
-                    // use heartbeat mechanism to check if the tab is open or closed
-                    // instead of setTimeout
-                    setTimeout(() => {
-                      chrome.tabs.query(
-                        { windowId: newWindowId, active: true },
-                        async function (tabs) {
-                          if (tabs.length > 0) {
-                            Logger.log(
-                              "Sending message to tab in new window",
-                              tabs[0].id,
-                            );
-                            let response = await sendMessageToContentScript(
-                              tabs[0].id!,
-                              {
-                                intent: "triggerEventListener",
-                                data: JSON.stringify(eventData),
-                              },
-                            );
-                            Logger.log(
-                              "Message sent to tab in new window. Response =>",
-                              response,
-                            );
-                          }
-                        },
+                    try {
+                      const response = await waitForTabAndSendMessage(
+                        newWindowId,
+                        eventData,
                       );
-                    }, 5000);
+                      Logger.log(
+                        "Message sent to tab in new window. Response =>",
+                        response,
+                      );
+                    } catch (error) {
+                      Logger.log("Failed to send message to tab:", error);
+                    }
 
                     resolve(newWindowId);
                   } else {
@@ -180,5 +173,62 @@ export function createUnfocusedWindow(
         );
       }
     }
+  });
+}
+
+async function waitForTabAndSendMessage(newWindowId: number, eventData: any) {
+  let retryCount: number = 0;
+
+  // Create a promise that resolves when the tab is ready
+  return new Promise((resolve, reject) => {
+    const heartbeat: number = setInterval(async () => {
+      try {
+        // Query for the active tab in the window
+        const tabs = await chrome.tabs.query({
+          windowId: newWindowId,
+          active: true,
+        });
+
+        if (tabs.length > 0) {
+          const tab: chrome.tabs.Tab = tabs[0];
+
+          // Try sending a ping message first to check if content script is ready
+          try {
+            const pingResponse = await sendMessageToContentScript(tab.id!, {
+              intent: "ping",
+            });
+            Logger.log("Ping response =>", pingResponse);
+
+            if (pingResponse?.status === "ready") {
+              // Tab is ready, send the actual message
+              Logger.log("Tab is ready, sending message TO ", tab.id);
+              setTimeout(async () => {
+                const response = await sendMessageToContentScript(tab.id!, {
+                  intent: "triggerEventListener",
+                  data: JSON.stringify(eventData),
+                });
+
+                Logger.log("Message sent successfully. Response =>", response);
+                clearInterval(heartbeat);
+                resolve(response);
+              }, DELAY_BEFORE_SENDING_MESSAGE);
+            }
+          } catch (error) {
+            // Content script not ready yet, continue heartbeat
+            Logger.log("Content script not ready yet", error);
+          }
+        }
+
+        // Check if we've exceeded max retries
+        retryCount++;
+        if (retryCount >= MAX_RETRIES) {
+          clearInterval(heartbeat);
+          reject(new Error("Max retries exceeded while waiting for tab"));
+        }
+      } catch (error) {
+        clearInterval(heartbeat);
+        reject(error);
+      }
+    }, HEARTBEAT_INTERVAL);
   });
 }
