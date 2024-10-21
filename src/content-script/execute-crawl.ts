@@ -693,6 +693,7 @@ export async function proceedWithActivation(
           recordID,
           parseInt(eventData.waitBeforeScraping),
           eventData,
+          url,
         );
       }
       if (openTab) {

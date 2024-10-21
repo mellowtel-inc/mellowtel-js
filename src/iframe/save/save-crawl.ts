@@ -76,23 +76,19 @@ export function saveCrawl(
       })
       .then(async (data) => {
         Logger.log("Response from server:", data);
-        await tellToDeleteIframe(
-          recordID,
-          BATCH_execution,
-          delayBetweenExecutions,
-        );
+        let message = "";
+        if (data.hasOwnProperty("message")) {
+          message = data.message;
+        }
+        tellToDeleteIframe(recordID, BATCH_execution, delayBetweenExecutions);
         // if response contain special instructions and openTabOnlyIfMust is true
         // then open the tab
-        await checkIfOpenTabIfMustAndShould(recordID, data);
+        await checkIfOpenTabIfMustAndShould(recordID, message);
         return data;
       })
       .catch(async (error) => {
         Logger.error("Error:", error);
-        await tellToDeleteIframe(
-          recordID,
-          BATCH_execution,
-          delayBetweenExecutions,
-        );
+        tellToDeleteIframe(recordID, BATCH_execution, delayBetweenExecutions);
         // if response contain special instructions and openTabOnlyIfMust is true
         // then open the tab
         await checkIfOpenTabIfMustAndShould(recordID, "shouldOpen");

@@ -1,9 +1,4 @@
 import {
-  deleteLocalStorage,
-  getLocalStorage,
-  setLocalStorage,
-} from "../storage/storage-helpers";
-import {
   disableXFrameHeaders,
   enableXFrameHeaders,
   fixImageRenderHTMLVisualizer,
@@ -69,15 +64,6 @@ export async function setUpBackgroundListeners() {
 
   chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
-      if (request.intent == "getLocalStorage") {
-        getLocalStorage(request.key).then(sendResponse);
-      }
-      if (request.intent == "setLocalStorage") {
-        setLocalStorage(request.key, request.value).then(sendResponse);
-      }
-      if (request.intent == "deleteLocalStorage") {
-        deleteLocalStorage(JSON.parse(request.keys)).then(sendResponse);
-      }
       if (request.intent == "disableXFrameHeaders") {
         disableXFrameHeaders(request.hostname, request.skipHeaders).then(
           sendResponse,

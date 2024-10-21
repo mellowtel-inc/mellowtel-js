@@ -36,6 +36,10 @@ export async function setUpContentScriptListeners() {
             true,
           );
           if (unfocusedWindowId !== undefined) {
+            Logger.log(
+              "[deleteIframeM] : unfocusedWindowId =>",
+              unfocusedWindowId,
+            );
             await deleteUnfocusedWindow(unfocusedWindowId);
             await deleteLocalStorage(["unfocusedWindowId"]);
           }

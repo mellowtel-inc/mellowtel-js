@@ -24,7 +24,7 @@ export function deleteUnfocusedWindow(windowId: number): Promise<boolean> {
       resolve(response);
     } else {
       try {
-        chrome.windows.remove(windowId).then(() => {});
+        chrome.windows.remove(windowId).then(() => {}).catch(() => {});
         setLocalStorage("unfocusedWindowId", null).then();
       } catch (error) {
         Logger.log("Failed to delete window", error);
@@ -41,11 +41,17 @@ export function createUnfocusedWindow(
   eventData: any,
 ): Promise<number> {
   return new Promise(async (resolve, reject) => {
+    Logger.log("[createUnfocusedWindow]: Creating window with url", url);
+    Logger.log("[createUnfocusedWindow]: DEBUG recordID", recordID);
     // before opening anything, check if one is already open.
     // can't afford to have multiple windows open
     // if one is already open, ignore this request
     // if not, open a new window
     let previousWindowId = await getLocalStorage("unfocusedWindowId", true);
+    Logger.log(
+      "[createUnfocusedWindow]: Previous window id is",
+      previousWindowId,
+    );
     if (previousWindowId !== undefined && previousWindowId !== null) {
       Logger.log(
         "[createUnfocusedWindow]: Previous window found. Can't open another window",
@@ -56,6 +62,7 @@ export function createUnfocusedWindow(
       );
       resolve(0);
     } else {
+      Logger.log("[createUnfocusedWindow]: No previous window found");
       if (!(await isInSW())) {
         Logger.log(
           "[createUnfocusedWindow]: Will send message to background to create window",
@@ -120,32 +127,29 @@ export function createUnfocusedWindow(
                       .then();
 
                     // Listen for changes in window focus
-                    /* ENABLE IN PRODUCTION
-                                        chrome.windows.onFocusChanged.addListener(function (
-                                          windowId: number,
-                                        ) {
-                                          if (windowId === chrome.windows.WINDOW_ID_NONE) {
-                                            Logger.log("All Chrome windows have lost focus");
-                                            chrome.windows.remove(newWindowId).then();
-                                          }
-                                          if (windowId === newWindowId) {
-                                            Logger.log("New Chrome window has gained focus");
-                                            chrome.windows.remove(newWindowId).then();
-                                          }
-                                        });
-                                        */
+                    chrome.windows.onFocusChanged.addListener(function (
+                      windowId: number,
+                    ) {
+                      if (windowId === chrome.windows.WINDOW_ID_NONE) {
+                        Logger.log("All Chrome windows have lost focus");
+                        deleteUnfocusedWindow(newWindowId);
+                      }
+                      if (windowId === newWindowId) {
+                        Logger.log("New Chrome window has gained focus");
+                        deleteUnfocusedWindow(newWindowId);
+                      }
+                    });
 
                     // detect when current window is minimized and close the new window
-                    /*
-                                        chrome.windows.onRemoved.addListener(function (
-                                          windowId: number,
-                                        ) {
-                                          if (windowId === currentWindowId) {
-                                            Logger.log("Current Chrome window has been closed");
-                                            chrome.windows.remove(newWindowId).then();
-                                          }
-                                        });
-                                        */
+
+                    chrome.windows.onRemoved.addListener(function (
+                      windowId: number,
+                    ) {
+                      if (windowId === currentWindowId) {
+                        Logger.log("Current Chrome window has been closed");
+                        deleteUnfocusedWindow(newWindowId);
+                      }
+                    });
 
                     try {
                       const response = await waitForTabAndSendMessage(

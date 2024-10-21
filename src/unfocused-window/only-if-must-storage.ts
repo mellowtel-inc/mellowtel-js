@@ -4,6 +4,7 @@ export function saveToOnlyIfMustStorage(
   recordID: string,
   waitBeforeScraping: number,
   eventData: any,
+  url: string,
 ): Promise<boolean> {
   return new Promise(async (resolve) => {
     let onlyIfMustArray = await getLocalStorage("onlyIfMustArray", true);
@@ -14,6 +15,7 @@ export function saveToOnlyIfMustStorage(
       recordID: recordID,
       waitBeforeScraping: waitBeforeScraping,
       eventData: eventData,
+      url: url,
     });
     await setLocalStorage("onlyIfMustArray", onlyIfMustArray);
     resolve(true);
