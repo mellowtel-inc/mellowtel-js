@@ -14,6 +14,8 @@ export function saveCrawl(
   htmlTransformer: string,
   orgId: string,
   saveText: string,
+  saveHtml: boolean,
+  saveMarkdown: boolean,
   BATCH_execution: boolean,
   batch_id: string,
   website_unreachable: boolean = false,
@@ -41,9 +43,9 @@ export function saveCrawl(
     let moreInfo: any = await getFromRequestInfoStorage(recordID);
     Logger.log("[saveCrawl] => More Info:", moreInfo);
 
-    const bodyData = {
-      content: content,
-      markDown: markDown,
+    let bodyData: any = {
+      // content: content,
+      // markDown: markDown,
       recordID: recordID,
       fastLane: fastLane,
       url: url,
@@ -57,7 +59,15 @@ export function saveCrawl(
       website_unreachable: website_unreachable,
       statusCode: moreInfo.statusCode,
       requestMessageInfo: requestMessageInfo,
+      saveHtml: saveHtml,
+      saveMarkdown: saveMarkdown,
     };
+    if (saveHtml) {
+      bodyData["content"] = content;
+    }
+    if (saveMarkdown) {
+      bodyData["markDown"] = markDown;
+    }
 
     const requestOptions = {
       method: "POST",

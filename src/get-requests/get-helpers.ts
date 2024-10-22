@@ -26,6 +26,8 @@ export function handleGetRequest(
   delayBetweenExecutions: number = 500,
   openTab: boolean = false,
   openTabOnlyIfMust: boolean = false,
+  saveHtml: boolean = true,
+  saveMarkdown: boolean = true,
 ) {
   return new Promise(async function (res) {
     await disableHeadersForPOST();
@@ -110,6 +112,8 @@ export function handleGetRequest(
                 delayBetweenExecutions: delayBetweenExecutions,
                 openTab: openTab,
                 openTabOnlyIfMust: openTabOnlyIfMust,
+                saveHtml: saveHtml,
+                saveMarkdown: saveMarkdown,
               });
               if (response !== null) {
                 break;

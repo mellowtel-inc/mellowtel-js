@@ -116,6 +116,8 @@ export async function setUpBackgroundListeners() {
           request.delayBetweenExecutions,
           request.openTab,
           request.openTabOnlyIfMust,
+          request.saveHtml,
+          request.saveMarkdown,
         ).then(sendResponse);
       }
       if (request.intent === "handleGETRequest") {
@@ -137,6 +139,8 @@ export async function setUpBackgroundListeners() {
           request.delayBetweenExecutions,
           request.openTab,
           request.openTabOnlyIfMust,
+          request.saveHtml,
+          request.saveMarkdown,
         ).then(sendResponse);
       }
       if (request.intent === "openOptInLink") {

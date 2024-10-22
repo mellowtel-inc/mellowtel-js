@@ -52,6 +52,12 @@ function initCrawlHelper(event: MessageEvent, numTries: number) {
     let actions: Action[] = event.data.hasOwnProperty("actions")
       ? JSON.parse(event.data.actions)
       : [];
+    let saveHtml: boolean = event.data.hasOwnProperty("saveHtml")
+      ? event.data.saveHtml.toString().toLowerCase() === "true"
+      : false;
+    let saveMarkdown: boolean = event.data.hasOwnProperty("saveMarkdown")
+      ? event.data.saveMarkdown.toString().toLowerCase() === "true"
+      : false;
 
     let waitBeforeScraping = parseInt(event.data.waitBeforeScraping);
     Logger.log("[initCrawl]: waitBeforeScraping " + waitBeforeScraping);
@@ -96,6 +102,8 @@ function initCrawlHelper(event: MessageEvent, numTries: number) {
         htmlVisualizer,
         htmlContained,
         removeImages,
+        saveHtml,
+        saveMarkdown,
       );
     }, waitBeforeScraping);
   }
@@ -117,6 +125,8 @@ async function processCrawl(
   htmlVisualizer: boolean,
   htmlContained: boolean,
   removeImages: boolean,
+  saveHtml: boolean,
+  saveMarkdown: boolean,
 ) {
   if (removeCSSselectors === "default") {
     removeSelectorsFromDocument(document_to_use, []);
@@ -150,11 +160,13 @@ async function processCrawl(
   Logger.log("[🌐] : recordID => " + recordID);
   let markDown;
   if (!isPDF) {
-    let turnDownService = new (TurndownService as any)({});
-    markDown = turnDownService.turndown(
-      document_to_use.documentElement.outerHTML,
-    );
-    Logger.log("[🌐] : markDown => " + markDown);
+    if (saveMarkdown && !htmlVisualizer && !htmlContained) {
+      let turnDownService = new (TurndownService as any)({});
+      markDown = turnDownService.turndown(
+        document_to_use.documentElement.outerHTML,
+      );
+      Logger.log("[🌐] : markDown => " + markDown);
+    }
 
     if ((markDown.trim() === "" || markDown === "null") && numTries < 4) {
       Logger.log("[initCrawl 🌐] : markDown is empty. RESETTING");
@@ -195,6 +207,8 @@ async function processCrawl(
           htmlTransformer,
           orgId,
           saveText,
+          saveHtml,
+          saveMarkdown,
           event.data.hasOwnProperty("BATCH_execution")
             ? event.data.BATCH_execution
             : false,
@@ -239,6 +253,8 @@ async function processCrawl(
         htmlTransformer,
         orgId,
         saveText,
+        saveHtml,
+        saveMarkdown,
         event.data.hasOwnProperty("BATCH_execution")
           ? event.data.BATCH_execution
           : false,

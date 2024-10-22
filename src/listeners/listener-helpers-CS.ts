@@ -143,6 +143,8 @@ export async function setUpContentScriptListeners() {
             request.delayBetweenExecutions,
             request.openTab,
             request.openTabOnlyIfMust,
+            request.saveHtml,
+            request.saveMarkdown,
           );
         }
         if (request.intent === "preProcessCrawl") {
@@ -212,6 +214,8 @@ async function processCrawl(
   delayBetweenExecutions: number,
   openTab: boolean,
   openTabOnlyIfMust: boolean,
+  saveHtml: boolean,
+  saveMarkdown: boolean,
 ) {
   const saveCrawlModule = await import("../iframe/save/save-crawl");
   const {
@@ -316,6 +320,8 @@ async function processCrawl(
           htmlTransformer,
           orgId,
           saveText,
+          saveHtml,
+          saveMarkdown,
           BATCH_execution,
           batch_id,
           false,
@@ -366,6 +372,8 @@ async function processCrawl(
         htmlTransformer,
         orgId,
         saveText,
+        saveHtml,
+        saveMarkdown,
         BATCH_execution,
         batch_id,
         false,

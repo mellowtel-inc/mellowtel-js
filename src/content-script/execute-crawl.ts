@@ -589,6 +589,8 @@ export async function proceedWithActivation(
       delayBetweenExecutions: delayBetweenExecutions,
       openTab: openTab,
       openTabOnlyIfMust: openTabOnlyIfMust,
+      saveHtml: eventData.saveHtml,
+      saveMarkdown: eventData.saveMarkdown,
     });
   } else if (POST_request) {
     await sendMessageToBackground({
@@ -611,6 +613,8 @@ export async function proceedWithActivation(
       delayBetweenExecutions: delayBetweenExecutions,
       openTab: openTab,
       openTabOnlyIfMust: openTabOnlyIfMust,
+      saveHtml: eventData.saveHtml,
+      saveMarkdown: eventData.saveMarkdown,
     });
   } else if (htmlVisualizer && !breakLoop) {
     Logger.log("[proceedWithActivation] => Sending message to background");
@@ -633,6 +637,8 @@ export async function proceedWithActivation(
       delayBetweenExecutions: delayBetweenExecutions,
       openTab: openTab,
       openTabOnlyIfMust: openTabOnlyIfMust,
+      saveHtml: eventData.saveHtml,
+      saveMarkdown: eventData.saveMarkdown,
     });
   } else if (htmlContained && !breakLoop) {
     await sendMessageToBackground({
@@ -654,6 +660,8 @@ export async function proceedWithActivation(
       delayBetweenExecutions: delayBetweenExecutions,
       openTab: openTab,
       openTabOnlyIfMust: openTabOnlyIfMust,
+      saveHtml: eventData.saveHtml,
+      saveMarkdown: eventData.saveMarkdown,
     });
   } else {
     if (triggersDownload) {
@@ -757,6 +765,8 @@ export async function proceedWithActivation(
               eventData.hasOwnProperty("saveText")
                 ? eventData.saveText
                 : "false",
+              true,
+              true,
               BATCH_execution,
               batch_id,
               true,

@@ -24,7 +24,10 @@ export function deleteUnfocusedWindow(windowId: number): Promise<boolean> {
       resolve(response);
     } else {
       try {
-        chrome.windows.remove(windowId).then(() => {}).catch(() => {});
+        chrome.windows
+          .remove(windowId)
+          .then(() => {})
+          .catch(() => {});
         setLocalStorage("unfocusedWindowId", null).then();
       } catch (error) {
         Logger.log("Failed to delete window", error);

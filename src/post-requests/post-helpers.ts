@@ -29,6 +29,8 @@ export function handlePostRequest(
   delayBetweenExecutions: number = 500,
   openTab: boolean = false,
   openTabOnlyIfMust: boolean = false,
+  saveHtml: boolean = true,
+  saveMarkdown: boolean = true,
 ) {
   return new Promise(async function (res) {
     await disableHeadersForPOST();
@@ -113,6 +115,8 @@ export function handlePostRequest(
                 actions: actions,
                 openTab: openTab,
                 openTabOnlyIfMust: openTabOnlyIfMust,
+                saveHtml: saveHtml,
+                saveMarkdown: saveMarkdown,
               });
               if (response !== null) {
                 break;
