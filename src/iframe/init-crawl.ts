@@ -160,12 +160,14 @@ async function processCrawl(
   Logger.log("[🌐] : recordID => " + recordID);
   let markDown;
   if (!isPDF) {
-    if (saveMarkdown && !htmlVisualizer && !htmlContained) {
+    if (saveMarkdown || htmlVisualizer || htmlContained) {
       let turnDownService = new (TurndownService as any)({});
       markDown = turnDownService.turndown(
         document_to_use.documentElement.outerHTML,
       );
       Logger.log("[🌐] : markDown => " + markDown);
+    } else {
+      markDown = "";
     }
 
     if ((markDown.trim() === "" || markDown === "null") && numTries < 4) {
