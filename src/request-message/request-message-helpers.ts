@@ -17,7 +17,6 @@ export function addToRequestMessageStorage(record: any) {
           records.push(record);
         }
         chrome.storage.local.set({ recordsMessageInfo: records }, function () {
-          Logger.log("[addToRequestMessageStorage]: added record", record);
           res("done");
         });
       });

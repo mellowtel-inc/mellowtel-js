@@ -10,6 +10,8 @@ export async function purgeOnStartup(): Promise<void> {
       "checked_switch_value",
       "recordsRequestInfo",
       "recordsMessageInfo",
+      "unfocusedWindowId",
+      "onlyIfMustArray",
     ];
     await deleteLocalStorage(keysToPurge);
   });

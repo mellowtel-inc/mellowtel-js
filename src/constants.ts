@@ -1,10 +1,11 @@
-export const VERSION: string = "1.4.5";
+export const VERSION: string = "1.4.6";
 export const MAX_PARALLEL_EXECUTIONS: number = 4;
 export const MAX_PARALLEL_EXECUTIONS_BATCH: number = 4;
 export const MAX_PARALLEL_EXECUTIONS_FETCH: number = 10;
 export const MAX_PARALLEL_EXECUTIONS_BATCH_FETCH: number = 10;
 export const MAX_QUEUE_SIZE: number = 24;
 export const LIFESPAN_IFRAME: number = 1000 * 60 * 1.5; // 1.5 minutes
+export const LIFESPAN_TAB: number = 1000 * 10; // 10 seconds
 export const DATA_ID_IFRAME: string = "data-mllwtl-frame-crwl-ml";
 export const DATA_ID_IFRAME_BATCH: string = "data-mllwtl-frame-batch-crwl-ml";
 export const DATA_ID_STRING: string = "data-mllwtl-frame";

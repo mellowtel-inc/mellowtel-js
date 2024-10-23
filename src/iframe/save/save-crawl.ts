@@ -1,8 +1,9 @@
-import { tellToDeleteIframe } from "./message-background";
-import { getIdentifier } from "../utils/identity-helpers";
-import { Logger } from "../logger/logger";
-import { getFromRequestInfoStorage } from "../request-info/request-info-helpers";
-import { getFromRequestMessageStorage } from "../request-message/request-message-helpers";
+import { tellToDeleteIframe } from "../message-background";
+import { getIdentifier } from "../../utils/identity-helpers";
+import { Logger } from "../../logger/logger";
+import { getFromRequestInfoStorage } from "../../request-info/request-info-helpers";
+import { getFromRequestMessageStorage } from "../../request-message/request-message-helpers";
+import { checkIfOpenTabIfMustAndShould } from "./save-utils";
 
 export function saveCrawl(
   recordID: string,
@@ -13,10 +14,13 @@ export function saveCrawl(
   htmlTransformer: string,
   orgId: string,
   saveText: string,
+  saveHtml: boolean,
+  saveMarkdown: boolean,
   BATCH_execution: boolean,
   batch_id: string,
   website_unreachable: boolean = false,
   delayBetweenExecutions: number = 500,
+  openTabOnlyIfMust: boolean = false,
 ) {
   Logger.log("📋 Saving Crawl 📋");
   Logger.log("RecordID:", recordID);
@@ -39,9 +43,9 @@ export function saveCrawl(
     let moreInfo: any = await getFromRequestInfoStorage(recordID);
     Logger.log("[saveCrawl] => More Info:", moreInfo);
 
-    const bodyData = {
-      content: content,
-      markDown: markDown,
+    let bodyData: any = {
+      // content: content,
+      // markDown: markDown,
       recordID: recordID,
       fastLane: fastLane,
       url: url,
@@ -55,7 +59,15 @@ export function saveCrawl(
       website_unreachable: website_unreachable,
       statusCode: moreInfo.statusCode,
       requestMessageInfo: requestMessageInfo,
+      saveHtml: saveHtml,
+      saveMarkdown: saveMarkdown,
     };
+    if (saveHtml) {
+      bodyData["content"] = content;
+    }
+    if (saveMarkdown) {
+      bodyData["markDown"] = markDown;
+    }
 
     const requestOptions = {
       method: "POST",
@@ -72,21 +84,25 @@ export function saveCrawl(
         }
         return response.json();
       })
-      .then((data) => {
+      .then(async (data) => {
         Logger.log("Response from server:", data);
-        return tellToDeleteIframe(
-          recordID,
-          BATCH_execution,
-          delayBetweenExecutions,
-        );
+        let message = "";
+        if (data.hasOwnProperty("message")) {
+          message = data.message;
+        }
+        tellToDeleteIframe(recordID, BATCH_execution, delayBetweenExecutions);
+        // if response contain special instructions and openTabOnlyIfMust is true
+        // then open the tab
+        await checkIfOpenTabIfMustAndShould(recordID, message);
+        return data;
       })
-      .catch((error) => {
+      .catch(async (error) => {
         Logger.error("Error:", error);
-        return tellToDeleteIframe(
-          recordID,
-          BATCH_execution,
-          delayBetweenExecutions,
-        );
+        tellToDeleteIframe(recordID, BATCH_execution, delayBetweenExecutions);
+        // if response contain special instructions and openTabOnlyIfMust is true
+        // then open the tab
+        await checkIfOpenTabIfMustAndShould(recordID, "shouldOpen");
+        return error;
       });
   });
 }

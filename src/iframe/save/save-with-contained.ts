@@ -1,14 +1,14 @@
-import { tellToDeleteIframe } from "./message-background";
-import { getIdentifier } from "../utils/identity-helpers";
-import { Logger } from "../logger/logger";
-import { sendMessageToBackground } from "../utils/messaging-helpers";
+import { tellToDeleteIframe } from "../message-background";
+import { getIdentifier } from "../../utils/identity-helpers";
+import { Logger } from "../../logger/logger";
+import { sendMessageToBackground } from "../../utils/messaging-helpers";
 import {
   checkThroughFilters,
   getS3SignedUrls,
-} from "./contained-visualizer-helpers";
-import { capture, OutputType } from "../htmlVisualizer/src";
-import { getFromRequestInfoStorage } from "../request-info/request-info-helpers";
-import { getFromRequestMessageStorage } from "../request-message/request-message-helpers";
+} from "../contained-visualizer-helpers";
+import { capture, OutputType } from "../../htmlVisualizer/src";
+import { getFromRequestInfoStorage } from "../../request-info/request-info-helpers";
+import { getFromRequestMessageStorage } from "../../request-message/request-message-helpers";
 
 async function tellEC2ToRender(
   recordID: string,
@@ -82,6 +82,7 @@ export async function saveWithContained(
   second_document_string: string,
   not_in_iframe: boolean = false,
   delayBetweenExecutions: number = 500,
+  openTabOnlyIfMust: boolean = false,
 ) {
   Logger.log("📋  saveWithContained - Saving Crawl 📋. RecordID:", recordID);
   // first pass through filters

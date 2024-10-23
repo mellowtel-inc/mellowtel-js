@@ -6,123 +6,159 @@ import {
   MAX_PARALLEL_EXECUTIONS_BATCH,
 } from "../constants";
 import { proceedWithActivation } from "./execute-crawl";
-import { getFrameCount } from "../utils/utils";
+import { getFrameCount, isInSW } from "../utils/utils";
 import { enableXFrameHeaders } from "../dnr/dnr-helpers";
 import { Logger } from "../logger/logger";
 import { resetTriggersDownload } from "../utils/triggers-download-helpers";
 import { hideBadgeIfShould } from "../transparency/badge-settings";
 import { deleteFromRequestInfoStorage } from "../request-info/request-info-helpers";
 import { deleteFromRequestMessageStorage } from "../request-message/request-message-helpers";
+import { sendMessageToContentScript } from "../utils/messaging-helpers";
 
 export async function resetAfterCrawl(
   recordID: string,
   BATCH_execution: boolean,
   delayBetweenExecutions: number = 500,
 ) {
-  if (delayBetweenExecutions === undefined || delayBetweenExecutions === null) {
-    Logger.log(
-      "[resetAfterCrawl] : delayBetweenExecutions is undefined or null. Setting it to 500",
-    );
-    delayBetweenExecutions = 500;
-  }
-  await deleteFromRequestInfoStorage(recordID);
-  await deleteFromRequestMessageStorage(recordID);
-  let dataPacket = await getLastFromQueue(BATCH_execution);
-  Logger.log("[resetAfterCrawl] : dataPacket => ");
-  Logger.log(dataPacket);
-  Logger.log("##############################");
-  if (dataPacket && dataPacket.url !== "") {
-    let frameCount = getFrameCount(BATCH_execution);
-    Logger.log("[🌐] : frameCount in cleanUpAfterCrawl  => " + frameCount);
-    let max_parallel_executions = BATCH_execution
-      ? MAX_PARALLEL_EXECUTIONS_BATCH
-      : MAX_PARALLEL_EXECUTIONS;
-    if (frameCount <= max_parallel_executions || BATCH_execution) {
-      Logger.log("[🌐] getLastFromQueue : dataPacket => ");
-      Logger.log(dataPacket);
-      if (BATCH_execution && dataPacket.methodEndpoint !== "") {
-        Logger.log(
-          "[🌐] : Waiting for delayBetweenExecutions => " +
-            delayBetweenExecutions,
-        );
-        // if fetching during batch execution, wait delayBetweenExecutions before proceeding
-        setTimeout(() => {
-          proceedWithActivation(
-            dataPacket.url,
-            dataPacket.recordID,
-            dataPacket.eventData,
-            dataPacket.waitForElement,
-            dataPacket.shouldSandbox,
-            dataPacket.sandBoxAttributes,
-            BATCH_execution,
-            dataPacket.batch_id,
-            dataPacket.triggersDownload,
-            dataPacket.skipHeaders,
-            dataPacket.hostname,
-            dataPacket.htmlVisualizer,
-            dataPacket.htmlContained,
-            dataPacket.screenWidth,
-            dataPacket.screenHeight,
-            dataPacket.POST_request,
-            dataPacket.GET_request,
-            dataPacket.methodEndpoint,
-            dataPacket.methodPayload,
-            dataPacket.methodHeaders,
-            dataPacket.actions,
-            dataPacket.delayBetweenExecutions,
-          );
-        }, delayBetweenExecutions);
-      } else {
-        await proceedWithActivation(
-          dataPacket.url,
-          dataPacket.recordID,
-          dataPacket.eventData,
-          dataPacket.waitForElement,
-          dataPacket.shouldSandbox,
-          dataPacket.sandBoxAttributes,
-          BATCH_execution,
-          dataPacket.batch_id,
-          dataPacket.triggersDownload,
-          dataPacket.skipHeaders,
-          dataPacket.hostname,
-          dataPacket.htmlVisualizer,
-          dataPacket.htmlContained,
-          dataPacket.screenWidth,
-          dataPacket.screenHeight,
-          dataPacket.POST_request,
-          dataPacket.GET_request,
-          dataPacket.methodEndpoint,
-          dataPacket.methodPayload,
-          dataPacket.methodHeaders,
-          dataPacket.actions,
-        );
-      }
-    }
-  } else {
-    setTimeout(() => {
-      let frameCount = getFrameCount(BATCH_execution);
-      let frameCountOther = getFrameCount(!BATCH_execution);
-      let frameCountTotal = frameCount + frameCountOther;
+  return new Promise(async (resolve) => {
+    if (await isInSW()) {
       Logger.log(
-        "[🌐] : frameCountTotal in cleanUpAfterCrawl (before resetting headers)  => " +
-          frameCountTotal,
+        "[resetAfterCrawl] : In service worker. Sending message to content script",
       );
-      if (frameCountTotal === 0 && !BATCH_execution) {
-        Logger.log("[🌐] : Resetting headers!");
-        enableXFrameHeaders("");
-        resetTriggersDownload();
-      } else if (frameCountTotal === 0 && BATCH_execution) {
-        // wait for 1 minute before resetting headers
+      chrome.tabs.query({}, async function (tabs) {
+        for (let i = 0; i < tabs.length; i++) {
+          let response = await sendMessageToContentScript(tabs[i]?.id!, {
+            intent: "resetAfterCrawl",
+            recordID: recordID,
+            BATCH_execution: BATCH_execution,
+            delayBetweenExecutions: delayBetweenExecutions,
+          });
+          if (response !== null) {
+            break;
+          }
+        }
+      });
+      resolve("done");
+    } else {
+      if (
+        delayBetweenExecutions === undefined ||
+        delayBetweenExecutions === null
+      ) {
+        Logger.log(
+          "[resetAfterCrawl] : delayBetweenExecutions is undefined or null. Setting it to 500",
+        );
+        delayBetweenExecutions = 500;
+      }
+      await deleteFromRequestInfoStorage(recordID);
+      await deleteFromRequestMessageStorage(recordID);
+      let dataPacket = await getLastFromQueue(BATCH_execution);
+      Logger.log("[resetAfterCrawl] : dataPacket => ");
+      Logger.log(dataPacket);
+      Logger.log("##############################");
+      if (dataPacket && dataPacket.url !== "") {
+        let frameCount = getFrameCount(BATCH_execution);
+        Logger.log("[🌐] : frameCount in cleanUpAfterCrawl  => " + frameCount);
+        let max_parallel_executions = BATCH_execution
+          ? MAX_PARALLEL_EXECUTIONS_BATCH
+          : MAX_PARALLEL_EXECUTIONS;
+        if (frameCount <= max_parallel_executions || BATCH_execution) {
+          Logger.log("[🌐] getLastFromQueue : dataPacket => ");
+          Logger.log(dataPacket);
+          if (BATCH_execution && dataPacket.methodEndpoint !== "") {
+            Logger.log(
+              "[🌐] : Waiting for delayBetweenExecutions => " +
+                delayBetweenExecutions,
+            );
+            // if fetching during batch execution, wait delayBetweenExecutions before proceeding
+            setTimeout(() => {
+              proceedWithActivation(
+                dataPacket.url,
+                dataPacket.recordID,
+                dataPacket.eventData,
+                dataPacket.waitForElement,
+                dataPacket.shouldSandbox,
+                dataPacket.sandBoxAttributes,
+                BATCH_execution,
+                dataPacket.batch_id,
+                dataPacket.triggersDownload,
+                dataPacket.skipHeaders,
+                dataPacket.hostname,
+                dataPacket.htmlVisualizer,
+                dataPacket.htmlContained,
+                dataPacket.screenWidth,
+                dataPacket.screenHeight,
+                dataPacket.POST_request,
+                dataPacket.GET_request,
+                dataPacket.methodEndpoint,
+                dataPacket.methodPayload,
+                dataPacket.methodHeaders,
+                dataPacket.actions,
+                dataPacket.delayBetweenExecutions,
+                dataPacket.openTab,
+                dataPacket.openTabOnlyIfMust,
+              );
+              resolve("done");
+            }, delayBetweenExecutions);
+          } else {
+            await proceedWithActivation(
+              dataPacket.url,
+              dataPacket.recordID,
+              dataPacket.eventData,
+              dataPacket.waitForElement,
+              dataPacket.shouldSandbox,
+              dataPacket.sandBoxAttributes,
+              BATCH_execution,
+              dataPacket.batch_id,
+              dataPacket.triggersDownload,
+              dataPacket.skipHeaders,
+              dataPacket.hostname,
+              dataPacket.htmlVisualizer,
+              dataPacket.htmlContained,
+              dataPacket.screenWidth,
+              dataPacket.screenHeight,
+              dataPacket.POST_request,
+              dataPacket.GET_request,
+              dataPacket.methodEndpoint,
+              dataPacket.methodPayload,
+              dataPacket.methodHeaders,
+              dataPacket.actions,
+              dataPacket.delayBetweenExecutions,
+              dataPacket.openTab,
+            );
+            resolve("done");
+          }
+        } else {
+          resolve("done");
+        }
+      } else {
         setTimeout(() => {
-          Logger.log("[🌐] : Resetting headers (BATCH_execution)!");
-          enableXFrameHeaders("");
-          resetTriggersDownload();
-        }, 60000);
-      } /* else {
+          let frameCount = getFrameCount(BATCH_execution);
+          let frameCountOther = getFrameCount(!BATCH_execution);
+          let frameCountTotal = frameCount + frameCountOther;
+          Logger.log(
+            "[🌐] : frameCountTotal in cleanUpAfterCrawl (before resetting headers)  => " +
+              frameCountTotal,
+          );
+          if (frameCountTotal === 0 && !BATCH_execution) {
+            Logger.log("[🌐] : Resetting headers!");
+            enableXFrameHeaders("");
+            resetTriggersDownload();
+            resolve("done");
+          } else if (frameCountTotal === 0 && BATCH_execution) {
+            // wait for 1 minute before resetting headers
+            setTimeout(() => {
+              Logger.log("[🌐] : Resetting headers (BATCH_execution)!");
+              enableXFrameHeaders("");
+              resetTriggersDownload();
+              resolve("done");
+            }, 60000);
+          } /* else {
         resetAfterCrawl(recordID, BATCH_execution);
       }*/
-    }, 15000);
-  }
+        }, 15000);
+      }
+    }
+  });
 }
 
 export function setLifespanForIframe(

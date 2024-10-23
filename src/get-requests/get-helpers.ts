@@ -24,6 +24,10 @@ export function handleGetRequest(
   batch_id: string,
   actions: string,
   delayBetweenExecutions: number = 500,
+  openTab: boolean = false,
+  openTabOnlyIfMust: boolean = false,
+  saveHtml: boolean = true,
+  saveMarkdown: boolean = true,
 ) {
   return new Promise(async function (res) {
     await disableHeadersForPOST();
@@ -106,6 +110,10 @@ export function handleGetRequest(
                 batch_id: batch_id,
                 statusCode: statusCode,
                 delayBetweenExecutions: delayBetweenExecutions,
+                openTab: openTab,
+                openTabOnlyIfMust: openTabOnlyIfMust,
+                saveHtml: saveHtml,
+                saveMarkdown: saveMarkdown,
               });
               if (response !== null) {
                 break;

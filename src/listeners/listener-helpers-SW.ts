@@ -1,9 +1,4 @@
 import {
-  deleteLocalStorage,
-  getLocalStorage,
-  setLocalStorage,
-} from "../storage/storage-helpers";
-import {
   disableXFrameHeaders,
   enableXFrameHeaders,
   fixImageRenderHTMLVisualizer,
@@ -40,6 +35,10 @@ import {
 import { handleGetRequest } from "../get-requests/get-helpers";
 import { startConnectionWs } from "../content-script/websocket";
 import { Logger } from "../logger/logger";
+import {
+  createUnfocusedWindow,
+  deleteUnfocusedWindow,
+} from "../unfocused-window/create-window";
 
 export async function setUpBackgroundListeners() {
   // Queue to store incoming messages to start websocket
@@ -65,15 +64,6 @@ export async function setUpBackgroundListeners() {
 
   chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
-      if (request.intent == "getLocalStorage") {
-        getLocalStorage(request.key).then(sendResponse);
-      }
-      if (request.intent == "setLocalStorage") {
-        setLocalStorage(request.key, request.value).then(sendResponse);
-      }
-      if (request.intent == "deleteLocalStorage") {
-        deleteLocalStorage(JSON.parse(request.keys)).then(sendResponse);
-      }
       if (request.intent == "disableXFrameHeaders") {
         disableXFrameHeaders(request.hostname, request.skipHeaders).then(
           sendResponse,
@@ -124,6 +114,10 @@ export async function setUpBackgroundListeners() {
           request.batch_id,
           request.actions,
           request.delayBetweenExecutions,
+          request.openTab,
+          request.openTabOnlyIfMust,
+          request.saveHtml,
+          request.saveMarkdown,
         ).then(sendResponse);
       }
       if (request.intent === "handleGETRequest") {
@@ -143,6 +137,10 @@ export async function setUpBackgroundListeners() {
           request.batch_id,
           request.actions,
           request.delayBetweenExecutions,
+          request.openTab,
+          request.openTabOnlyIfMust,
+          request.saveHtml,
+          request.saveMarkdown,
         ).then(sendResponse);
       }
       if (request.intent === "openOptInLink") {
@@ -194,6 +192,8 @@ export async function setUpBackgroundListeners() {
                 methodHeaders: request.methodHeaders,
                 actions: request.actions,
                 delayBetweenExecutions: request.delayBetweenExecutions,
+                openTab: request.openTab,
+                openTabOnlyIfMust: request.openTabOnlyIfMust,
               });
             }
           },
@@ -226,6 +226,8 @@ export async function setUpBackgroundListeners() {
                 methodHeaders: request.methodHeaders,
                 actions: request.actions,
                 delayBetweenExecutions: request.delayBetweenExecutions,
+                openTab: request.openTab,
+                openTabOnlyIfMust: request.openTabOnlyIfMust,
               });
             }
           },
@@ -277,6 +279,18 @@ export async function setUpBackgroundListeners() {
       if (request.intent === "startWebsocket") {
         startWebsocketMessageQueue.push({ identifier: request.identifier });
         sendResponse(true);
+      }
+      if (request.intent === "createUnfocusedWindow") {
+        createUnfocusedWindow(
+          request.url,
+          request.recordID,
+          request.waitBeforeScraping,
+          request.eventData,
+        ).then(sendResponse);
+      }
+      // deleteUnfocusedWindow
+      if (request.intent === "deleteUnfocusedWindow") {
+        deleteUnfocusedWindow(request.windowId).then(sendResponse);
       }
       return true; // return true to indicate you want to send a response asynchronously
     },

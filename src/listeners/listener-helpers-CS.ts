@@ -10,6 +10,12 @@ import {
   proceedWithActivation,
 } from "../content-script/execute-crawl";
 import { Logger } from "../logger/logger";
+import { getFromRequestMessageStorage } from "../request-message/request-message-helpers";
+import {
+  deleteLocalStorage,
+  getLocalStorage,
+} from "../storage/storage-helpers";
+import { deleteUnfocusedWindow } from "../unfocused-window/create-window";
 
 export async function setUpContentScriptListeners() {
   chrome.runtime.onMessage.addListener(
@@ -18,11 +24,25 @@ export async function setUpContentScriptListeners() {
         if (request.target !== "contentScriptM") return false;
         if (request.intent === "deleteIframeM") {
           let recordID = request.recordID;
-          let iframe = document.getElementById(recordID);
-          let dataId = iframe?.getAttribute("data-id") || "";
-          let divIframe = document.getElementById("div-" + recordID);
+          let iframe: HTMLElement | null = document.getElementById(recordID);
+          let dataId: string = iframe?.getAttribute("data-id") || "";
+          let divIframe: HTMLElement | null = document.getElementById(
+            "div-" + recordID,
+          );
           if (iframe) iframe.remove();
           if (divIframe) divIframe.remove();
+          let unfocusedWindowId = await getLocalStorage(
+            "unfocusedWindowId",
+            true,
+          );
+          if (unfocusedWindowId !== undefined) {
+            Logger.log(
+              "[deleteIframeM] : unfocusedWindowId =>",
+              unfocusedWindowId,
+            );
+            await deleteUnfocusedWindow(unfocusedWindowId);
+            await deleteLocalStorage(["unfocusedWindowId"]);
+          }
           await resetAfterCrawl(
             recordID,
             request.BATCH_execution,
@@ -67,6 +87,8 @@ export async function setUpContentScriptListeners() {
             request.method_headers,
             request.actions,
             request.delayBetweenExecutions,
+            request.openTab,
+            request.openTabOnlyIfMust,
             true, // to break the loop
           );
         }
@@ -94,6 +116,8 @@ export async function setUpContentScriptListeners() {
             request.method_headers,
             request.actions,
             request.delayBetweenExecutions,
+            request.openTab,
+            request.openTabOnlyIfMust,
             true, // to break the loop
           );
         }
@@ -117,6 +141,10 @@ export async function setUpContentScriptListeners() {
             request.BATCH_execution.toString() === "true",
             request.batch_id,
             request.delayBetweenExecutions,
+            request.openTab,
+            request.openTabOnlyIfMust,
+            request.saveHtml,
+            request.saveMarkdown,
           );
         }
         if (request.intent === "preProcessCrawl") {
@@ -133,6 +161,30 @@ export async function setUpContentScriptListeners() {
             batch_id,
             parallelExecutionsBatch,
             delayBetweenExecutions,
+          );
+        }
+        if (request.intent === "ping") {
+          Logger.log("[🌐] : ping received, replying...");
+          sendResponse({
+            status: "ready",
+          });
+        }
+        if (request.intent === "triggerEventListener") {
+          Logger.log("[🌐] : triggerEventListener...");
+          const initialEventListenerModule = await import(
+            "../iframe/mutation-observer"
+          );
+          let event = new MessageEvent("message", {
+            data: JSON.parse(request.data),
+          });
+          await initialEventListenerModule.initialEventListener(event);
+        }
+        if (request.intent === "resetAfterCrawl") {
+          sendResponse("success");
+          await resetAfterCrawl(
+            request.recordID,
+            request.BATCH_execution,
+            request.delayBetweenExecutions,
           );
         }
       })();
@@ -160,8 +212,12 @@ async function processCrawl(
   BATCH_execution: boolean,
   batch_id: string,
   delayBetweenExecutions: number,
+  openTab: boolean,
+  openTabOnlyIfMust: boolean,
+  saveHtml: boolean,
+  saveMarkdown: boolean,
 ) {
-  const saveCrawlModule = await import("../iframe/save-crawl");
+  const saveCrawlModule = await import("../iframe/save/save-crawl");
   const {
     get_document_html,
     removeElementsByClassNames,
@@ -170,9 +226,11 @@ async function processCrawl(
   } = await import("../iframe/dom-processing");
   const TurndownModule = await import("../turndown/turndown");
   const saveWithVisualizerModule = await import(
-    "../iframe/save-with-visualizer"
+    "../iframe/save/save-with-visualizer"
   );
-  const saveWithContainedModule = await import("../iframe/save-with-contained");
+  const saveWithContainedModule = await import(
+    "../iframe/save/save-with-contained"
+  );
   const extractTextFromPDFModule = await import("../pdf/pdf-getter");
   let parser: DOMParser = new DOMParser();
   let document_to_use: Document = parser.parseFromString(
@@ -236,6 +294,7 @@ async function processCrawl(
           orgId,
           second_document_string,
           delayBetweenExecutions,
+          openTabOnlyIfMust,
         );
       } else if (htmlContained) {
         // SPECIAL LOGIC FOR HTML CONTAINED
@@ -249,6 +308,7 @@ async function processCrawl(
           second_document_string,
           true,
           delayBetweenExecutions,
+          openTabOnlyIfMust,
         );
       } else {
         saveCrawlModule.saveCrawl(
@@ -260,10 +320,13 @@ async function processCrawl(
           htmlTransformer,
           orgId,
           saveText,
+          saveHtml,
+          saveMarkdown,
           BATCH_execution,
           batch_id,
           false,
           delayBetweenExecutions,
+          openTabOnlyIfMust,
         );
       }
     }
@@ -283,6 +346,7 @@ async function processCrawl(
         orgId,
         second_document_string,
         delayBetweenExecutions,
+        openTabOnlyIfMust,
       );
     } else if (htmlContained) {
       // SPECIAL LOGIC FOR HTML CONTAINED
@@ -296,6 +360,7 @@ async function processCrawl(
         second_document_string,
         false,
         delayBetweenExecutions,
+        openTabOnlyIfMust,
       );
     } else {
       saveCrawlModule.saveCrawl(
@@ -307,10 +372,13 @@ async function processCrawl(
         htmlTransformer,
         orgId,
         saveText,
+        saveHtml,
+        saveMarkdown,
         BATCH_execution,
         batch_id,
         false,
         delayBetweenExecutions,
+        openTabOnlyIfMust,
       );
     }
   }

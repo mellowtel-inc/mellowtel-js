@@ -1,14 +1,14 @@
-import { tellToDeleteIframe } from "./message-background";
-import { getIdentifier } from "../utils/identity-helpers";
-import { Logger } from "../logger/logger";
-import { htmlVisualizer } from "../htmlVisualizer/htmlVisualizer";
-import { sendMessageToBackground } from "../utils/messaging-helpers";
+import { tellToDeleteIframe } from "../message-background";
+import { getIdentifier } from "../../utils/identity-helpers";
+import { Logger } from "../../logger/logger";
+import { htmlVisualizer } from "../../htmlVisualizer/htmlVisualizer";
+import { sendMessageToBackground } from "../../utils/messaging-helpers";
 import {
   checkThroughFilters,
   getS3SignedUrls,
-} from "./contained-visualizer-helpers";
-import { getFromRequestInfoStorage } from "../request-info/request-info-helpers";
-import { getFromRequestMessageStorage } from "../request-message/request-message-helpers";
+} from "../contained-visualizer-helpers";
+import { getFromRequestInfoStorage } from "../../request-info/request-info-helpers";
+import { getFromRequestMessageStorage } from "../../request-message/request-message-helpers";
 
 let htmlVisualizerTimedOut: boolean = true;
 
@@ -97,6 +97,7 @@ export async function saveWithVisualizer(
   orgId: string,
   second_document_string: string,
   delayBetweenExecutions: number = 500,
+  openTabOnlyIfMust: boolean = false,
 ) {
   Logger.log("📋  saveWithVisualizer - Saving Crawl 📋");
   Logger.log("RecordID:", recordID);
