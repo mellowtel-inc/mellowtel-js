@@ -14,8 +14,6 @@ import { Logger } from "../logger/logger";
 import { sendMessageToBackground } from "../utils/messaging-helpers";
 import { saveCrawl } from "../iframe/save/save-crawl";
 import { getFromRequestInfoStorage } from "../request-info/request-info-helpers";
-import { createUnfocusedWindow } from "../unfocused-window/create-window";
-import { saveToOnlyIfMustStorage } from "../unfocused-window/only-if-must-storage";
 
 function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
   Logger.log("[fromDPToNElements] => ", dataPacket);
@@ -696,103 +694,84 @@ export async function proceedWithActivation(
       }
     }
     if (safeToProceed) {
-      if (openTabOnlyIfMust) {
-        await saveToOnlyIfMustStorage(
-          recordID,
-          parseInt(eventData.waitBeforeScraping),
-          eventData,
-          url,
-        );
-      }
-      if (openTab) {
-        createUnfocusedWindow(
-          url,
-          recordID,
-          parseInt(eventData.waitBeforeScraping),
-          eventData,
-        ).then();
-      } else {
-        insertIFrame(
-          url,
-          recordID,
-          function () {
-            // find a way to send a message to the content script inside this iframe
-            // to check if it's ready
-            // send message isContentScriptAlive
-            let iframe: HTMLIFrameElement | null = document.getElementById(
-              recordID,
-            ) as HTMLIFrameElement | null;
-            if (iframe)
-              iframe.contentWindow?.postMessage(
-                { isContentScriptAlive: true, recordID: recordID },
-                "*",
-              );
-            if (waitForElement === "none") {
-              if (iframe) iframe.contentWindow?.postMessage(eventData, "*");
-            }
-          },
-          BATCH_execution ? DATA_ID_IFRAME_BATCH : DATA_ID_IFRAME,
-          shouldSandbox,
-          sandBoxAttributes,
-          htmlVisualizer,
-          htmlContained,
-          screenWidth,
-          screenHeight,
-        );
-
-        setTimeout(async () => {
-          let moreInfo: any = await getFromRequestInfoStorage(recordID);
-          Logger.log("[proceedWithActivation] => More Info:", moreInfo);
-          // if status code starts with 5, set as website unreachable
-          if (moreInfo.statusCode.toString().startsWith("5")) {
-            // SET AS NOT WORKING WEBSITE
-            // hit endpoint to save result
-            Logger.log(
-              "[proceedWithActivation] => Website unreachable, saving it",
+      insertIFrame(
+        url,
+        recordID,
+        function () {
+          // find a way to send a message to the content script inside this iframe
+          // to check if it's ready
+          // send message isContentScriptAlive
+          let iframe: HTMLIFrameElement | null = document.getElementById(
+            recordID,
+          ) as HTMLIFrameElement | null;
+          if (iframe)
+            iframe.contentWindow?.postMessage(
+              { isContentScriptAlive: true, recordID: recordID },
+              "*",
             );
-            saveCrawl(
-              recordID,
-              "",
-              "",
-              eventData.hasOwnProperty("fastLane")
-                ? eventData.fastLane.toString() === "true"
-                : false,
-              url,
-              eventData.hasOwnProperty("htmlTransformer")
-                ? eventData.htmlTransformer
-                : "none",
-              eventData.hasOwnProperty("orgId") ? eventData.orgId : "",
-              eventData.hasOwnProperty("saveText")
-                ? eventData.saveText
-                : "false",
-              true,
-              true,
-              BATCH_execution,
-              batch_id,
-              true,
-            );
-          }
-        }, 500);
-        // if waitForElement isn't none, don't
-        // wait to load the iframe, but keep
-        // sending message until iframe replies.
-        if (waitForElement !== "none") {
-          let iFrameReplied = false;
-          window.addEventListener("message", function (event) {
-            if (event.data.isMReply && event.data.recordID === recordID)
-              iFrameReplied = true;
-          });
-          let timer = setInterval(function () {
-            let iframe: HTMLIFrameElement | null = document.getElementById(
-              recordID,
-            ) as HTMLIFrameElement | null;
-            if (iFrameReplied) {
-              clearInterval(timer);
-              return;
-            }
+          if (waitForElement === "none") {
             if (iframe) iframe.contentWindow?.postMessage(eventData, "*");
-          }, 50);
+          }
+        },
+        BATCH_execution ? DATA_ID_IFRAME_BATCH : DATA_ID_IFRAME,
+        shouldSandbox,
+        sandBoxAttributes,
+        htmlVisualizer,
+        htmlContained,
+        screenWidth,
+        screenHeight,
+      );
+
+      setTimeout(async () => {
+        let moreInfo: any = await getFromRequestInfoStorage(recordID);
+        Logger.log("[proceedWithActivation] => More Info:", moreInfo);
+        // if status code starts with 5, set as website unreachable
+        if (moreInfo.statusCode.toString().startsWith("5")) {
+          // SET AS NOT WORKING WEBSITE
+          // hit endpoint to save result
+          Logger.log(
+            "[proceedWithActivation] => Website unreachable, saving it",
+          );
+          saveCrawl(
+            recordID,
+            "",
+            "",
+            eventData.hasOwnProperty("fastLane")
+              ? eventData.fastLane.toString() === "true"
+              : false,
+            url,
+            eventData.hasOwnProperty("htmlTransformer")
+              ? eventData.htmlTransformer
+              : "none",
+            eventData.hasOwnProperty("orgId") ? eventData.orgId : "",
+            eventData.hasOwnProperty("saveText") ? eventData.saveText : "false",
+            true,
+            true,
+            BATCH_execution,
+            batch_id,
+            true,
+          );
         }
+      }, 500);
+      // if waitForElement isn't none, don't
+      // wait to load the iframe, but keep
+      // sending message until iframe replies.
+      if (waitForElement !== "none") {
+        let iFrameReplied = false;
+        window.addEventListener("message", function (event) {
+          if (event.data.isMReply && event.data.recordID === recordID)
+            iFrameReplied = true;
+        });
+        let timer = setInterval(function () {
+          let iframe: HTMLIFrameElement | null = document.getElementById(
+            recordID,
+          ) as HTMLIFrameElement | null;
+          if (iFrameReplied) {
+            clearInterval(timer);
+            return;
+          }
+          if (iframe) iframe.contentWindow?.postMessage(eventData, "*");
+        }, 50);
       }
     }
   }

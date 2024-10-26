@@ -10,12 +10,10 @@ import {
   proceedWithActivation,
 } from "../content-script/execute-crawl";
 import { Logger } from "../logger/logger";
-import { getFromRequestMessageStorage } from "../request-message/request-message-helpers";
 import {
   deleteLocalStorage,
   getLocalStorage,
 } from "../storage/storage-helpers";
-import { deleteUnfocusedWindow } from "../unfocused-window/create-window";
 
 export async function setUpContentScriptListeners() {
   chrome.runtime.onMessage.addListener(
@@ -31,18 +29,6 @@ export async function setUpContentScriptListeners() {
           );
           if (iframe) iframe.remove();
           if (divIframe) divIframe.remove();
-          let unfocusedWindowId = await getLocalStorage(
-            "unfocusedWindowId",
-            true,
-          );
-          if (unfocusedWindowId !== undefined) {
-            Logger.log(
-              "[deleteIframeM] : unfocusedWindowId =>",
-              unfocusedWindowId,
-            );
-            await deleteUnfocusedWindow(unfocusedWindowId);
-            await deleteLocalStorage(["unfocusedWindowId"]);
-          }
           await resetAfterCrawl(
             recordID,
             request.BATCH_execution,

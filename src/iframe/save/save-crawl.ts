@@ -3,7 +3,6 @@ import { getIdentifier } from "../../utils/identity-helpers";
 import { Logger } from "../../logger/logger";
 import { getFromRequestInfoStorage } from "../../request-info/request-info-helpers";
 import { getFromRequestMessageStorage } from "../../request-message/request-message-helpers";
-import { checkIfOpenTabIfMustAndShould } from "./save-utils";
 
 export function saveCrawl(
   recordID: string,
@@ -86,22 +85,20 @@ export function saveCrawl(
       })
       .then(async (data) => {
         Logger.log("Response from server:", data);
-        let message = "";
-        if (data.hasOwnProperty("message")) {
-          message = data.message;
-        }
-        tellToDeleteIframe(recordID, BATCH_execution, delayBetweenExecutions);
-        // if response contain special instructions and openTabOnlyIfMust is true
-        // then open the tab
-        await checkIfOpenTabIfMustAndShould(recordID, message);
+        await tellToDeleteIframe(
+          recordID,
+          BATCH_execution,
+          delayBetweenExecutions,
+        );
         return data;
       })
       .catch(async (error) => {
         Logger.error("Error:", error);
-        tellToDeleteIframe(recordID, BATCH_execution, delayBetweenExecutions);
-        // if response contain special instructions and openTabOnlyIfMust is true
-        // then open the tab
-        await checkIfOpenTabIfMustAndShould(recordID, "shouldOpen");
+        await tellToDeleteIframe(
+          recordID,
+          BATCH_execution,
+          delayBetweenExecutions,
+        );
         return error;
       });
   });

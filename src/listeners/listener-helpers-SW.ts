@@ -35,10 +35,6 @@ import {
 import { handleGetRequest } from "../get-requests/get-helpers";
 import { startConnectionWs } from "../content-script/websocket";
 import { Logger } from "../logger/logger";
-import {
-  createUnfocusedWindow,
-  deleteUnfocusedWindow,
-} from "../unfocused-window/create-window";
 
 export async function setUpBackgroundListeners() {
   // Queue to store incoming messages to start websocket
@@ -279,18 +275,6 @@ export async function setUpBackgroundListeners() {
       if (request.intent === "startWebsocket") {
         startWebsocketMessageQueue.push({ identifier: request.identifier });
         sendResponse(true);
-      }
-      if (request.intent === "createUnfocusedWindow") {
-        createUnfocusedWindow(
-          request.url,
-          request.recordID,
-          request.waitBeforeScraping,
-          request.eventData,
-        ).then(sendResponse);
-      }
-      // deleteUnfocusedWindow
-      if (request.intent === "deleteUnfocusedWindow") {
-        deleteUnfocusedWindow(request.windowId).then(sendResponse);
       }
       return true; // return true to indicate you want to send a response asynchronously
     },
