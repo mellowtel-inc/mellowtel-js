@@ -32,7 +32,7 @@ With Mellowtel's Open-Source library, your users can decide if they want to supp
 
 **How?**
 
-Companies need to retrieve publicly available data from the web. You get a share of the revenue they pay for providing access to the web thanks to user's that want to support you and share their unused bandwidth.
+Companies need to retrieve publicly available data from the web. You get a share of the revenue they pay for providing access to the web thanks to users that want to support you and share their unused bandwidth.
 
 # Key Features 🎯
 
@@ -70,7 +70,7 @@ We have moved our documentation to a dedicated website: [docs.mellowtel.com](htt
 
 # Quickstart
 
-[Here](https://docs.mellowtel.com/get-started/quickstart) is a detailed guide on how to get started with Mellowtel.
+[Here](https://docs.mellowtel.com/browser-plugins/quickstart) is a detailed guide on how to get started with Mellowtel.
 
 # Contributing 🫶
 
