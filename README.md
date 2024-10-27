@@ -28,29 +28,29 @@
 
 # Introduction ℹ️
 
-With Mellowtel's Open-Source library, your users can share a fraction of their unused internet by using a transparent opt-in/out mechanism. Trusted partners — from startups to enterprises — access the internet through this network to train their AI models, and you get paid for it.
+With Mellowtel's Open-Source library, your users can decide if they want to support you by sharing a fraction of their unused internet bandwidth. Trusted partners — from startups to non-profits — access the internet to retrieve publicly available data, and you get paid for it.
 
 **How?**
 
-AI labs & startups need to access the web to train their models. They need a lot of publicly available data, and they need it fast. Mellowtel provides them with a way to access the internet at scale, by using a decentralized network of consensual users. You get a share of the revenue for providing access to your users' unused internet.
+Companies need to retrieve publicly available data from the web. You get a share of the revenue they pay for providing access to the web thanks to user's that want to support you and share their unused bandwidth.
 
 # Key Features 🎯
 
-- **Easy to use**: Monetize your Browser plugins with a few lines of code.
-- **Open-source**: Transparency is at the core of Mellowtel. Our code is open-source and available for everyone.
-- **Consensual & Opt-out by default**: We believe in the power of informed consent. Your users are always in control. Only they decide if they want to support your extension through an explicit opt-in mechanism (not some small print in TOS). They can opt-out at any time.
-- **Non-intrusive & Private**: We do not collect, share, or sell personal information (not even anonymized data). Mellowtel doesn't negatively affect user experience.
-- **Highly regulated**: We keep communicating with Web Store DevRels in order to guarantee a safe experience. Mellowtel provides regulators with tools to monitor and enforce compliance (e.g. A custom dashboard to review every single URL that passes through the network)
+- **Easy to use**: Earn from your Browser plugins with a few lines of code.
+- **Open-source**: The code is open-source and available for everyone to see.
+- **Consensual & Opt-out by default**: Users are opted out by default. If they want to support you they have to explicitly opt-in. They can opt-out and manage their settings at any time.
+- **Non-intrusive & Private**: In contrast to ads network, we do not collect, share, or sell personal information (not even anonymized data). The whole business model relies on the fact we don't need to collect or sell data but on using a small portion of unused bandwidth
+- **Good user experience**: Mellowtel only requires enough resources to open an additional incognito tab. In order to guarantee a good user experience we only operate when the connection is stable (wifi, ethernet) and there is high bandwidth available.
 
 # Why❓
 
-We believe that extension developers should be able to monetize their work without compromising their users' privacy or experience. Most Browser plugins provide a lot of value to users, but they are not willing to pay for them.
+We believe that extension developers should be able to earn from their hard work without compromising their users' privacy or experience. Most Browser plugins provide a lot of value to users, but they are not willing to pay for them.
 
-Mellowtel gives your users a way to support your extension without having to directly pay for it. They can instead choose to share a fraction of their unused internet bandwidth. It's a win-win situation for everyone: users pay with a resource they didn't even know they had, and you get paid for your work.
+Mellowtel gives your users a way to support your extension without having to directly pay for it. They can instead choose to share a fraction of their unused internet bandwidth. It's a win-win situation for everyone: users pay with a resource they aren't using, and you get paid for your work.
 
 Hopefully this will lead to fewer extensions being shut down or discontinued due to inability to monetize, fewer personal data being collected and sold, and more transparency in the Browser plugins ecosystem.
 
-See other "monetization solutions" below for examples of what can go wrong when developers are not given a fair way to monetize their work.
+See other "monetization solutions" below for examples of what can go wrong when developers are not given a fair way to earn from their work.
 
 # What are the current "monetization solutions"? 🧐
 
