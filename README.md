@@ -29,6 +29,7 @@
 # Introduction ℹ️
 
 With Mellowtel's Open-Source library, your users can decide if they want to support you by sharing a fraction of their unused internet bandwidth. Trusted partners — from startups to non-profits — access the internet to retrieve publicly available data, and you get paid for it.
+Mellowtel is supported on all major browsers: Chrome, Firefox and Edge.
 
 **How?**
 
