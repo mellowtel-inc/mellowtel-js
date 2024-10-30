@@ -11,6 +11,7 @@ const BASE_DOMAIN: string = "https://www.mellow.tel/";
 const BASE_LINK_SETTING: string = BASE_DOMAIN + "settings/";
 const BASE_LINK_OPT_IN: string = BASE_DOMAIN + "opt-in/";
 const BASE_LINK_UPDATE: string = BASE_DOMAIN + "update/";
+const BASE_LINK_FEEDBACK: string = BASE_DOMAIN + "uninstall-feedback/";
 
 /*
     generateAndOpenOptInLink is a convenience function that generates an opt-in link
@@ -155,5 +156,36 @@ export function openUserSettingsInPopupWindow(): Promise<boolean> {
     }
     await openPopupWindow(userSettingsLink, "Settings", 768, 400);
     resolve(true);
+  });
+}
+
+export function generateAndOpenFeedbackLink(): Promise<string> {
+  return new Promise(async (resolve) => {
+    // if not access to tabs api, send message to background script to open the link
+    let shouldDelegate = await shouldDelegateTabsAPI();
+    if (shouldDelegate) {
+      let link = await sendMessageToBackground({ intent: "openFeedbackLink" });
+      resolve(link);
+    }
+    let extension_id = await getExtensionIdentifier();
+    getIdentifier().then(async (nodeId) => {
+      let configuration_key = nodeId.split("_")[1];
+      let link = `${BASE_LINK_FEEDBACK}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}`;
+      chrome.tabs.create({ url: link }, (tab) => {
+        resolve(link);
+      });
+    });
+  });
+}
+
+export function generateFeedbackLink(): Promise<string> {
+  return new Promise(async (resolve) => {
+    let extension_id = await getExtensionIdentifier();
+    getIdentifier().then((nodeId) => {
+      let configuration_key = nodeId.split("_")[1];
+      resolve(
+        `${BASE_LINK_FEEDBACK}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}`,
+      );
+    });
   });
 }

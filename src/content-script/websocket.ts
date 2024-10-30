@@ -86,6 +86,7 @@ export async function startConnectionWs(identifier: string): WebSocket {
         Logger.log(`[🌐]: Browser: ${browser}`);
         const manifestVersion = getManifestVersion();
         Logger.log(`[🌐]: Manifest version: ${manifestVersion}`);
+        Logger.log(`[🌐]: Extension identifier: ${extension_identifier}`);
         const ws = new WebSocket(
           `${ws_url}?node_id=${identifier}&version=${VERSION}&extension_id=${encodeURIComponent(extension_identifier)}&speedMbps=${speedMpbs}&browser=${browser}&manifest_version=${manifestVersion}`,
         );

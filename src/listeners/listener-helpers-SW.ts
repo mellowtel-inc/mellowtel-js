@@ -15,6 +15,7 @@ import {
 import { sendMessageToContentScript } from "../utils/messaging-helpers";
 import { handlePostRequest } from "../post-requests/post-helpers";
 import {
+  generateAndOpenFeedbackLink,
   generateAndOpenOptInLink,
   generateAndOpenUpdateLink,
 } from "../elements/generate-links";
@@ -275,6 +276,11 @@ export async function setUpBackgroundListeners() {
       if (request.intent === "startWebsocket") {
         startWebsocketMessageQueue.push({ identifier: request.identifier });
         sendResponse(true);
+      }
+      if (request.intent === "openFeedbackLink") {
+        generateAndOpenFeedbackLink().then((link) => {
+          sendResponse(link);
+        });
       }
       return true; // return true to indicate you want to send a response asynchronously
     },

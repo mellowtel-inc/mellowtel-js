@@ -26,6 +26,8 @@ import {
   generateAndOpenOptInLink,
   generateUpdateLink,
   generateAndOpenUpdateLink,
+  generateFeedbackLink,
+  generateAndOpenFeedbackLink,
 } from "./elements/generate-links";
 import { detectBrowser } from "./utils/utils";
 import { switchShouldContinue } from "./switch/check-switch";
@@ -162,5 +164,13 @@ export default class M {
 
   public async stop(): Promise<boolean> {
     return stop();
+  }
+
+  public async generateFeedbackLink(): Promise<string> {
+    return generateFeedbackLink();
+  }
+
+  public async generateAndOpenFeedbackLink(): Promise<string> {
+    return generateAndOpenFeedbackLink();
   }
 }
