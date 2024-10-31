@@ -44,6 +44,8 @@ export function handlePostRequest(
       headers?: any;
     } = {
       method: "POST",
+      // we're omitting credentials to avoid leaking cookies & session data
+      // this is a security measure to protect the user's data
       credentials: "omit",
     };
     if (method_payload !== "no_payload") {

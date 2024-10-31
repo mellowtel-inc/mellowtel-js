@@ -41,6 +41,8 @@ export function handleGetRequest(
       headers?: any;
     } = {
       method: "GET",
+      // we're omitting credentials to avoid leaking cookies & session data
+      // this is a security measure to protect the user's data
       credentials: "omit",
     };
     if (method_headers !== "no_headers") {
