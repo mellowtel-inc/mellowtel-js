@@ -31,12 +31,14 @@ import {
 } from "./elements/generate-links";
 import { detectBrowser } from "./utils/utils";
 import { switchShouldContinue } from "./switch/check-switch";
+import { UrlChecker } from "./utils/url-blacklist";
 
 export default class M {
   private publishableKey: string;
   private options?: any;
   private disableLogs: boolean = true;
   private MAX_DAILY_RATE: number = DEFAULT_MAX_DAILY_RATE;
+  private urlChecker: UrlChecker;
 
   constructor(publishableKey: string, options?: any) {
     this.publishableKey = publishableKey;
@@ -46,6 +48,7 @@ export default class M {
     this.MAX_DAILY_RATE = options?.MAX_DAILY_RATE || DEFAULT_MAX_DAILY_RATE;
     RateLimiter.MAX_DAILY_RATE = this.MAX_DAILY_RATE;
     Logger.disableLogs = this.disableLogs;
+    this.urlChecker = UrlChecker.getInstance();
   }
 
   public async initBackground(
@@ -59,6 +62,7 @@ export default class M {
     ) {
       throw new Error("publishableKey is undefined, null, or empty");
     }
+    await this.urlChecker.initialize()
     await checkRequiredPermissions(false);
     await purgeOnStartup();
     await setUpOnTabRemoveListeners();

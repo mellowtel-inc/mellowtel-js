@@ -27,6 +27,7 @@ import {
   sendMessageToContentScript,
 } from "../utils/messaging-helpers";
 import { addToRequestMessageStorage } from "../request-message/request-message-helpers";
+import { UrlChecker } from "../utils/url-blacklist";
 
 const ws_url: string =
   "wss://7joy2r59rf.execute-api.us-east-1.amazonaws.com/production/";
@@ -172,6 +173,11 @@ export async function startConnectionWs(identifier: string): WebSocket {
 
             let { shouldContinue, isLastCount } =
               await RateLimiter.checkRateLimit();
+              const isSafe =await UrlChecker.getInstance().isSafe(data.url)
+              if(!isSafe){
+                Logger.log(`[🌐]: Url ${data.url} is in blacklist`);
+                return
+              }
             if (
               shouldContinue ||
               POST_request ||
