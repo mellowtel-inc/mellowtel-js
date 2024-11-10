@@ -57,6 +57,7 @@ export function checkHostPermissionsMV2_3(): Promise<boolean> {
         );
       }
     }
+    resolve(false)
   });
 }
 
