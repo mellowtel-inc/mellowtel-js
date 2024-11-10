@@ -113,12 +113,12 @@ export async function setUpExternalMessageListeners() {
               );
             });
           }
-          if (message.action === "getNodeId") {
-            getIdentifier().then((nodeId) => {
+          if (message.action === "getDeviceId") {
+            getIdentifier().then((deviceId) => {
               sendMessageToWebsite(
                 {
-                  message: "node-id",
-                  nodeId: nodeId,
+                  message: "device-id",
+                  deviceId: deviceId,
                   id: message_id,
                 },
                 extension_id_original,

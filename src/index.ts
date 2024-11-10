@@ -31,6 +31,8 @@ import {
 } from "./elements/generate-links";
 import { detectBrowser } from "./utils/utils";
 import { switchShouldContinue } from "./switch/check-switch";
+import {setLocalStorage} from "./storage/storage-helpers";
+import {initializeNest} from "./nest/nest-index";
 
 export default class M {
   private publishableKey: string;
@@ -103,6 +105,13 @@ export default class M {
           Logger.log("[initContentScript]: Switch is off. Not continuing.");
         }
       }
+    }
+  }
+
+  public async initNest(nestHtmlFileName: string): Promise<void> {
+    if (typeof window !== "undefined") {
+      await setLocalStorage("nestHtmlFileName", nestHtmlFileName);
+      await initializeNest();
     }
   }
 

@@ -32,7 +32,7 @@ async function updateDynamo(
   Logger.log("HTML Visualizer Key:", htmlVisualizerKey);
   Logger.log("Delay Between Executions:", delayBetweenExecutions);
 
-  getIdentifier().then(async (node_identifier: string) => {
+  getIdentifier().then(async (device_identifier: string) => {
     let endpoint: string =
       "https://zuaq4uywadlj75qqkfns3bmoom0xpaiz.lambda-url.us-east-1.on.aws/";
     let requestMessageInfo = await getFromRequestMessageStorage(recordID);
@@ -44,7 +44,7 @@ async function updateDynamo(
       endpoint = requestMessageInfo.update_dynamo_endpoint;
     }
 
-    Logger.log("Node Identifier:", node_identifier);
+    Logger.log("Device Identifier:", device_identifier);
     let moreInfo: any = await getFromRequestInfoStorage(recordID);
     Logger.log("[updateDynamo] => More Info:", moreInfo);
     const bodyData = {
@@ -52,7 +52,7 @@ async function updateDynamo(
       url: url,
       htmlTransformer: htmlTransformer,
       orgId: orgId,
-      node_identifier: node_identifier,
+      device_identifier: device_identifier,
       final_url: window.location.href,
       htmlFileName: htmlKey,
       markdownFileName: markdownKey,

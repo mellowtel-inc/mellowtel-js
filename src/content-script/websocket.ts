@@ -88,7 +88,7 @@ export async function startConnectionWs(identifier: string): WebSocket {
         Logger.log(`[🌐]: Manifest version: ${manifestVersion}`);
         Logger.log(`[🌐]: Extension identifier: ${extension_identifier}`);
         const ws = new WebSocket(
-          `${ws_url}?node_id=${identifier}&version=${VERSION}&extension_id=${encodeURIComponent(extension_identifier)}&speedMbps=${speedMpbs}&browser=${browser}&manifest_version=${manifestVersion}`,
+          `${ws_url}?device_id=${identifier}&version=${VERSION}&plugin_id=${encodeURIComponent(extension_identifier)}&speed_download=${speedMpbs}&platform=${browser}&manifest_version=${manifestVersion}`,
         );
 
         ws.onopen = function open() {
@@ -106,7 +106,7 @@ export async function startConnectionWs(identifier: string): WebSocket {
             setSharedMemory("webSocketConnected", "true");
           }
           Logger.log(
-            `[🌐]: connected with node_id= ${identifier} and version= ${VERSION}`,
+            `[🌐]: connected with device_id= ${identifier} and version= ${VERSION}`,
           );
         };
 

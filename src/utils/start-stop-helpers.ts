@@ -12,13 +12,13 @@ export function start(metadata_id?: string | undefined): Promise<boolean> {
     let optInStatus: boolean = (await getOptInStatus()).boolean;
     if (!optInStatus) {
       throw new Error(
-        "Node has not opted in yet. Request a disclaimer to the end-user and then call the optIn() method if they agree to join.",
+        "User has not opted in yet. Request a disclaimer to the end-user and then call the optIn() method if they agree to join.",
       );
     }
     try {
       await checkRequiredPermissions(true);
       // note: in later version, metadata_id will be used to trace the #...
-      // ...of requests to this specific node, so you can give rewards, etc.
+      // ...of requests to this specific device, so you can give rewards, etc.
       setLocalStorage("mStatus", "start").then(() => {
         resolve(true);
       });
