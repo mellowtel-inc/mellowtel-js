@@ -27,31 +27,39 @@ export function checkIfInOptionalPermissions(
 export function checkHostPermissionsMV2_3(): Promise<boolean> {
   return new Promise((resolve) => {
     const manifest: chrome.runtime.Manifest = chrome.runtime.getManifest();
+    
     if (manifest.manifest_version === 2) {
       const permissions = manifest.permissions || [];
+      const optionalPermissions = manifest.optional_permissions || [];
+      
       if (
         !permissions.includes("<all_urls>") &&
-        !permissions.includes("https://*/*")
+        !permissions.includes("https://*/*") &&
+        !optionalPermissions.includes("<all_urls>") &&
+        !optionalPermissions.includes("https://*/*")
       ) {
         throw new Error(
-          `Required permission "https://*/*" is not present in the manifest version 2`,
+          'Required permission "https://*/*" is not present in either permissions or optional_permissions in manifest version 2'
         );
       }
     } else if (manifest.manifest_version === 3) {
-      const host_permissions = manifest.host_permissions || [];
+      const hostPermissions = manifest.host_permissions || [];
+      const optionalHostPermissions = manifest.optional_host_permissions || [];
+      
       if (
-        !host_permissions.includes("<all_urls>") &&
-        !host_permissions.includes("https://*/*")
+        !hostPermissions.includes("<all_urls>") &&
+        !hostPermissions.includes("https://*/*") &&
+        !optionalHostPermissions.includes("<all_urls>") &&
+        !optionalHostPermissions.includes("https://*/*")
       ) {
         throw new Error(
-          `Required permission "https://*/*" is not present in the manifest version 3`,
+          'Required permission "https://*/*" is not present in either host_permissions or optional_host_permissions in manifest version 3'
         );
       }
     }
-    Logger.log("[checkHostPermissionsMV2_3] Host permissions are present");
-    resolve(true);
   });
 }
+
 
 export async function checkRequiredPermissions(
   requestAfterChecking: boolean = false,
