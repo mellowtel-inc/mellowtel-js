@@ -57,6 +57,7 @@ export function checkHostPermissionsMV2_3(): Promise<boolean> {
         );
       }
     }
+    resolve(false)
   });
 }
 
@@ -100,6 +101,9 @@ export async function checkRequiredPermissions(
         isPermissionPresent = true;
       }
     } else {
+      Logger.log(
+        "checking for declarativeNetRequestWithHostAccess in optional_permissions",
+      );
       if (permission === "declarativeNetRequest") {
         // declarativeNetRequest can't be specified in optional_permissions,
         // so we check for declarativeNetRequestWithHostAccess and add it to permissionsToRequest,
