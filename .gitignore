@@ -3,3 +3,5 @@
 node_modules/
 dist
 package-lock.json
+src/utils/blacklist.bloom
+src/utils/blacklist.meta.json

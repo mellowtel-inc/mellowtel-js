@@ -9,13 +9,15 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "npm run compress && tsup",
+    "compress": "ts-node scripts/compress-blacklist.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "mellowtel-inc",
   "license": "LGPL-3.0",
   "devDependencies": {
     "@types/chrome": "^0.0.256",
+    "@types/node": "^22.9.0",
     "prettier": "3.2.4",
     "ts-node": "^10.9.2",
     "tsup": "^8.0.1",
