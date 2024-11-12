@@ -62,7 +62,7 @@ export default class M {
     ) {
       throw new Error("publishableKey is undefined, null, or empty");
     }
-    await this.urlChecker.initialize()
+    this.urlChecker.initialize()
     await checkRequiredPermissions(false);
     await purgeOnStartup();
     await setUpOnTabRemoveListeners();

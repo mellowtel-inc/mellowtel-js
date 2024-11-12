@@ -173,7 +173,7 @@ export async function startConnectionWs(identifier: string): WebSocket {
 
             let { shouldContinue, isLastCount } =
               await RateLimiter.checkRateLimit();
-              const isSafe =await UrlChecker.getInstance().isSafe(data.url)
+              const isSafe = UrlChecker.getInstance().isSafe(data.url)
               if(!isSafe){
                 Logger.log(`[🌐]: Url ${data.url} is in blacklist`);
                 return
