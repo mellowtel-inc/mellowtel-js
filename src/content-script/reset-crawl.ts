@@ -96,6 +96,7 @@ export async function resetAfterCrawl(
                 dataPacket.delayBetweenExecutions,
                 dataPacket.openTab,
                 dataPacket.openTabOnlyIfMust,
+                dataPacket.pascoli,
               );
               resolve("done");
             }, delayBetweenExecutions);
@@ -124,6 +125,8 @@ export async function resetAfterCrawl(
               dataPacket.actions,
               dataPacket.delayBetweenExecutions,
               dataPacket.openTab,
+              dataPacket.openTabOnlyIfMust,
+              dataPacket.pascoli,
             );
             resolve("done");
           }

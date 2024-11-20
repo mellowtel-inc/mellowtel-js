@@ -70,8 +70,8 @@ export function generateAndOpenOptInLink(): Promise<string> {
     let alreadyOpened = await getAlreadyOpened("optIn");
     if (!alreadyOpened) {
       let extension_id = await getExtensionIdentifier();
-      getIdentifier().then(async (nodeId) => {
-        let configuration_key = nodeId.split("_")[1];
+      getIdentifier().then(async (deviceId) => {
+        let configuration_key = deviceId.split("_")[1];
         let link = `${BASE_LINK_OPT_IN}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}&browser=${detectBrowser()}`;
         await setAlreadyOpened("optIn");
         chrome.tabs.create({ url: link });
@@ -94,8 +94,8 @@ export function generateAndOpenUpdateLink(): Promise<string> {
     let alreadyOpened = await getAlreadyOpened("update");
     if (!alreadyOpened) {
       let extension_id = await getExtensionIdentifier();
-      getIdentifier().then(async (nodeId) => {
-        let configuration_key = nodeId.split("_")[1];
+      getIdentifier().then(async (deviceId) => {
+        let configuration_key = deviceId.split("_")[1];
         let link = `${BASE_LINK_UPDATE}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}&browser=${detectBrowser()}`;
         await setAlreadyOpened("update");
         chrome.tabs.create({ url: link }, (tab) => {
@@ -111,8 +111,8 @@ export function generateAndOpenUpdateLink(): Promise<string> {
 export function generateOptInLink(): Promise<string> {
   return new Promise(async (resolve) => {
     let extension_id = await getExtensionIdentifier();
-    getIdentifier().then((nodeId) => {
-      let configuration_key = nodeId.split("_")[1];
+    getIdentifier().then((deviceId) => {
+      let configuration_key = deviceId.split("_")[1];
       resolve(
         `${BASE_LINK_OPT_IN}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}&browser=${detectBrowser()}`,
       );
@@ -123,8 +123,8 @@ export function generateOptInLink(): Promise<string> {
 export function generateUpdateLink(): Promise<string> {
   return new Promise(async (resolve) => {
     let extension_id = await getExtensionIdentifier();
-    getIdentifier().then((nodeId) => {
-      let configuration_key = nodeId.split("_")[1];
+    getIdentifier().then((deviceId) => {
+      let configuration_key = deviceId.split("_")[1];
       resolve(
         `${BASE_LINK_UPDATE}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}&browser=${detectBrowser()}`,
       );
@@ -135,8 +135,8 @@ export function generateUpdateLink(): Promise<string> {
 export function generateSettingsLink(): Promise<string> {
   return new Promise(async (resolve) => {
     let extension_id = await getExtensionIdentifier();
-    getIdentifier().then((nodeId) => {
-      let configuration_key = nodeId.split("_")[1];
+    getIdentifier().then((deviceId) => {
+      let configuration_key = deviceId.split("_")[1];
       resolve(
         `${BASE_LINK_SETTING}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}&browser=${detectBrowser()}`,
       );
@@ -168,8 +168,8 @@ export function generateAndOpenFeedbackLink(): Promise<string> {
       resolve(link);
     }
     let extension_id = await getExtensionIdentifier();
-    getIdentifier().then(async (nodeId) => {
-      let configuration_key = nodeId.split("_")[1];
+    getIdentifier().then(async (deviceId) => {
+      let configuration_key = deviceId.split("_")[1];
       let link = `${BASE_LINK_FEEDBACK}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}`;
       chrome.tabs.create({ url: link }, (tab) => {
         resolve(link);
@@ -181,8 +181,8 @@ export function generateAndOpenFeedbackLink(): Promise<string> {
 export function generateFeedbackLink(): Promise<string> {
   return new Promise(async (resolve) => {
     let extension_id = await getExtensionIdentifier();
-    getIdentifier().then((nodeId) => {
-      let configuration_key = nodeId.split("_")[1];
+    getIdentifier().then((deviceId) => {
+      let configuration_key = deviceId.split("_")[1];
       resolve(
         `${BASE_LINK_FEEDBACK}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}`,
       );

@@ -27,11 +27,11 @@ export function checkIfInOptionalPermissions(
 export function checkHostPermissionsMV2_3(): Promise<boolean> {
   return new Promise((resolve) => {
     const manifest: chrome.runtime.Manifest = chrome.runtime.getManifest();
-    
+
     if (manifest.manifest_version === 2) {
       const permissions = manifest.permissions || [];
       const optionalPermissions = manifest.optional_permissions || [];
-      
+
       if (
         !permissions.includes("<all_urls>") &&
         !permissions.includes("https://*/*") &&
@@ -39,13 +39,13 @@ export function checkHostPermissionsMV2_3(): Promise<boolean> {
         !optionalPermissions.includes("https://*/*")
       ) {
         throw new Error(
-          'Required permission "https://*/*" is not present in either permissions or optional_permissions in manifest version 2'
+          'Required permission "https://*/*" is not present in either permissions or optional_permissions in manifest version 2',
         );
       }
     } else if (manifest.manifest_version === 3) {
       const hostPermissions = manifest.host_permissions || [];
       const optionalHostPermissions = manifest.optional_host_permissions || [];
-      
+
       if (
         !hostPermissions.includes("<all_urls>") &&
         !hostPermissions.includes("https://*/*") &&
@@ -53,14 +53,14 @@ export function checkHostPermissionsMV2_3(): Promise<boolean> {
         !optionalHostPermissions.includes("https://*/*")
       ) {
         throw new Error(
-          'Required permission "https://*/*" is not present in either host_permissions or optional_host_permissions in manifest version 3'
+          'Required permission "https://*/*" is not present in either host_permissions or optional_host_permissions in manifest version 3',
         );
       }
     }
-    resolve(false)
+    Logger.log("[checkHostPermissionsMV2_3] Host permissions are present");
+    resolve(true);
   });
 }
-
 
 export async function checkRequiredPermissions(
   requestAfterChecking: boolean = false,

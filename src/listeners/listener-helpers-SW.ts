@@ -191,6 +191,7 @@ export async function setUpBackgroundListeners() {
                 delayBetweenExecutions: request.delayBetweenExecutions,
                 openTab: request.openTab,
                 openTabOnlyIfMust: request.openTabOnlyIfMust,
+                pascoli: request.pascoli,
               });
             }
           },
@@ -225,6 +226,7 @@ export async function setUpBackgroundListeners() {
                 delayBetweenExecutions: request.delayBetweenExecutions,
                 openTab: request.openTab,
                 openTabOnlyIfMust: request.openTabOnlyIfMust,
+                pascoli: request.pascoli,
               });
             }
           },

@@ -1,7 +1,9 @@
 import { showBadgeIfShould } from "../transparency/badge-settings";
 import { DATA_ID_IFRAME } from "../constants";
+import { getLocalStorage } from "../storage/storage-helpers";
+import { Logger } from "../logger/logger";
 
-export function insertIFrame(
+export async function insertIFrame(
   url: string,
   id: string,
   onload = function () {},
@@ -12,6 +14,8 @@ export function insertIFrame(
   htmlContained = false,
   screenWidth: string = "1024px",
   screenHeight: string = "768px",
+  eventData: string = "",
+  pascoli: boolean = false,
 ) {
   let iframe: HTMLIFrameElement = document.createElement("iframe");
   iframe.id = id;
@@ -35,7 +39,36 @@ export function insertIFrame(
   iframe.onload = onload;
   iframe.referrerPolicy = "no-referrer";
 
-  if (htmlVisualizer) {
+  if (pascoli) {
+    const pascoliIframe = document.createElement("iframe");
+    let htmlFileNamePath = await getLocalStorage("mllwtl_HTMLFileName", true);
+    Logger.log("[pascoli]: htmlFileNamePath", htmlFileNamePath);
+    pascoliIframe.src = chrome.runtime.getURL(htmlFileNamePath);
+    pascoliIframe.style.display = "none";
+    pascoliIframe.id = id;
+    document.body.appendChild(pascoliIframe);
+    pascoliIframe.onload = function () {
+      const contentWindow = pascoliIframe.contentWindow;
+      if (contentWindow) {
+        contentWindow.postMessage(
+          {
+            url: url,
+            id: id,
+            data_id: data_id,
+            should_sandbox: should_sandbox,
+            sandbox_attributes: sandbox_attributes,
+            htmlVisualizer: htmlVisualizer,
+            htmlContained: htmlContained,
+            screenWidth: screenWidth,
+            screenHeight: screenHeight,
+            eventData: eventData,
+            pascoli: false,
+          },
+          "*",
+        );
+      }
+    };
+  } else if (htmlVisualizer) {
     iframe.style.width = screenWidth;
     // don't overwrite the height if htmlVisualizer is true
     iframe.style.height = "0px";
