@@ -40,7 +40,8 @@ export function disableXFrameHeaders(
                     {
                       header: "Content-Security-Policy",
                       operation: "set" as HeaderOperation,
-                      value: "frame-ancestors *; frame-src *; default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; connect-src * data: blob:; script-src * 'unsafe-inline' 'unsafe-eval'; child-src * 'self' blob: data:;"
+                      value:
+                        "frame-ancestors *; frame-src *; default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; connect-src * data: blob:; script-src * 'unsafe-inline' 'unsafe-eval'; child-src * 'self' blob: data:;",
                     },
                     {
                       header: "Content-Security-Policy-Report-Only",
@@ -79,12 +80,16 @@ export function disableXFrameHeaders(
                       header: "Access-Control-Allow-Credentials",
                       operation: "set" as HeaderOperation,
                       value: "true",
-                    }
+                    },
                   ],
                 },
                 condition: {
                   // resourceTypes: ["sub_frame" as ResourceType],
-                  resourceTypes: ["main_frame", "sub_frame", "xmlhttprequest"] as ResourceType[],
+                  resourceTypes: [
+                    "main_frame",
+                    "sub_frame",
+                    "xmlhttprequest",
+                  ] as ResourceType[],
                   urlFilter: "*://*/*",
                   // `*${hostname}*`, --> specific filter disabled because
                   // there are internal redirects that need to be handled.

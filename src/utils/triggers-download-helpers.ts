@@ -79,7 +79,7 @@ export async function seeIfTriggersDownload(
           ) {
             rulesToApply.push({
               id: RULE_ID_CONTENT_DISPOSITION,
-              priority: 2,
+              priority: 1,
               action: {
                 type: "modifyHeaders" as RuleActionType,
                 responseHeaders: [
@@ -98,7 +98,7 @@ export async function seeIfTriggersDownload(
           if ("modifyContentType" in result && result.modifyContentType) {
             rulesToApply.push({
               id: RULE_ID_CONTENT_TYPE,
-              priority: 2,
+              priority: 1,
               action: {
                 type: "modifyHeaders" as RuleActionType,
                 responseHeaders: [
@@ -120,7 +120,7 @@ export async function seeIfTriggersDownload(
           ) {
             rulesToApply.push({
               id: RULE_ID_VALUE_TO_MODIFY_CONTENT_TYPE_TO,
-              priority: 2,
+              priority: 1,
               action: {
                 type: "modifyHeaders" as RuleActionType,
                 responseHeaders: [
