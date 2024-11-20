@@ -32,7 +32,7 @@ import {
 import { detectBrowser } from "./utils/utils";
 import { switchShouldContinue } from "./switch/check-switch";
 import { setLocalStorage } from "./storage/storage-helpers";
-import { initializeNest } from "./nest/nest-index";
+import { initializePascoli } from "./pascoli/pascoli-index";
 
 export default class M {
   private publishableKey: string;
@@ -80,7 +80,12 @@ export default class M {
     }
   }
 
-  public async initContentScript(): Promise<void> {
+  public async initContentScript(
+    pascoliHTMLFileName?: string | undefined,
+  ): Promise<void> {
+    if (typeof pascoliHTMLFileName !== "undefined") {
+      await setLocalStorage("mllwtl_HTMLFileName", pascoliHTMLFileName);
+    }
     if (typeof window !== "undefined") {
       await setUpExternalMessageListeners();
     }
@@ -108,10 +113,9 @@ export default class M {
     }
   }
 
-  public async initNest(nestHtmlFileName: string): Promise<void> {
+  public async initPascoli(): Promise<void> {
     if (typeof window !== "undefined") {
-      await setLocalStorage("nestHtmlFileName", nestHtmlFileName);
-      await initializeNest();
+      await initializePascoli();
     }
   }
 

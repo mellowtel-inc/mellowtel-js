@@ -57,6 +57,8 @@ export function checkHostPermissionsMV2_3(): Promise<boolean> {
         );
       }
     }
+    Logger.log("[checkHostPermissionsMV2_3] Host permissions are present");
+    resolve(true);
   });
 }
 

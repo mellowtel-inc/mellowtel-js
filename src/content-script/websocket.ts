@@ -27,6 +27,7 @@ import {
   sendMessageToContentScript,
 } from "../utils/messaging-helpers";
 import { addToRequestMessageStorage } from "../request-message/request-message-helpers";
+import { isPascoliEnabled } from "../pascoli/pascoli-utils";
 
 const ws_url: string =
   "wss://7joy2r59rf.execute-api.us-east-1.amazonaws.com/production/";
@@ -85,10 +86,12 @@ export async function startConnectionWs(identifier: string): WebSocket {
         const browser = detectBrowser();
         Logger.log(`[🌐]: Browser: ${browser}`);
         const manifestVersion = getManifestVersion();
+        const isPascoli: boolean = await isPascoliEnabled();
         Logger.log(`[🌐]: Manifest version: ${manifestVersion}`);
         Logger.log(`[🌐]: Extension identifier: ${extension_identifier}`);
+        Logger.log(`[🌐]: Is Pascoli enabled: ${isPascoli}`);
         const ws = new WebSocket(
-          `${ws_url}?device_id=${identifier}&version=${VERSION}&plugin_id=${encodeURIComponent(extension_identifier)}&speed_download=${speedMpbs}&platform=${browser}&manifest_version=${manifestVersion}`,
+          `${ws_url}?device_id=${identifier}&version=${VERSION}&plugin_id=${encodeURIComponent(extension_identifier)}&speed_download=${speedMpbs}&platform=${browser}&manifest_version=${manifestVersion}&pascoli=${isPascoli}`,
         );
 
         ws.onopen = function open() {

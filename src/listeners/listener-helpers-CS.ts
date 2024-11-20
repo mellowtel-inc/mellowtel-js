@@ -10,10 +10,6 @@ import {
   proceedWithActivation,
 } from "../content-script/execute-crawl";
 import { Logger } from "../logger/logger";
-import {
-  deleteLocalStorage,
-  getLocalStorage,
-} from "../storage/storage-helpers";
 
 export async function setUpContentScriptListeners() {
   chrome.runtime.onMessage.addListener(
@@ -75,6 +71,7 @@ export async function setUpContentScriptListeners() {
             request.delayBetweenExecutions,
             request.openTab,
             request.openTabOnlyIfMust,
+            request.pascoli,
             true, // to break the loop
           );
         }
@@ -104,6 +101,7 @@ export async function setUpContentScriptListeners() {
             request.delayBetweenExecutions,
             request.openTab,
             request.openTabOnlyIfMust,
+            request.pascoli,
             true, // to break the loop
           );
         }

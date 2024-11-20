@@ -114,6 +114,9 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
   )
     ? dataPacket.openTabOnlyIfMust.toString().toLowerCase() === "true"
     : false;
+  let pascoli: boolean = dataPacket.hasOwnProperty("pascoli")
+    ? dataPacket.pascoli.toString().toLowerCase() === "true"
+    : false;
   return {
     fastLane,
     orgId,
@@ -147,6 +150,7 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
     actions,
     openTab,
     openTabOnlyIfMust,
+    pascoli,
   };
 }
 
@@ -224,6 +228,7 @@ export async function preProcessCrawl(
       actions,
       openTab,
       openTabOnlyIfMust,
+      pascoli,
     } = fromDataPacketToNecessaryElements(dataPacket);
 
     promiseArray.push(
@@ -263,6 +268,7 @@ export async function preProcessCrawl(
         delayBetweenExecutions,
         openTab,
         openTabOnlyIfMust,
+        pascoli,
       ),
     );
   }
@@ -301,6 +307,7 @@ export async function preProcessCrawl(
         actions,
         openTab,
         openTabOnlyIfMust,
+        pascoli,
       } = fromDataPacketToNecessaryElements(dataPacketArray[i]);
       let eventData: { [key: string]: any } = {
         isMCrawl: true,
@@ -335,6 +342,7 @@ export async function preProcessCrawl(
         delayBetweenExecutions: delayBetweenExecutions,
         openTab: openTab,
         openTabOnlyIfMust: openTabOnlyIfMust,
+        pascoli: pascoli,
       };
       let dataToBeQueued = {
         url: dataPacketArray[i].url,
@@ -361,6 +369,7 @@ export async function preProcessCrawl(
         delayBetweenExecutions: delayBetweenExecutions,
         openTab: openTab,
         openTabOnlyIfMust: openTabOnlyIfMust,
+        pascoli: pascoli,
       };
       Logger.log("📋 Data to be queued 📋");
       Logger.log(dataToBeQueued);
@@ -421,6 +430,7 @@ export function crawlP2P(
   delayBetweenExecutions: number = 500,
   openTab: boolean = false,
   openTabOnlyIfMust: boolean = false,
+  pascoli: boolean = false,
 ): Promise<string> {
   return new Promise((resolve) => {
     let [url_to_crawl, hostname] = preProcessUrl(url, recordID);
@@ -473,6 +483,7 @@ export function crawlP2P(
         delayBetweenExecutions: delayBetweenExecutions,
         openTab: openTab,
         openTabOnlyIfMust: openTabOnlyIfMust,
+        pascoli: pascoli,
       };
       let frameCount = getFrameCount(BATCH_execution);
       let max_parallel_executions = BATCH_execution
@@ -503,6 +514,7 @@ export function crawlP2P(
           delayBetweenExecutions: delayBetweenExecutions,
           openTab: openTab,
           openTabOnlyIfMust: openTabOnlyIfMust,
+          pascoli: pascoli,
         };
         await insertInQueue(dataToBeQueued, BATCH_execution);
       } else {
@@ -531,6 +543,7 @@ export function crawlP2P(
           delayBetweenExecutions,
           openTab,
           openTabOnlyIfMust,
+          pascoli,
         );
       }
       resolve("done");
@@ -563,6 +576,7 @@ export async function proceedWithActivation(
   delayBetweenExecutions: number = 500,
   openTab: boolean = false,
   openTabOnlyIfMust: boolean = false,
+  pascoli: boolean = false,
   breakLoop: boolean = false,
 ) {
   Logger.log("[proceedWithActivation] => HTML Visualizer: " + htmlVisualizer);
@@ -637,6 +651,7 @@ export async function proceedWithActivation(
       openTabOnlyIfMust: openTabOnlyIfMust,
       saveHtml: eventData.saveHtml,
       saveMarkdown: eventData.saveMarkdown,
+      pascoli: pascoli,
     });
   } else if (htmlContained && !breakLoop) {
     await sendMessageToBackground({
@@ -660,6 +675,7 @@ export async function proceedWithActivation(
       openTabOnlyIfMust: openTabOnlyIfMust,
       saveHtml: eventData.saveHtml,
       saveMarkdown: eventData.saveMarkdown,
+      pascoli: pascoli,
     });
   } else {
     if (triggersDownload) {
@@ -694,7 +710,7 @@ export async function proceedWithActivation(
       }
     }
     if (safeToProceed) {
-      insertIFrame(
+      await insertIFrame(
         url,
         recordID,
         function () {
@@ -720,6 +736,8 @@ export async function proceedWithActivation(
         htmlContained,
         screenWidth,
         screenHeight,
+        JSON.stringify(eventData),
+        pascoli,
       );
 
       setTimeout(async () => {
@@ -770,7 +788,14 @@ export async function proceedWithActivation(
             clearInterval(timer);
             return;
           }
-          if (iframe) iframe.contentWindow?.postMessage(eventData, "*");
+          if (iframe)
+            iframe.contentWindow?.postMessage(
+              {
+                ...eventData,
+                ...{ waitForElementIsNotNone: true },
+              },
+              "*",
+            );
         }, 50);
       }
     }
