@@ -34,62 +34,45 @@ export function disableXFrameHeaders(
                   type: "modifyHeaders" as RuleActionType,
                   responseHeaders: [
                     {
+                      header: "x-frame-options",
+                      operation: "remove" as HeaderOperation,
+                    },
+                    {
+                      header: "content-security-policy",
+                      operation: "remove" as HeaderOperation,
+                    },
+                    /*{
                       header: "X-Frame-Options",
                       operation: "remove" as HeaderOperation,
                     },
                     {
                       header: "Content-Security-Policy",
-                      operation: "set" as HeaderOperation,
-                      value:
-                        "frame-ancestors *; frame-src *; default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; connect-src * data: blob:; script-src * 'unsafe-inline' 'unsafe-eval'; child-src * 'self' blob: data:;",
-                    },
-                    {
-                      header: "Content-Security-Policy-Report-Only",
                       operation: "remove" as HeaderOperation,
                     },
                     {
                       header: "Frame-Options",
                       operation: "remove" as HeaderOperation,
+                    },*/
+                    {
+                      header: "cross-origin-embedder-policy",
+                      operation: "remove" as HeaderOperation,
                     },
                     {
-                      header: "Cross-Origin-Resource-Policy",
-                      operation: "set" as HeaderOperation,
-                      value: "cross-origin",
+                      header: "cross-origin-opener-policy",
+                      operation: "remove" as HeaderOperation,
                     },
                     {
-                      header: "Cross-Origin-Opener-Policy",
-                      operation: "set" as HeaderOperation,
-                      value: "unsafe-none",
+                      header: "cross-origin-resource-policy",
+                      operation: "remove" as HeaderOperation,
                     },
                     {
-                      header: "Access-Control-Allow-Origin",
-                      operation: "set" as HeaderOperation,
-                      value: "*",
-                    },
-                    {
-                      header: "Access-Control-Allow-Methods",
-                      operation: "set" as HeaderOperation,
-                      value: "GET, POST, PUT, DELETE, OPTIONS",
-                    },
-                    {
-                      header: "Access-Control-Allow-Headers",
-                      operation: "set" as HeaderOperation,
-                      value: "*",
-                    },
-                    {
-                      header: "Access-Control-Allow-Credentials",
-                      operation: "set" as HeaderOperation,
-                      value: "true",
+                      header: "content-security-policy-report-only",
+                      operation: "remove" as HeaderOperation,
                     },
                   ],
                 },
                 condition: {
-                  // resourceTypes: ["sub_frame" as ResourceType],
-                  resourceTypes: [
-                    "main_frame",
-                    "sub_frame",
-                    "xmlhttprequest",
-                  ] as ResourceType[],
+                  resourceTypes: ["sub_frame" as ResourceType],
                   urlFilter: "*://*/*",
                   // `*${hostname}*`, --> specific filter disabled because
                   // there are internal redirects that need to be handled.
