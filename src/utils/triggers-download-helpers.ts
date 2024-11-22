@@ -5,13 +5,36 @@ import Rule = chrome.declarativeNetRequest.Rule;
 import { Logger } from "../logger/logger";
 import {
   RULE_ID_CONTENT_DISPOSITION,
+  RULE_ID_CONTENT_DISPOSITION_INLINE,
   RULE_ID_CONTENT_TYPE,
   RULE_ID_VALUE_TO_MODIFY_CONTENT_TYPE_TO,
 } from "../constants";
 import { shouldDelegateDNR } from "../dnr/dnr-helpers";
 import { sendMessageToBackground } from "./messaging-helpers";
 import { addToRequestInfoStorage } from "../request-info/request-info-helpers";
-import request = chrome.permissions.request;
+
+type MimeTypeMap = {
+  [key: string]: string;
+  pdf: string;
+  json: string;
+  xml: string;
+  xlsx: string;
+  xls: string;
+  docx: string;
+  doc: string;
+  pptx: string;
+  ppt: string;
+  gif: string;
+  jpg: string;
+  jpeg: string;
+  png: string;
+  webp: string;
+  svg: string;
+  mp3: string;
+  mp4: string;
+  webm: string;
+};
+
 interface Header {
   name: string;
   value: string;
@@ -56,98 +79,147 @@ export async function seeIfTriggersDownload(
       res("done");
     } else {
       let rulesToApply: Rule[] = [];
-      fetchAndProcessHeaders(url).then(async function (
-        result: { error: boolean; isPDF: boolean; statusCode: number } | any,
-      ) {
-        let isPDF: boolean = result.isPDF;
-        let statusCode: number = result.statusCode;
-        // TODO: pass this over, so we can avoid sandboxing PDFs and
-        // render them correctly
-        // save in local storage as an array of objects with recordId as unique key
-        await addToRequestInfoStorage({
-          recordID: recordID,
-          isPDF: isPDF,
-          statusCode: statusCode,
-        });
-        Logger.log("fetchAndProcessHeaders =>", result);
-        if (result.error) {
-          res("error");
-        } else {
-          if (
-            "removeContentDisposition" in result &&
-            result.removeContentDisposition
-          ) {
-            rulesToApply.push({
-              id: RULE_ID_CONTENT_DISPOSITION,
-              priority: 1,
-              action: {
-                type: "modifyHeaders" as RuleActionType,
-                responseHeaders: [
-                  {
-                    header: "content-disposition",
-                    operation: "remove" as HeaderOperation,
-                  },
-                ],
-              },
-              condition: {
-                resourceTypes: ["sub_frame" as ResourceType],
-                urlFilter: "*://*/*",
-              },
-            });
-          }
-          if ("modifyContentType" in result && result.modifyContentType) {
-            rulesToApply.push({
-              id: RULE_ID_CONTENT_TYPE,
-              priority: 1,
-              action: {
-                type: "modifyHeaders" as RuleActionType,
-                responseHeaders: [
-                  {
-                    header: "content-type",
-                    operation: "remove" as HeaderOperation,
-                  },
-                ],
-              },
-              condition: {
-                resourceTypes: ["sub_frame" as ResourceType],
-                urlFilter: "*://*/*",
-              },
-            });
-          }
-          if (
-            "valueToModifyContentTypeTo" in result &&
-            result.valueToModifyContentTypeTo
-          ) {
-            rulesToApply.push({
-              id: RULE_ID_VALUE_TO_MODIFY_CONTENT_TYPE_TO,
-              priority: 1,
-              action: {
-                type: "modifyHeaders" as RuleActionType,
-                responseHeaders: [
-                  {
-                    header: "content-type",
-                    operation: "set" as HeaderOperation,
-                    value: result.valueToModifyContentTypeTo,
-                  },
-                ],
-              },
-              condition: {
-                resourceTypes: ["sub_frame" as ResourceType],
-                urlFilter: "*://*/*",
-              },
-            });
-          }
-          chrome.declarativeNetRequest.updateSessionRules({
-            removeRuleIds: [
-              RULE_ID_CONTENT_DISPOSITION,
-              RULE_ID_CONTENT_TYPE,
-              RULE_ID_VALUE_TO_MODIFY_CONTENT_TYPE_TO,
-            ],
-            addRules: rulesToApply,
+
+      // Add URL-specific condition to all rules
+      const urlCondition = {
+        resourceTypes: ["sub_frame" as ResourceType],
+      };
+
+      fetchAndProcessHeaders(url)
+        .then(async function (result: {
+          error: boolean;
+          isPDF: boolean;
+          isOfficeDoc: boolean;
+          statusCode: number;
+          removeContentDisposition?: boolean;
+          modifyContentType?: boolean;
+          valueToModifyContentTypeTo?: string;
+        }) {
+          Logger.log("@@ fetchAndProcessHeaders @@ =>", result);
+          let isPDF: boolean = result.isPDF;
+          let statusCode: number = result.statusCode;
+          let isOfficeDoc: boolean = result.isOfficeDoc;
+
+          // Store request info
+          await addToRequestInfoStorage({
+            recordID: recordID,
+            isPDF: isPDF,
+            isOfficeDoc: isOfficeDoc,
+            statusCode: statusCode,
           });
-          res("done");
-        }
-      });
+
+          if (result.error) {
+            res("error");
+          } else if (isOfficeDoc) {
+            res("done");
+          } else {
+            // Handle content-disposition removal
+            if (result.removeContentDisposition) {
+              rulesToApply.push({
+                id: RULE_ID_CONTENT_DISPOSITION,
+                priority: 1, // Increased priority
+                action: {
+                  type: "modifyHeaders" as RuleActionType,
+                  responseHeaders: [
+                    {
+                      header: "content-disposition",
+                      operation: "remove" as HeaderOperation,
+                    },
+                  ],
+                },
+                condition: urlCondition,
+              });
+            }
+
+            // Content type modification
+            if (result.modifyContentType && result.valueToModifyContentTypeTo) {
+              // First remove existing content-type
+              rulesToApply.push({
+                id: RULE_ID_CONTENT_TYPE,
+                priority: 1,
+                action: {
+                  type: "modifyHeaders" as RuleActionType,
+                  responseHeaders: [
+                    {
+                      header: "content-type",
+                      operation: "remove" as HeaderOperation,
+                    },
+                  ],
+                },
+                condition: urlCondition,
+              });
+
+              // Then set new content-type
+              rulesToApply.push({
+                id: RULE_ID_VALUE_TO_MODIFY_CONTENT_TYPE_TO,
+                priority: 1, // Highest priority to ensure it's applied last
+                action: {
+                  type: "modifyHeaders" as RuleActionType,
+                  responseHeaders: [
+                    {
+                      header: "content-type",
+                      operation: "set" as HeaderOperation,
+                      value: result.valueToModifyContentTypeTo,
+                    },
+                    // Add additional headers to prevent download
+                    {
+                      header: "x-content-type-options",
+                      operation: "set" as HeaderOperation,
+                      value: "nosniff",
+                    },
+                  ],
+                },
+                condition: urlCondition,
+              });
+
+              // For Office documents and PDFs, add extra protection
+              if (isPDF || isOfficeDoc) {
+                rulesToApply.push({
+                  id: RULE_ID_CONTENT_DISPOSITION_INLINE,
+                  priority: 2, // Higher priority than removal
+                  action: {
+                    type: "modifyHeaders" as RuleActionType,
+                    responseHeaders: [
+                      {
+                        header: "content-disposition",
+                        operation: "set" as HeaderOperation,
+                        value: "inline",
+                      },
+                      {
+                        header: "x-content-type-options",
+                        operation: "set" as HeaderOperation,
+                        value: "nosniff",
+                      },
+                    ],
+                  },
+                  condition: urlCondition,
+                });
+              }
+            }
+
+            // Update session rules
+            try {
+              await chrome.declarativeNetRequest.updateSessionRules({
+                removeRuleIds: [
+                  RULE_ID_CONTENT_DISPOSITION,
+                  RULE_ID_CONTENT_TYPE,
+                  RULE_ID_VALUE_TO_MODIFY_CONTENT_TYPE_TO,
+                  RULE_ID_CONTENT_DISPOSITION_INLINE,
+                ],
+                addRules: rulesToApply,
+              });
+              Logger.log("Updated session rules successfully:", rulesToApply);
+              res("done");
+            } catch (error) {
+              Logger.error("Failed to update session rules:", error);
+              res("error");
+            }
+          }
+        })
+        .catch((error) => {
+          Logger.error("Fetch error:", error);
+          res("error");
+        });
     }
   });
 }
@@ -167,6 +239,7 @@ export async function resetTriggersDownload() {
             RULE_ID_CONTENT_DISPOSITION,
             RULE_ID_CONTENT_TYPE,
             RULE_ID_VALUE_TO_MODIFY_CONTENT_TYPE_TO,
+            RULE_ID_CONTENT_DISPOSITION_INLINE,
           ],
         });
         res("done");
@@ -175,105 +248,103 @@ export async function resetTriggersDownload() {
   });
 }
 
-export async function fetchAndProcessHeaders(
-  url: string,
-): Promise<{ error: boolean; isPDF: boolean } | any> {
-  // TODO: ADD DETECTION FOR PDF (if pdf, don't sandbox)
-  let response: Response = new Response();
+async function fetchAndProcessHeaders(url: string) {
+  let response = new Response();
   try {
+    Logger.log("[fetchAndProcessHeaders] => Fetching URL:", url);
     response = await fetch(url);
   } catch (error) {
     Logger.log("[fetchAndProcessHeaders] => Fetch error:", error);
-    return { error: true, isPDF: false, statusCode: 599 };
+    return { error: true, isPDF: false, isOfficeDoc: false, statusCode: 599 };
   }
   try {
-    let statusCode: number;
-    if (!response.ok) {
-      return { error: true, isPDF: false, statusCode: response.status };
+    const statusCode = response.status;
+    const contentType: string | undefined = response.headers
+      .get("content-type")
+      ?.toLowerCase();
+    Logger.log("Content-Type:", contentType);
+
+    const isPDF = contentType === "application/pdf";
+    const isOfficeDoc = isOfficeDocument(contentType);
+    Logger.log("isPDF:", isPDF, "isOfficeDoc:", isOfficeDoc);
+
+    const removeContentDisposition = false; // TODO: WHAT SHOULD DEFAULT BE?
+    let modifyContentType = false;
+    let valueToModifyContentTypeTo = "";
+
+    const contentDisposition = response.headers.get("content-disposition");
+    Logger.log("## Content-Disposition:", contentDisposition);
+
+    // Process content type for Office documents
+    if (contentType) {
+      const fileType = url.substring(url.lastIndexOf(".") + 1).toLowerCase();
+      Logger.log("Detected file type:", fileType);
+
+      // Skip binary and archive files
+      const skipTypes = [
+        "exe",
+        "dmg",
+        "deb",
+        "rpm",
+        "apk",
+        "msi",
+        "pkg",
+        "zip",
+        "rar",
+        "7z",
+        "gz",
+        "tar",
+        "xz",
+        "bz2",
+      ];
+
+      if (!skipTypes.includes(fileType) && isOfficeDoc) {
+        modifyContentType = true;
+
+        // For Office documents, always force inline viewing
+        const mimeTypeMap = {
+          xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+          doc: "application/msword",
+          ppt: "application/vnd.ms-powerpoint",
+          xls: "application/vnd.ms-excel",
+        };
+
+        valueToModifyContentTypeTo = Object.prototype.hasOwnProperty.call(
+          mimeTypeMap,
+          fileType,
+        )
+          ? (mimeTypeMap as Record<string, string>)[fileType]
+          : contentType;
+      }
     }
-    statusCode = response.status;
-    const result = processHeaders(response, response.url);
-    const isPDF: boolean =
-      response.headers.get("content-type") === "application/pdf";
+
     return {
-      ...result,
-      ...{
-        error: false,
-        isPDF,
-        statusCode,
-      },
+      error: false,
+      isPDF: isPDF,
+      isOfficeDoc: isOfficeDoc,
+      statusCode: statusCode,
+      removeContentDisposition: removeContentDisposition,
+      modifyContentType: modifyContentType,
+      valueToModifyContentTypeTo: valueToModifyContentTypeTo,
     };
   } catch (error) {
     Logger.error("Fetch error:", error);
-    return { error: true, isPDF: false, statusCode: 599 };
+    return { error: true, isPDF: false, isOfficeDoc: false, statusCode: 599 };
   }
 }
 
-export function processHeaders(
-  response: Response,
-  url: string,
-): ProcessHeadersResult {
-  let headers: Header[] = [];
-  response.headers.forEach((value: string, name: string) => {
-    headers.push({ name, value });
-  });
-  let removeContentDisposition: boolean = false;
-  let modifyContentType: boolean = false;
-  let valueToModifyContentTypeTo: string = "";
-  // Process 'content-disposition'
-  for (let i = 0; i < headers.length; i++) {
-    if (
-      headers[i].name.toLowerCase() === "content-disposition" &&
-      headers[i].value.indexOf("attachment") === 0
-    ) {
-      removeContentDisposition = true;
-      headers.splice(i, 1);
-      break;
-    }
-  }
-  // Process 'content-type'
-  for (let j: number = 0; j < headers.length; j++) {
-    if (headers[j].name.toLowerCase() === "content-type") {
-      if (
-        headers[j].value === "application/octet-stream" ||
-        headers[j].value === "application/x-download"
-      ) {
-        let fileType: string = url
-          .substring(url.lastIndexOf(".") + 1)
-          .toLowerCase();
-        let skip: string[] = [
-          "exe",
-          "dmg",
-          "deb",
-          "rpm",
-          "apk",
-          "zip",
-          "rar",
-          "7z",
-          "gz",
-          "xz",
-        ];
-        let fixApplication: string[] = ["pdf", "json", "xml", "ogg"];
-        let fixImage: string[] = ["gif", "jpg", "jpeg", "png", "tiff"];
+// Helper function to detect Office documents
+function isOfficeDocument(contentType: string | undefined): boolean {
+  if (!contentType) return false;
 
-        if (!skip.includes(fileType)) {
-          modifyContentType = true;
-          if (fixApplication.includes(fileType)) {
-            valueToModifyContentTypeTo = "application/" + fileType;
-          } else if (fixImage.includes(fileType)) {
-            valueToModifyContentTypeTo = "image/" + fileType;
-          } else {
-            valueToModifyContentTypeTo = "text/plain";
-          }
-          headers[j].value = valueToModifyContentTypeTo;
-        }
-      }
-      break;
-    }
-  }
-  return {
-    removeContentDisposition,
-    modifyContentType,
-    valueToModifyContentTypeTo,
-  };
+  const officeTypes = [
+    "application/vnd.openxmlformats-officedocument.",
+    "application/vnd.ms-",
+    "application/msword",
+    "application/vnd.oasis.opendocument.",
+  ];
+
+  return officeTypes.some((type) => contentType.includes(type));
 }

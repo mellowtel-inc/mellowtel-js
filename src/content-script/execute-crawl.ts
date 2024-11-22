@@ -710,6 +710,13 @@ export async function proceedWithActivation(
       }
     }
     if (safeToProceed) {
+      let moreInfo: any = await getFromRequestInfoStorage(recordID);
+      if (moreInfo.isOfficeDoc) {
+        url = `https://docs.google.com/viewer?url=${url}`;
+      }
+      if (moreInfo.isPDF) {
+        shouldSandbox = false;
+      }
       await insertIFrame(
         url,
         recordID,
@@ -741,7 +748,6 @@ export async function proceedWithActivation(
       );
 
       setTimeout(async () => {
-        let moreInfo: any = await getFromRequestInfoStorage(recordID);
         Logger.log("[proceedWithActivation] => More Info:", moreInfo);
         // if status code starts with 5, set as website unreachable
         if (moreInfo.statusCode.toString().startsWith("5")) {

@@ -68,7 +68,7 @@ export function getFromRequestInfoStorage(recordID: string) {
       });
     } catch (e) {
       Logger.log("getFromRequestInfoStorage error", e);
-      res(null);
+      res({});
     }
   });
 }
