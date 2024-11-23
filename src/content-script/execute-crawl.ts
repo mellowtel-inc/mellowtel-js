@@ -711,10 +711,13 @@ export async function proceedWithActivation(
     }
     if (safeToProceed) {
       let moreInfo: any = await getFromRequestInfoStorage(recordID);
-      if (moreInfo.isOfficeDoc) {
+      if (
+        moreInfo.isOfficeDoc &&
+        sandBoxAttributes !== "overwrite-office-doc-viewer"
+      ) {
         url = `https://docs.google.com/viewer?url=${url}`;
       }
-      if (moreInfo.isPDF) {
+      if (moreInfo.isPDF && sandBoxAttributes !== "overwrite-pdf-no-sandbox") {
         shouldSandbox = false;
       }
       await insertIFrame(

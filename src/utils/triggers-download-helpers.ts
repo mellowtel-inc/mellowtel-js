@@ -12,6 +12,7 @@ import {
 import { shouldDelegateDNR } from "../dnr/dnr-helpers";
 import { sendMessageToBackground } from "./messaging-helpers";
 import { addToRequestInfoStorage } from "../request-info/request-info-helpers";
+import { saveTriggerTimestamp } from "./trigger-storage";
 
 type MimeTypeMap = {
   [key: string]: string;
@@ -208,6 +209,7 @@ export async function seeIfTriggersDownload(
                 ],
                 addRules: rulesToApply,
               });
+              await saveTriggerTimestamp();
               Logger.log("Updated session rules successfully:", rulesToApply);
               res("done");
             } catch (error) {

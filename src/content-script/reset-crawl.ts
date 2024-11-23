@@ -14,6 +14,7 @@ import { hideBadgeIfShould } from "../transparency/badge-settings";
 import { deleteFromRequestInfoStorage } from "../request-info/request-info-helpers";
 import { deleteFromRequestMessageStorage } from "../request-message/request-message-helpers";
 import { sendMessageToContentScript } from "../utils/messaging-helpers";
+import { waitForResetInterval } from "../utils/trigger-storage";
 
 export async function resetAfterCrawl(
   recordID: string,
@@ -134,7 +135,7 @@ export async function resetAfterCrawl(
           resolve("done");
         }
       } else {
-        setTimeout(() => {
+        setTimeout(async () => {
           let frameCount = getFrameCount(BATCH_execution);
           let frameCountOther = getFrameCount(!BATCH_execution);
           let frameCountTotal = frameCount + frameCountOther;
@@ -145,13 +146,19 @@ export async function resetAfterCrawl(
           if (frameCountTotal === 0 && !BATCH_execution) {
             Logger.log("[🌐] : Resetting headers!");
             enableXFrameHeaders("");
+            Logger.log("[🌐] : Waiting for minimum reset interval...");
+            await waitForResetInterval();
+            Logger.log("[🌐] : Resetting headers!");
             resetTriggersDownload();
             resolve("done");
           } else if (frameCountTotal === 0 && BATCH_execution) {
             // wait for 1 minute before resetting headers
-            setTimeout(() => {
+            setTimeout(async () => {
               Logger.log("[🌐] : Resetting headers (BATCH_execution)!");
               enableXFrameHeaders("");
+              Logger.log("[🌐] : Waiting for minimum reset interval...");
+              await waitForResetInterval();
+              Logger.log("[🌐] : Resetting headers!");
               resetTriggersDownload();
               resolve("done");
             }, 60000);
