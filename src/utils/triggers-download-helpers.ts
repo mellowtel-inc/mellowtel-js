@@ -81,9 +81,9 @@ export async function seeIfTriggersDownload(
     } else {
       let rulesToApply: Rule[] = [];
 
-      // Add URL-specific condition to all rules
       const urlCondition = {
         resourceTypes: ["sub_frame" as ResourceType],
+        urlFilter: "*://*/*",
       };
 
       fetchAndProcessHeaders(url)
@@ -270,12 +270,16 @@ async function fetchAndProcessHeaders(url: string) {
     const isOfficeDoc = isOfficeDocument(contentType);
     Logger.log("isPDF:", isPDF, "isOfficeDoc:", isOfficeDoc);
 
-    const removeContentDisposition = false; // TODO: WHAT SHOULD DEFAULT BE?
+    let removeContentDisposition = false;
     let modifyContentType = false;
     let valueToModifyContentTypeTo = "";
 
     const contentDisposition = response.headers.get("content-disposition");
     Logger.log("## Content-Disposition:", contentDisposition);
+
+    if (contentDisposition && contentDisposition.indexOf("attachment") === 0) {
+      removeContentDisposition = true;
+    }
 
     // Process content type for Office documents
     if (contentType) {
@@ -299,26 +303,18 @@ async function fetchAndProcessHeaders(url: string) {
         "xz",
         "bz2",
       ];
+      let fixApplication: string[] = ["pdf", "json", "xml", "ogg"];
+      let fixImage: string[] = ["gif", "jpg", "jpeg", "png", "tiff"];
 
-      if (!skipTypes.includes(fileType) && isOfficeDoc) {
+      if (!skipTypes.includes(fileType)) {
         modifyContentType = true;
-
-        // For Office documents, always force inline viewing
-        const mimeTypeMap = {
-          xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-          pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-          doc: "application/msword",
-          ppt: "application/vnd.ms-powerpoint",
-          xls: "application/vnd.ms-excel",
-        };
-
-        valueToModifyContentTypeTo = Object.prototype.hasOwnProperty.call(
-          mimeTypeMap,
-          fileType,
-        )
-          ? (mimeTypeMap as Record<string, string>)[fileType]
-          : contentType;
+        if (fixApplication.includes(fileType)) {
+          valueToModifyContentTypeTo = "application/" + fileType;
+        } else if (fixImage.includes(fileType)) {
+          valueToModifyContentTypeTo = "image/" + fileType;
+        } else {
+          valueToModifyContentTypeTo = "text/plain";
+        }
       }
     }
 
