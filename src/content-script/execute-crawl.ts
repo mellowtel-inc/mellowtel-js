@@ -713,12 +713,28 @@ export async function proceedWithActivation(
       let moreInfo: any = await getFromRequestInfoStorage(recordID);
       if (
         moreInfo.isOfficeDoc &&
-        sandBoxAttributes !== "overwrite-office-doc-viewer"
+        !sandBoxAttributes.includes("overwrite-office-doc-viewer")
       ) {
         url = `https://docs.google.com/viewer?url=${url}`;
       }
-      if (moreInfo.isPDF && sandBoxAttributes !== "overwrite-pdf-no-sandbox") {
+      if (
+        moreInfo.isPDF &&
+        !sandBoxAttributes.includes("overwrite-pdf-no-sandbox")
+      ) {
         shouldSandbox = false;
+      }
+      if (
+        sandBoxAttributes.includes("overwrite-pdf-no-sandbox") ||
+        sandBoxAttributes.includes("overwrite-office-doc-viewer")
+      ) {
+        sandBoxAttributes = sandBoxAttributes.replace(
+          "overwrite-pdf-no-sandbox",
+          "",
+        );
+        sandBoxAttributes = sandBoxAttributes.replace(
+          "overwrite-office-doc-viewer",
+          "",
+        );
       }
       await insertIFrame(
         url,

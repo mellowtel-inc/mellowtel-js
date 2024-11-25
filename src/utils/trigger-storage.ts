@@ -2,8 +2,8 @@ import { Logger } from "../logger/logger";
 import { getLocalStorage, setLocalStorage } from "../storage/storage-helpers";
 
 const TRIGGER_TIMESTAMP_KEY: string = "mllwtl_trigger_rules_timestamp";
-const MINIMUM_RESET_INTERVAL: number = 60000; // 60 seconds in milliseconds
-const RETRY_INTERVAL: number = 15000; // 15 seconds in milliseconds
+const MINIMUM_RESET_INTERVAL: number = 10000; // 10 seconds in milliseconds
+const RETRY_INTERVAL: number = 3000; // 3 seconds in milliseconds
 
 export async function saveTriggerTimestamp(): Promise<boolean> {
   try {

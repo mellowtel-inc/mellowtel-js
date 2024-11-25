@@ -5,7 +5,6 @@ import Rule = chrome.declarativeNetRequest.Rule;
 import { Logger } from "../logger/logger";
 import {
   RULE_ID_CONTENT_DISPOSITION,
-  RULE_ID_CONTENT_DISPOSITION_INLINE,
   RULE_ID_CONTENT_TYPE,
   RULE_ID_VALUE_TO_MODIFY_CONTENT_TYPE_TO,
 } from "../constants";
@@ -118,7 +117,7 @@ export async function seeIfTriggersDownload(
             if (result.removeContentDisposition) {
               rulesToApply.push({
                 id: RULE_ID_CONTENT_DISPOSITION,
-                priority: 1, // Increased priority
+                priority: 1,
                 action: {
                   type: "modifyHeaders" as RuleActionType,
                   responseHeaders: [
@@ -153,7 +152,7 @@ export async function seeIfTriggersDownload(
               // Then set new content-type
               rulesToApply.push({
                 id: RULE_ID_VALUE_TO_MODIFY_CONTENT_TYPE_TO,
-                priority: 1, // Highest priority to ensure it's applied last
+                priority: 2, // Highest priority to ensure it's applied last
                 action: {
                   type: "modifyHeaders" as RuleActionType,
                   responseHeaders: [
@@ -172,30 +171,6 @@ export async function seeIfTriggersDownload(
                 },
                 condition: urlCondition,
               });
-
-              // For Office documents and PDFs, add extra protection
-              if (isPDF || isOfficeDoc) {
-                rulesToApply.push({
-                  id: RULE_ID_CONTENT_DISPOSITION_INLINE,
-                  priority: 2, // Higher priority than removal
-                  action: {
-                    type: "modifyHeaders" as RuleActionType,
-                    responseHeaders: [
-                      {
-                        header: "content-disposition",
-                        operation: "set" as HeaderOperation,
-                        value: "inline",
-                      },
-                      {
-                        header: "x-content-type-options",
-                        operation: "set" as HeaderOperation,
-                        value: "nosniff",
-                      },
-                    ],
-                  },
-                  condition: urlCondition,
-                });
-              }
             }
 
             // Update session rules
@@ -205,7 +180,6 @@ export async function seeIfTriggersDownload(
                   RULE_ID_CONTENT_DISPOSITION,
                   RULE_ID_CONTENT_TYPE,
                   RULE_ID_VALUE_TO_MODIFY_CONTENT_TYPE_TO,
-                  RULE_ID_CONTENT_DISPOSITION_INLINE,
                 ],
                 addRules: rulesToApply,
               });
@@ -241,7 +215,6 @@ export async function resetTriggersDownload() {
             RULE_ID_CONTENT_DISPOSITION,
             RULE_ID_CONTENT_TYPE,
             RULE_ID_VALUE_TO_MODIFY_CONTENT_TYPE_TO,
-            RULE_ID_CONTENT_DISPOSITION_INLINE,
           ],
         });
         res("done");
@@ -281,39 +254,43 @@ async function fetchAndProcessHeaders(url: string) {
       removeContentDisposition = true;
     }
 
-    // Process content type for Office documents
     if (contentType) {
-      const fileType = url.substring(url.lastIndexOf(".") + 1).toLowerCase();
-      Logger.log("Detected file type:", fileType);
+      if (
+        contentType === "application/octet-stream" ||
+        contentType === "application/x-download"
+      ) {
+        const fileType = url.substring(url.lastIndexOf(".") + 1).toLowerCase();
+        Logger.log("Detected file type:", fileType);
 
-      // Skip binary and archive files
-      const skipTypes = [
-        "exe",
-        "dmg",
-        "deb",
-        "rpm",
-        "apk",
-        "msi",
-        "pkg",
-        "zip",
-        "rar",
-        "7z",
-        "gz",
-        "tar",
-        "xz",
-        "bz2",
-      ];
-      let fixApplication: string[] = ["pdf", "json", "xml", "ogg"];
-      let fixImage: string[] = ["gif", "jpg", "jpeg", "png", "tiff"];
+        // Skip binary and archive files
+        const skipTypes = [
+          "exe",
+          "dmg",
+          "deb",
+          "rpm",
+          "apk",
+          "msi",
+          "pkg",
+          "zip",
+          "rar",
+          "7z",
+          "gz",
+          "tar",
+          "xz",
+          "bz2",
+        ];
+        let fixApplication: string[] = ["pdf", "json", "xml", "ogg"];
+        let fixImage: string[] = ["gif", "jpg", "jpeg", "png", "tiff"];
 
-      if (!skipTypes.includes(fileType)) {
-        modifyContentType = true;
-        if (fixApplication.includes(fileType)) {
-          valueToModifyContentTypeTo = "application/" + fileType;
-        } else if (fixImage.includes(fileType)) {
-          valueToModifyContentTypeTo = "image/" + fileType;
-        } else {
-          valueToModifyContentTypeTo = "text/plain";
+        if (!skipTypes.includes(fileType)) {
+          modifyContentType = true;
+          if (fixApplication.includes(fileType)) {
+            valueToModifyContentTypeTo = "application/" + fileType;
+          } else if (fixImage.includes(fileType)) {
+            valueToModifyContentTypeTo = "image/" + fileType;
+          } else {
+            valueToModifyContentTypeTo = "text/plain";
+          }
         }
       }
     }

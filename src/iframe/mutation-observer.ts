@@ -16,6 +16,7 @@ export function listenerAlive() {
   if (typeof window !== "undefined") {
     window.addEventListener("message", (event) => {
       if (event.data.isContentScriptAlive) {
+        muteIframe();
         window.parent.postMessage(
           { isIframeAlive: true, recordID: event.data.recordID },
           "*",
@@ -33,7 +34,6 @@ export function attachMutationObserver() {
 
 function initIframeListeners() {
   if (typeof window === "undefined") return;
-  muteIframe();
   safeRenderIframe();
   if (inIframe()) {
     window.addEventListener("message", initialEventListener);

@@ -13,7 +13,6 @@ export const RULE_ID_XFRAME: number = 80045;
 export const RULE_ID_CONTENT_DISPOSITION: number = 80046;
 export const RULE_ID_CONTENT_TYPE: number = 80047;
 export const RULE_ID_VALUE_TO_MODIFY_CONTENT_TYPE_TO: number = 80048;
-export const RULE_ID_CONTENT_DISPOSITION_INLINE: number = 80050;
 export const RULE_ID_POST_REQUEST: number = 80049;
 export let MAX_DAILY_RATE: number = 500;
 export const BADGE_COLOR: string = "#4CAF50";
