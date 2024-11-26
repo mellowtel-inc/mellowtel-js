@@ -710,6 +710,32 @@ export async function proceedWithActivation(
       }
     }
     if (safeToProceed) {
+      let moreInfo: any = await getFromRequestInfoStorage(recordID);
+      if (
+        moreInfo.isOfficeDoc &&
+        !sandBoxAttributes.includes("overwrite-office-doc-viewer")
+      ) {
+        url = `https://docs.google.com/viewer?url=${url}`;
+      }
+      if (
+        moreInfo.isPDF &&
+        !sandBoxAttributes.includes("overwrite-pdf-no-sandbox")
+      ) {
+        shouldSandbox = false;
+      }
+      if (
+        sandBoxAttributes.includes("overwrite-pdf-no-sandbox") ||
+        sandBoxAttributes.includes("overwrite-office-doc-viewer")
+      ) {
+        sandBoxAttributes = sandBoxAttributes.replace(
+          "overwrite-pdf-no-sandbox",
+          "",
+        );
+        sandBoxAttributes = sandBoxAttributes.replace(
+          "overwrite-office-doc-viewer",
+          "",
+        );
+      }
       await insertIFrame(
         url,
         recordID,
@@ -741,7 +767,6 @@ export async function proceedWithActivation(
       );
 
       setTimeout(async () => {
-        let moreInfo: any = await getFromRequestInfoStorage(recordID);
         Logger.log("[proceedWithActivation] => More Info:", moreInfo);
         // if status code starts with 5, set as website unreachable
         if (moreInfo.statusCode.toString().startsWith("5")) {
