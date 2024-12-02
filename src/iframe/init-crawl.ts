@@ -58,6 +58,9 @@ function initCrawlHelper(event: MessageEvent, numTries: number) {
     let saveMarkdown: boolean = event.data.hasOwnProperty("saveMarkdown")
       ? event.data.saveMarkdown.toString().toLowerCase() === "true"
       : false;
+    let cerealObject: string = event.data.hasOwnProperty("cerealObject")
+      ? event.data.cerealObject
+      : "{}";
 
     let waitBeforeScraping = parseInt(event.data.waitBeforeScraping);
     Logger.log("[initCrawl]: waitBeforeScraping " + waitBeforeScraping);
@@ -104,6 +107,7 @@ function initCrawlHelper(event: MessageEvent, numTries: number) {
         removeImages,
         saveHtml,
         saveMarkdown,
+        cerealObject,
       );
     }, waitBeforeScraping);
   }
@@ -127,6 +131,7 @@ async function processCrawl(
   removeImages: boolean,
   saveHtml: boolean,
   saveMarkdown: boolean,
+  cerealObject: string,
 ) {
   if (removeCSSselectors === "default") {
     removeSelectorsFromDocument(document_to_use, []);
@@ -215,6 +220,10 @@ async function processCrawl(
             ? event.data.BATCH_execution
             : false,
           event.data.hasOwnProperty("batch_id") ? event.data.batch_id : "",
+          false,
+          500,
+          false,
+          cerealObject,
         );
       }
     }
@@ -261,6 +270,10 @@ async function processCrawl(
           ? event.data.BATCH_execution
           : false,
         event.data.hasOwnProperty("batch_id") ? event.data.batch_id : "",
+        false,
+        500,
+        false,
+        cerealObject,
       );
     }
   }

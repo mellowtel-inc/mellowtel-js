@@ -10,8 +10,35 @@ import {
   proceedWithActivation,
 } from "../content-script/execute-crawl";
 import { Logger } from "../logger/logger";
+import { initCerealFrame } from "../cereal/cereal-utils";
+import { CerealFrameMessage, CerealResponse } from "../cereal/cereal-types";
 
 export async function setUpContentScriptListeners() {
+  // Global map to store pending request resolvers
+  const pendingCerealRequests = new Map();
+
+  // Single event listener for all cereal frame responses
+  window.addEventListener("message", (event) => {
+    // check if event is the one we are listening for
+    Logger.log("[RECEIVED CEREAL? event.data] : ", event.data);
+    let eventType = event.data?.type;
+    if (eventType === "CEREAL_RESPONSE") {
+      let cerealFrame = document.getElementById(
+        "cereal_frame",
+      ) as HTMLIFrameElement;
+      if (!cerealFrame) return;
+      if (event.source === cerealFrame.contentWindow) {
+        const recordID = event.data.recordID;
+        const json = event.data.json;
+        if (recordID && pendingCerealRequests.has(recordID)) {
+          Logger.log("[RECEIVED CEREAL] with recordID : ", recordID);
+          const resolve = pendingCerealRequests.get(recordID);
+          resolve({ success: true, data: json });
+          pendingCerealRequests.delete(recordID);
+        }
+      }
+    }
+  });
   chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
       (async function () {
@@ -72,6 +99,7 @@ export async function setUpContentScriptListeners() {
             request.openTab,
             request.openTabOnlyIfMust,
             request.pascoli,
+            request.cerealObject,
             true, // to break the loop
           );
         }
@@ -102,6 +130,7 @@ export async function setUpContentScriptListeners() {
             request.openTab,
             request.openTabOnlyIfMust,
             request.pascoli,
+            request.cerealObject,
             true, // to break the loop
           );
         }
@@ -129,6 +158,7 @@ export async function setUpContentScriptListeners() {
             request.openTabOnlyIfMust,
             request.saveHtml,
             request.saveMarkdown,
+            request.cerealObject,
           );
         }
         if (request.intent === "preProcessCrawl") {
@@ -171,6 +201,70 @@ export async function setUpContentScriptListeners() {
             request.delayBetweenExecutions,
           );
         }
+        if (request.intent === "mllwtl_initCerealFrame") {
+          Logger.log("[greeting] : ", "mllwtl_initCerealFrame");
+          const result = await initCerealFrame(request.cerealObject);
+          sendResponse(result);
+        }
+        if (request.intent === "mllwtl_processCereal") {
+          Logger.log("[greeting] : ", "mllwtl_processCereal");
+          let frame = document.getElementById("cereal_frame");
+
+          if (!frame) {
+            Logger.log("[PROCESS_CEREAL] Frame not found, initializing");
+            const initResult = (await initCerealFrame(
+              request.cerealObject,
+            )) as CerealResponse;
+            if (!initResult.success) {
+              sendResponse({ success: false, error: "frame_init_failed" });
+              return;
+            }
+            frame = document.getElementById("cereal_frame");
+          }
+
+          // Early return if frame is still null after initialization
+          if (!frame) {
+            sendResponse({ success: false, error: "frame_not_found" });
+            return;
+          }
+
+          // Type assertion for iframe
+          const iframeElement = frame as HTMLIFrameElement;
+
+          const { recordID, htmlString, cerealObject } = request;
+          Logger.log("[PROCESS_CEREAL => recordID] : ", recordID);
+
+          const processResult = await new Promise<CerealResponse>((resolve) => {
+            // Store the resolver for this request
+            pendingCerealRequests.set(recordID, resolve);
+
+            // Send message to frame with recordID
+            iframeElement.contentWindow?.postMessage(
+              {
+                type: "PROCESS_DOCUMENT",
+                recordID: recordID,
+                htmlString: htmlString,
+                cerealObject:
+                  typeof cerealObject === "string"
+                    ? cerealObject
+                    : JSON.stringify(cerealObject),
+              } as CerealFrameMessage,
+              "*",
+            );
+
+            Logger.log("[PROCESS_CEREAL => POSTED THE MESSAGE] : ", recordID);
+
+            // Optional: Cleanup if no response received after timeout
+            setTimeout(() => {
+              if (pendingCerealRequests.has(recordID)) {
+                pendingCerealRequests.delete(recordID);
+                resolve({ success: false, error: "timeout" });
+              }
+            }, 10000); // 10 second timeout
+          });
+
+          sendResponse(processResult);
+        }
       })();
       return true; // return true to indicate you want to send a response asynchronously
     },
@@ -200,6 +294,7 @@ async function processCrawl(
   openTabOnlyIfMust: boolean,
   saveHtml: boolean,
   saveMarkdown: boolean,
+  cerealObject: string,
 ) {
   const saveCrawlModule = await import("../iframe/save/save-crawl");
   const {
@@ -311,6 +406,7 @@ async function processCrawl(
           false,
           delayBetweenExecutions,
           openTabOnlyIfMust,
+          cerealObject,
         );
       }
     }
@@ -363,6 +459,7 @@ async function processCrawl(
         false,
         delayBetweenExecutions,
         openTabOnlyIfMust,
+        cerealObject,
       );
     }
   }

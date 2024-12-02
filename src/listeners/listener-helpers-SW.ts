@@ -36,6 +36,7 @@ import {
 import { handleGetRequest } from "../get-requests/get-helpers";
 import { startConnectionWs } from "../content-script/websocket";
 import { Logger } from "../logger/logger";
+import { cerealMain } from "../cereal/cereal-index";
 
 export async function setUpBackgroundListeners() {
   // Queue to store incoming messages to start websocket
@@ -60,7 +61,7 @@ export async function setUpBackgroundListeners() {
   processWebsocketQueue();
 
   chrome.runtime.onMessage.addListener(
-    function (request, sender, sendResponse) {
+    async function (request, sender, sendResponse) {
       if (request.intent == "disableXFrameHeaders") {
         disableXFrameHeaders(request.hostname, request.skipHeaders).then(
           sendResponse,
@@ -115,6 +116,7 @@ export async function setUpBackgroundListeners() {
           request.openTabOnlyIfMust,
           request.saveHtml,
           request.saveMarkdown,
+          request.cerealObject,
         ).then(sendResponse);
       }
       if (request.intent === "handleGETRequest") {
@@ -138,6 +140,7 @@ export async function setUpBackgroundListeners() {
           request.openTabOnlyIfMust,
           request.saveHtml,
           request.saveMarkdown,
+          request.cerealObject,
         ).then(sendResponse);
       }
       if (request.intent === "openOptInLink") {
@@ -192,6 +195,7 @@ export async function setUpBackgroundListeners() {
                 openTab: request.openTab,
                 openTabOnlyIfMust: request.openTabOnlyIfMust,
                 pascoli: request.pascoli,
+                cerealObject: request.cerealObject,
               });
             }
           },
@@ -227,6 +231,7 @@ export async function setUpBackgroundListeners() {
                 openTab: request.openTab,
                 openTabOnlyIfMust: request.openTabOnlyIfMust,
                 pascoli: request.pascoli,
+                cerealObject: request.cerealObject,
               });
             }
           },
@@ -283,6 +288,14 @@ export async function setUpBackgroundListeners() {
         generateAndOpenFeedbackLink().then((link) => {
           sendResponse(link);
         });
+      }
+      if (request.intent === "mllwtl_handleCerealRequest") {
+        const result = await cerealMain(
+          request.cerealObject,
+          request.recordID,
+          request.htmlString,
+        );
+        sendResponse(result);
       }
       return true; // return true to indicate you want to send a response asynchronously
     },
