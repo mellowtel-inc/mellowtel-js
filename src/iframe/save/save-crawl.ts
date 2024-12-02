@@ -88,7 +88,7 @@ export async function saveCrawl(
       requestMessageInfo: requestMessageInfo,
       saveHtml: saveHtml,
       saveMarkdown: saveMarkdown,
-      cereal_result: cereal_result,
+      cereal_result: JSON.stringify(cereal_result),
     };
     if (saveHtml) {
       bodyData["content"] = content;
