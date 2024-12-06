@@ -290,12 +290,15 @@ export async function setUpBackgroundListeners() {
         });
       }
       if (request.intent === "mllwtl_handleCerealRequest") {
-        const result = await cerealMain(
-          request.cerealObject,
-          request.recordID,
-          request.htmlString,
-        );
-        sendResponse(result);
+          cerealMain(
+              request.cerealObject,
+              request.recordID,
+              request.htmlString,
+          ).then(result => {
+              Logger.log("LISTENER: mllwtl_handleCerealRequest");
+              Logger.log(result);
+              sendResponse(result);
+          });
       }
       return true; // return true to indicate you want to send a response asynchronously
     },

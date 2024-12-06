@@ -38,11 +38,11 @@ export async function saveCrawl(
       Logger.log(cereal_result);
       Logger.log("############################################");
       // if not JSON object, then make it one
-      if (typeof cereal_result !== "object") {
+      /*if (typeof cereal_result !== "object") {
         cereal_result = {
           error: "cereal_result is not an object",
         };
-      }
+      }*/
     }
   } catch (e) {
     Logger.log(
