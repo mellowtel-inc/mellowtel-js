@@ -31,7 +31,28 @@ export function cerealMain(
       if (!inSW) {
         // In content script, delegate all tab management to service worker
         Logger.log("[cerealMain] => In Content Script, Delegating to SW");
-        let resultReceived = await sendMessageToBackground({
+        // Await the promise to ensure we get the result before logging and returning
+        const resultReceived = await new Promise((innerResolve) => {
+          chrome.runtime.sendMessage(
+              {
+                intent: "mllwtl_handleCerealRequest",
+                cerealObject: cerealObject,
+                recordID: recordID,
+                htmlString: htmlString,
+              },
+              (response) => {
+                if (chrome.runtime.lastError) {
+                  Logger.log("Hey, error in RUNTIME Error:", chrome.runtime.lastError);
+                }
+                Logger.log("[cerealMain] => Response from SW @@@@@@@@@@@@@@:", response);
+                innerResolve(response);
+              },
+          );
+        });
+
+        Logger.log("[cerealMain] => ## Result Received ##:", resultReceived);
+        return resultReceived;
+        /*let resultReceived = await sendMessageToBackground({
           intent: "mllwtl_handleCerealRequest",
           cerealObject: cerealObject, // Already a string
           recordID: recordID,
@@ -39,6 +60,7 @@ export function cerealMain(
         });
         Logger.log("[cerealMain] => ## Result Received ##:", resultReceived);
         return resultReceived;
+        */
       } else {
         // The following code only runs in service worker
         // Check for existing cereal tab in storage
