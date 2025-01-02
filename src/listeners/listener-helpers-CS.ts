@@ -1,5 +1,5 @@
 import { resetAfterCrawl } from "../content-script/reset-crawl";
-import { DATA_ID_IFRAME } from "../constants";
+import { CEREAL_FRAME_ID, DATA_ID_IFRAME } from "../constants";
 import { hideBadgeIfShould } from "../transparency/badge-settings";
 import { getSharedMemoryDOM } from "../content-script/shared-memory";
 import { getIfCurrentlyActiveDOM } from "../elements/elements-utils";
@@ -24,7 +24,7 @@ export async function setUpContentScriptListeners() {
     let eventType = event.data?.type;
     if (eventType === "CEREAL_RESPONSE") {
       let cerealFrame = document.getElementById(
-        "cereal_frame",
+        CEREAL_FRAME_ID,
       ) as HTMLIFrameElement;
       if (!cerealFrame) return;
       if (event.source === cerealFrame.contentWindow) {
@@ -41,7 +41,7 @@ export async function setUpContentScriptListeners() {
   });
   chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
-      (async function () {
+      (function () {
         if (request.target !== "contentScriptM") return false;
         if (request.intent === "deleteIframeM") {
           let recordID = request.recordID;
@@ -52,14 +52,15 @@ export async function setUpContentScriptListeners() {
           );
           if (iframe) iframe.remove();
           if (divIframe) divIframe.remove();
-          await resetAfterCrawl(
+          resetAfterCrawl(
             recordID,
             request.BATCH_execution,
             request.delayBetweenExecutions,
-          );
-          if (dataId === DATA_ID_IFRAME) {
-            await hideBadgeIfShould();
-          }
+          ).then(async () => {
+            if (dataId === DATA_ID_IFRAME) {
+              await hideBadgeIfShould();
+            }
+          });
         }
         if (request.intent === "getSharedMemoryDOM") {
           getSharedMemoryDOM(request.key).then(sendResponse);
@@ -73,7 +74,7 @@ export async function setUpContentScriptListeners() {
           });
         }
         if (request.intent === "handleHTMLVisualizer") {
-          await proceedWithActivation(
+          proceedWithActivation(
             request.url,
             request.recordID,
             JSON.parse(request.eventData),
@@ -100,11 +101,14 @@ export async function setUpContentScriptListeners() {
             request.openTabOnlyIfMust,
             request.pascoli,
             request.cerealObject,
+            request.refPolicy,
             true, // to break the loop
-          );
+          ).then(() => {
+            sendResponse("success");
+          });
         }
         if (request.intent === "handleHTMLContained") {
-          await proceedWithActivation(
+          proceedWithActivation(
             request.url,
             request.recordID,
             JSON.parse(request.eventData),
@@ -131,11 +135,14 @@ export async function setUpContentScriptListeners() {
             request.openTabOnlyIfMust,
             request.pascoli,
             request.cerealObject,
+            request.refPolicy,
             true, // to break the loop
-          );
+          ).then(() => {
+            sendResponse("success");
+          });
         }
         if (request.intent === "processCrawl") {
-          await processCrawl(
+          processCrawl(
             request.recordID,
             false,
             new MessageEvent("message", { data: {} }),
@@ -159,7 +166,10 @@ export async function setUpContentScriptListeners() {
             request.saveHtml,
             request.saveMarkdown,
             request.cerealObject,
-          );
+            request.refPolicy,
+          ).then(() => {
+            sendResponse("success");
+          });
         }
         if (request.intent === "preProcessCrawl") {
           sendResponse("success");
@@ -169,13 +179,15 @@ export async function setUpContentScriptListeners() {
           let batch_id = request.batch_id;
           let parallelExecutionsBatch: number = request.parallelExecutionsBatch;
           let delayBetweenExecutions: number = request.delayBetweenExecutions;
-          await preProcessCrawl(
+          preProcessCrawl(
             data,
             BATCH_execution,
             batch_id,
             parallelExecutionsBatch,
             delayBetweenExecutions,
-          );
+          ).then(() => {
+            sendResponse("success");
+          });
         }
         if (request.intent === "ping") {
           Logger.log("[🌐] : ping received, replying...");
@@ -185,85 +197,108 @@ export async function setUpContentScriptListeners() {
         }
         if (request.intent === "triggerEventListener") {
           Logger.log("[🌐] : triggerEventListener...");
-          const initialEventListenerModule = await import(
-            "../iframe/mutation-observer"
+          import("../iframe/mutation-observer").then(
+            (initialEventListenerModule) => {
+              let event = new MessageEvent("message", {
+                data: JSON.parse(request.data),
+              });
+              initialEventListenerModule
+                .initialEventListener(event)
+                .then(() => {
+                  sendResponse();
+                });
+            },
           );
-          let event = new MessageEvent("message", {
-            data: JSON.parse(request.data),
-          });
-          await initialEventListenerModule.initialEventListener(event);
         }
         if (request.intent === "resetAfterCrawl") {
-          sendResponse("success");
-          await resetAfterCrawl(
+          resetAfterCrawl(
             request.recordID,
             request.BATCH_execution,
             request.delayBetweenExecutions,
-          );
+          ).then(() => {
+            sendResponse("success");
+          });
         }
         if (request.intent === "mllwtl_initCerealFrame") {
           Logger.log("[greeting] : ", "mllwtl_initCerealFrame");
-          const result = await initCerealFrame(request.cerealObject);
-          sendResponse(result);
+          initCerealFrame(request.cerealObject).then((result) => {
+            sendResponse(result);
+          });
         }
         if (request.intent === "mllwtl_processCereal") {
           Logger.log("[greeting] : ", "mllwtl_processCereal");
-          let frame = document.getElementById("cereal_frame");
+          let frame = document.getElementById(CEREAL_FRAME_ID);
+
+          const processFrame = (iframeElement: HTMLIFrameElement) => {
+            const { recordID, htmlString, cerealObject } = request;
+            Logger.log("[PROCESS_CEREAL => recordID] : ", recordID);
+
+            return new Promise<CerealResponse>((resolve) => {
+              pendingCerealRequests.set(recordID, resolve);
+
+              iframeElement.contentWindow?.postMessage(
+                {
+                  type: "PROCESS_DOCUMENT",
+                  recordID: recordID,
+                  htmlString: htmlString,
+                  cerealObject:
+                    typeof cerealObject === "string"
+                      ? cerealObject
+                      : JSON.stringify(cerealObject),
+                } as CerealFrameMessage,
+                "*",
+              );
+
+              Logger.log("[PROCESS_CEREAL => POSTED THE MESSAGE] : ", recordID);
+
+              setTimeout(() => {
+                if (pendingCerealRequests.has(recordID)) {
+                  pendingCerealRequests.delete(recordID);
+                  resolve({ success: false, error: "timeout" });
+                }
+              }, 10000);
+            });
+          };
 
           if (!frame) {
             Logger.log("[PROCESS_CEREAL] Frame not found, initializing");
-            const initResult = (await initCerealFrame(
-              request.cerealObject,
-            )) as CerealResponse;
-            if (!initResult.success) {
-              sendResponse({ success: false, error: "frame_init_failed" });
-              return;
-            }
-            frame = document.getElementById("cereal_frame");
-          }
+            initCerealFrame(request.cerealObject).then(
+              (initResult: CerealResponse) => {
+                if (!initResult.success) {
+                  sendResponse({ success: false, error: "frame_init_failed" });
+                  return;
+                }
 
-          // Early return if frame is still null after initialization
+                const newFrame = document.getElementById(CEREAL_FRAME_ID);
+                if (!newFrame) {
+                  sendResponse({ success: false, error: "frame_not_found" });
+                  return;
+                }
+
+                processFrame(newFrame as HTMLIFrameElement).then(sendResponse);
+              },
+            );
+          } else {
+            processFrame(frame as HTMLIFrameElement).then(sendResponse);
+          }
+        }
+        if (request.intent === "mllwtl_refreshCerealFrame") {
+          Logger.log("[greeting] : ", "mllwtl_refreshCerealFrame");
+          let frame = document.getElementById(CEREAL_FRAME_ID);
+
           if (!frame) {
+            Logger.log("[REFRESH_CEREAL] Frame not found, nothing to refresh");
             sendResponse({ success: false, error: "frame_not_found" });
-            return;
           }
 
           // Type assertion for iframe
           const iframeElement = frame as HTMLIFrameElement;
 
-          const { recordID, htmlString, cerealObject } = request;
-          Logger.log("[PROCESS_CEREAL => recordID] : ", recordID);
+          iframeElement.src = iframeElement.src;
 
-          const processResult = await new Promise<CerealResponse>((resolve) => {
-            // Store the resolver for this request
-            pendingCerealRequests.set(recordID, resolve);
+          Logger.log("[REFRESH_CEREAL] Frame refreshed");
 
-            // Send message to frame with recordID
-            iframeElement.contentWindow?.postMessage(
-              {
-                type: "PROCESS_DOCUMENT",
-                recordID: recordID,
-                htmlString: htmlString,
-                cerealObject:
-                  typeof cerealObject === "string"
-                    ? cerealObject
-                    : JSON.stringify(cerealObject),
-              } as CerealFrameMessage,
-              "*",
-            );
-
-            Logger.log("[PROCESS_CEREAL => POSTED THE MESSAGE] : ", recordID);
-
-            // Optional: Cleanup if no response received after timeout
-            setTimeout(() => {
-              if (pendingCerealRequests.has(recordID)) {
-                pendingCerealRequests.delete(recordID);
-                resolve({ success: false, error: "timeout" });
-              }
-            }, 10000); // 10 second timeout
-          });
-
-          sendResponse(processResult);
+          sendResponse({ success: true });
         }
       })();
       return true; // return true to indicate you want to send a response asynchronously
@@ -295,6 +330,7 @@ async function processCrawl(
   saveHtml: boolean,
   saveMarkdown: boolean,
   cerealObject: string,
+  refPolicy: string,
 ) {
   const saveCrawlModule = await import("../iframe/save/save-crawl");
   const {

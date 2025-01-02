@@ -6,6 +6,8 @@ import { DATA_ID_IFRAME } from "../constants";
 import { checkRequiredPermissions } from "../permissions/permission-helpers";
 import { setLocalStorage } from "../storage/storage-helpers";
 import { getOptInStatus, optOut } from "./opt-in-out-helpers";
+import { Logger } from "../logger/logger";
+import { startPing, stopPing } from "../background-script/keep-ping";
 
 export function start(metadata_id?: string | undefined): Promise<boolean> {
   return new Promise(async (resolve) => {
@@ -19,10 +21,12 @@ export function start(metadata_id?: string | undefined): Promise<boolean> {
       await checkRequiredPermissions(true);
       // note: in later version, metadata_id will be used to trace the #...
       // ...of requests to this specific device, so you can give rewards, etc.
+      await startPing();
       setLocalStorage("mStatus", "start").then(() => {
         resolve(true);
       });
     } catch (error) {
+      Logger.log("[start] : Error starting the extension", error);
       await optOut();
       resolve(false);
     }
@@ -31,6 +35,7 @@ export function start(metadata_id?: string | undefined): Promise<boolean> {
 
 export function stop(): Promise<boolean> {
   return new Promise(async (resolve) => {
+    await stopPing();
     setLocalStorage("mStatus", "stop").then(() => {
       resolve(true);
     });

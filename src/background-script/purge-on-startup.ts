@@ -12,6 +12,8 @@ export async function purgeOnStartup(): Promise<void> {
       "recordsMessageInfo",
       "unfocusedWindowId",
       "onlyIfMustArray",
+      "mllwtl_cereal_frame_tab",
+      "device_disconnect_session",
     ];
     await deleteLocalStorage(keysToPurge);
   });

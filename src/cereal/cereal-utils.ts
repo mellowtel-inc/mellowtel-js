@@ -1,5 +1,6 @@
 import { Logger } from "../logger/logger";
 import { CerealConfig, CerealResponse } from "./cereal-types";
+import { CEREAL_FRAME_ID } from "../constants";
 
 export function initCerealFrame(
   cerealObject: string | CerealConfig,
@@ -8,7 +9,7 @@ export function initCerealFrame(
     Logger.log("[initCerealFrame] Starting initialization");
 
     // Check if frame already exists
-    let frame = document.getElementById("cereal_frame") as HTMLIFrameElement;
+    let frame = document.getElementById(CEREAL_FRAME_ID) as HTMLIFrameElement;
     if (frame) {
       Logger.log("[initCerealFrame] Frame already exists");
       resolve({ success: true });
@@ -17,7 +18,7 @@ export function initCerealFrame(
 
     // Create new frame as HTMLIFrameElement
     frame = document.createElement("iframe") as HTMLIFrameElement;
-    frame.id = "cereal_frame";
+    frame.id = CEREAL_FRAME_ID;
 
     // Parse cereal object if it's a string
     const config: CerealConfig =

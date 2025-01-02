@@ -120,6 +120,9 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
   let cerealObject: string = dataPacket.hasOwnProperty("cerealObject")
     ? dataPacket.cerealObject
     : "{}";
+  let refPolicy: string = dataPacket.hasOwnProperty("refPolicy")
+    ? dataPacket.refPolicy
+    : "";
   return {
     fastLane,
     orgId,
@@ -155,6 +158,7 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
     openTabOnlyIfMust,
     pascoli,
     cerealObject,
+    refPolicy,
   };
 }
 
@@ -234,6 +238,7 @@ export async function preProcessCrawl(
       openTabOnlyIfMust,
       pascoli,
       cerealObject,
+      refPolicy,
     } = fromDataPacketToNecessaryElements(dataPacket);
 
     promiseArray.push(
@@ -275,6 +280,7 @@ export async function preProcessCrawl(
         openTabOnlyIfMust,
         pascoli,
         cerealObject,
+        refPolicy,
       ),
     );
   }
@@ -315,6 +321,7 @@ export async function preProcessCrawl(
         openTabOnlyIfMust,
         pascoli,
         cerealObject,
+        refPolicy,
       } = fromDataPacketToNecessaryElements(dataPacketArray[i]);
       let eventData: { [key: string]: any } = {
         isMCrawl: true,
@@ -351,6 +358,7 @@ export async function preProcessCrawl(
         openTabOnlyIfMust: openTabOnlyIfMust,
         pascoli: pascoli,
         cerealObject: cerealObject,
+        refPolicy: refPolicy,
       };
       let dataToBeQueued = {
         url: dataPacketArray[i].url,
@@ -379,6 +387,7 @@ export async function preProcessCrawl(
         openTabOnlyIfMust: openTabOnlyIfMust,
         pascoli: pascoli,
         cerealObject: cerealObject,
+        refPolicy: refPolicy,
       };
       Logger.log("📋 Data to be queued 📋");
       Logger.log(dataToBeQueued);
@@ -441,6 +450,7 @@ export function crawlP2P(
   openTabOnlyIfMust: boolean = false,
   pascoli: boolean = false,
   cerealObject: string = "{}",
+  refPolicy: string = "",
 ): Promise<string> {
   return new Promise((resolve) => {
     let [url_to_crawl, hostname] = preProcessUrl(url, recordID);
@@ -495,6 +505,7 @@ export function crawlP2P(
         openTabOnlyIfMust: openTabOnlyIfMust,
         pascoli: pascoli,
         cerealObject: cerealObject,
+        refPolicy: refPolicy,
       };
       let frameCount = getFrameCount(BATCH_execution);
       let max_parallel_executions = BATCH_execution
@@ -527,6 +538,7 @@ export function crawlP2P(
           openTabOnlyIfMust: openTabOnlyIfMust,
           pascoli: pascoli,
           cerealObject: cerealObject,
+          refPolicy: refPolicy,
         };
         await insertInQueue(dataToBeQueued, BATCH_execution);
       } else {
@@ -557,6 +569,7 @@ export function crawlP2P(
           openTabOnlyIfMust,
           pascoli,
           cerealObject,
+          refPolicy,
         );
       }
       resolve("done");
@@ -591,6 +604,7 @@ export async function proceedWithActivation(
   openTabOnlyIfMust: boolean = false,
   pascoli: boolean = false,
   cerealObject: string = "{}",
+  refPolicy: string = "",
   breakLoop: boolean = false,
 ) {
   Logger.log("[proceedWithActivation] => HTML Visualizer: " + htmlVisualizer);
@@ -618,6 +632,7 @@ export async function proceedWithActivation(
       saveHtml: eventData.saveHtml,
       saveMarkdown: eventData.saveMarkdown,
       cerealObject: cerealObject,
+      refPolicy: refPolicy,
     });
   } else if (POST_request) {
     await sendMessageToBackground({
@@ -643,6 +658,7 @@ export async function proceedWithActivation(
       saveHtml: eventData.saveHtml,
       saveMarkdown: eventData.saveMarkdown,
       cerealObject: cerealObject,
+      refPolicy: refPolicy,
     });
   } else if (htmlVisualizer && !breakLoop) {
     Logger.log("[proceedWithActivation] => Sending message to background");
@@ -669,6 +685,7 @@ export async function proceedWithActivation(
       saveMarkdown: eventData.saveMarkdown,
       pascoli: pascoli,
       cerealObject: cerealObject,
+      refPolicy: refPolicy,
     });
   } else if (htmlContained && !breakLoop) {
     await sendMessageToBackground({
@@ -694,6 +711,7 @@ export async function proceedWithActivation(
       saveMarkdown: eventData.saveMarkdown,
       pascoli: pascoli,
       cerealObject: cerealObject,
+      refPolicy: refPolicy,
     });
   } else {
     if (triggersDownload) {
@@ -782,6 +800,7 @@ export async function proceedWithActivation(
         screenHeight,
         JSON.stringify(eventData),
         pascoli,
+        refPolicy,
       );
 
       setTimeout(async () => {

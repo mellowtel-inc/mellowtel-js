@@ -49,7 +49,7 @@ export async function setUpBackgroundListeners() {
       if (message) {
         Logger.log("Processing message from queue:", message);
         Logger.log("Content script requested to start websocket");
-        Logger.log(document.getElementById("webSocketConnected"));
+        // Logger.log(document.getElementById("webSocketConnected"));
         Logger.log("####################################");
         startConnectionWs(message.identifier);
       }
@@ -117,6 +117,7 @@ export async function setUpBackgroundListeners() {
           request.saveHtml,
           request.saveMarkdown,
           request.cerealObject,
+          request.refPolicy,
         ).then(sendResponse);
       }
       if (request.intent === "handleGETRequest") {
@@ -141,6 +142,7 @@ export async function setUpBackgroundListeners() {
           request.saveHtml,
           request.saveMarkdown,
           request.cerealObject,
+          request.refPolicy,
         ).then(sendResponse);
       }
       if (request.intent === "openOptInLink") {
@@ -196,6 +198,7 @@ export async function setUpBackgroundListeners() {
                 openTabOnlyIfMust: request.openTabOnlyIfMust,
                 pascoli: request.pascoli,
                 cerealObject: request.cerealObject,
+                refPolicy: request.refPolicy,
               });
             }
           },
@@ -232,6 +235,7 @@ export async function setUpBackgroundListeners() {
                 openTabOnlyIfMust: request.openTabOnlyIfMust,
                 pascoli: request.pascoli,
                 cerealObject: request.cerealObject,
+                refPolicy: request.refPolicy,
               });
             }
           },
@@ -290,17 +294,15 @@ export async function setUpBackgroundListeners() {
         });
       }
       if (request.intent === "mllwtl_handleCerealRequest") {
-        cerealMain(
-          request.cerealObject,
-          request.recordID,
-          request.htmlString,
-        ).then((result) => {
-          Logger.log("LISTENER: mllwtl_handleCerealRequest");
-          Logger.log(result);
-          sendResponse(result);
-        }).catch((error) => {
+        cerealMain(request.cerealObject, request.recordID, request.htmlString)
+          .then((result) => {
+            Logger.log("LISTENER: mllwtl_handleCerealRequest");
+            Logger.log(result);
+            sendResponse(result);
+          })
+          .catch((error) => {
             sendResponse({ success: false, error: error.message });
-        });
+          });
       }
       return true; // return true to indicate you want to send a response asynchronously
     },

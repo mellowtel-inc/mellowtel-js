@@ -1,11 +1,8 @@
 import { getLocalStorage, setLocalStorage } from "../storage/storage-helpers";
 import { Logger } from "../logger/logger";
 import { isInSW } from "../utils/utils";
-import {
-  sendMessageToBackground,
-  sendMessageToContentScript,
-} from "../utils/messaging-helpers";
-import { CerealObject, CerealResponse } from "./cereal-types";
+import { sendMessageToContentScript } from "../utils/messaging-helpers";
+import { CerealObject } from "./cereal-types";
 
 export function cerealMain(
   cerealObject: string,
@@ -34,19 +31,25 @@ export function cerealMain(
         // Await the promise to ensure we get the result before logging and returning
         const resultReceived = await new Promise((innerResolve) => {
           chrome.runtime.sendMessage(
-              {
-                intent: "mllwtl_handleCerealRequest",
-                cerealObject: cerealObject,
-                recordID: recordID,
-                htmlString: htmlString,
-              },
-              (response) => {
-                if (chrome.runtime.lastError) {
-                  Logger.log("Hey, error in RUNTIME Error:", chrome.runtime.lastError);
-                }
-                Logger.log("[cerealMain] => Response from SW @@@@@@@@@@@@@@:", response);
-                innerResolve(response);
-              },
+            {
+              intent: "mllwtl_handleCerealRequest",
+              cerealObject: cerealObject,
+              recordID: recordID,
+              htmlString: htmlString,
+            },
+            (response) => {
+              if (chrome.runtime.lastError) {
+                Logger.log(
+                  "Hey, error in RUNTIME Error:",
+                  chrome.runtime.lastError,
+                );
+              }
+              Logger.log(
+                "[cerealMain] => Response from SW @@@@@@@@@@@@@@:",
+                response,
+              );
+              innerResolve(response);
+            },
           );
         });
 
@@ -64,7 +67,10 @@ export function cerealMain(
       } else {
         // The following code only runs in service worker
         // Check for existing cereal tab in storage
-        const storedTab = await getLocalStorage("cereal_frame", true);
+        const storedTab = await getLocalStorage(
+          "mllwtl_cereal_frame_tab",
+          true,
+        );
         Logger.log("[cerealMain] => Stored Tab:", storedTab);
         let targetTabId: number | null = storedTab?.tabId ?? null;
         Logger.log("[cerealMain] => Target Tab ID:", targetTabId);
@@ -106,7 +112,9 @@ export function cerealMain(
               if (response?.success) {
                 targetTabId = tab.id;
                 Logger.log("[cerealMain] => Found Suitable Tab:", targetTabId);
-                await setLocalStorage("cereal_frame", { tabId: targetTabId });
+                await setLocalStorage("mllwtl_cereal_frame_tab", {
+                  tabId: targetTabId,
+                });
                 break;
               }
             } catch {
@@ -134,5 +142,59 @@ export function cerealMain(
     const result = await Promise.race([timeoutPromise, mainLogic()]);
     Logger.log("[cerealMain] => FINAL Result:", result);
     resolve(result);
+  });
+}
+
+export function refreshCereal() {
+  return new Promise(async (resolve) => {
+    // check if the tab with cereal exists.
+    // if it does, send message to refresh the frame and return success
+    // if it doesn't, return failure
+    const storedTab = await getLocalStorage("mllwtl_cereal_frame_tab", true);
+    Logger.log("[refreshCereal] => Stored Tab:", storedTab);
+    let targetTabId: number | null = storedTab?.tabId ?? null;
+    Logger.log("[refreshCereal] => Target Tab ID:", targetTabId);
+
+    if (targetTabId === null) {
+      Logger.log("[refreshCereal] => No Stored tab found.");
+      resolve({ success: false, message: "not tab found" });
+    }
+
+    // Verify tab still exists
+    Logger.log("[refreshCereal] => Verifying Tab:", targetTabId);
+    try {
+      const tabExists = await new Promise<boolean>((res) => {
+        if (targetTabId != null) {
+          chrome.tabs.get(targetTabId, (tab) => {
+            res(!chrome.runtime.lastError && !!tab); // Convert tab to boolean
+          });
+        }
+      });
+
+      Logger.log("[refreshCereal] => Tab Exists:", tabExists);
+
+      if (!tabExists) {
+        targetTabId = null;
+      }
+    } catch {
+      targetTabId = null;
+    }
+
+    if (targetTabId === null) {
+      Logger.log("[refreshCereal] => Tab does not exist.");
+      resolve({ success: false, message: "not tab found" });
+    }
+
+    // now we know the tab exists, send message to refresh the frame
+    Logger.log(
+      "[refreshCereal] => Sending message to refresh tab:",
+      targetTabId,
+    );
+    if (targetTabId != null) {
+      await sendMessageToContentScript(targetTabId, {
+        intent: "mllwtl_refreshCerealFrame",
+      });
+      resolve({ success: true });
+    }
   });
 }

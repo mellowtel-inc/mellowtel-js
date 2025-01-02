@@ -29,6 +29,7 @@ export function handleGetRequest(
   saveHtml: boolean = true,
   saveMarkdown: boolean = true,
   cerealObject: string = "{}",
+  refPolicy: string = "",
 ) {
   return new Promise(async function (res) {
     await disableHeadersForPOST();
