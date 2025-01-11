@@ -10,7 +10,7 @@ export interface Action {
 
 export function executeActions(
   actions: Action[],
-  document: Document,
+  document: Document
 ): Promise<void> {
   return new Promise((resolve) => {
     let index = 0;
@@ -30,9 +30,29 @@ export function executeActions(
           break;
 
         case "click":
-          const clickElement = document.querySelector(action.selector);
+          const clickElement = document.querySelector<HTMLElement>(
+            action.selector
+          );
           if (clickElement) {
-            (clickElement as HTMLElement).click();
+            if (
+              /**
+               * Prevents triggering a download in the user's browser. See discussion: https://discord.com/channels/1221455179619106887/1221893620710375425/1325847913263267861
+               *
+               * If the crawler clicks on a link with the 'download' attribute, the browser doesn't open the file in a new tab. Instead, it tries to download the file.
+               * This likely triggered a download in the user's browser. It also explains why this issue happens only rarely since the download attribute isn't commonly used.
+               *
+               * MDN: "The HTMLAnchorElement.download property is a string indicating that the linked resource is intended to be downloaded
+               * rather than displayed in the browser."
+               *
+               *
+               */
+              clickElement instanceof HTMLAnchorElement &&
+              clickElement.hasAttribute("download")
+            ) {
+              clickElement.removeAttribute("download");
+            }
+
+            clickElement.click();
           }
           executeNextAction();
           break;
@@ -56,7 +76,7 @@ export function executeActions(
 
         case "fill_input":
           const inputElement = document.querySelector(
-            action.selector,
+            action.selector
           ) as HTMLInputElement;
           if (inputElement) {
             inputElement.value = action.value;
@@ -66,7 +86,7 @@ export function executeActions(
 
         case "fill_textarea":
           const textareaElement = document.querySelector(
-            action.selector,
+            action.selector
           ) as HTMLTextAreaElement;
           if (textareaElement) {
             textareaElement.value = action.value;
@@ -76,7 +96,7 @@ export function executeActions(
 
         case "select":
           const selectElement = document.querySelector(
-            action.selector,
+            action.selector
           ) as HTMLSelectElement;
           if (selectElement) {
             selectElement.value = action.value;
@@ -86,7 +106,7 @@ export function executeActions(
 
         case "fill_form":
           const formElement = document.querySelector(
-            action.selector,
+            action.selector
           ) as HTMLFormElement;
           if (formElement) {
             const formData = new FormData(formElement);
