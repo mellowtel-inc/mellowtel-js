@@ -250,8 +250,12 @@ async function fetchAndProcessHeaders(url: string) {
     const contentDisposition = response.headers.get("content-disposition");
     Logger.log("## Content-Disposition:", contentDisposition);
 
-    if (contentDisposition && contentDisposition.indexOf("attachment") === 0) {
-      removeContentDisposition = true;
+    if (contentDisposition) {
+      const contentDispositionLower = contentDisposition.toLowerCase();
+      if (contentDispositionLower.includes("attachment") ||
+          (contentDispositionLower.includes("inline") && contentDispositionLower.includes("filename"))) {
+        removeContentDisposition = true;
+      }
     }
 
     if (contentType) {
