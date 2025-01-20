@@ -1,7 +1,7 @@
 export function testCSP(onload_callback = function () {}): void {
   const img: HTMLImageElement = new Image();
   img.src =
-    "https://m-bucket-light.s3.amazonaws.com/lightning-boltrepo-com.svg";
+    "https://mellowtel-bucket.s3.us-east-1.amazonaws.com/lightning-boltrepo-com.svg";
   img.onload = onload_callback;
   img.id = "test-csp-image";
   img.style.display = "none";

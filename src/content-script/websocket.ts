@@ -5,12 +5,6 @@ import {
   MAX_PARALLEL_EXECUTIONS_BATCH,
   MAX_PARALLEL_EXECUTIONS_BATCH_FETCH,
 } from "../constants";
-import { preProcessCrawl } from "./execute-crawl";
-import {
-  getSharedMemory,
-  removeSharedMemory,
-  setSharedMemory,
-} from "./shared-memory";
 import { isStarted } from "../utils/start-stop-helpers";
 import { RateLimiter } from "../local-rate-limiting/rate-limiter";
 import { Logger } from "../logger/logger";
@@ -31,7 +25,8 @@ import { isPascoliEnabled } from "../pascoli/pascoli-utils";
 import { refreshCereal } from "../cereal/cereal-index";
 
 const ws_url: string =
-  "wss://7joy2r59rf.execute-api.us-east-1.amazonaws.com/production/";
+  // "wss://7joy2r59rf.execute-api.us-east-1.amazonaws.com/production/";
+  "wss://ws.mellow.tel";
 
 let is_websocket_connected: boolean = false;
 
@@ -97,7 +92,7 @@ export async function startConnectionWs(identifier: string): WebSocket {
         Logger.log(`[🌐]: Extension identifier: ${extension_identifier}`);
         Logger.log(`[🌐]: Is Pascoli enabled: ${isPascoli}`);
         const ws = new WebSocket(
-          `${ws_url}?device_id=${identifier}&version=${VERSION}&plugin_id=${encodeURIComponent(extension_identifier)}&speed_download=${speedMpbs}&platform=${browser}&manifest_version=${manifestVersion}&pascoli=${isPascoli}`,
+          `${ws_url}?device_id=${identifier}&version=${VERSION}&plugin_id=${encodeURIComponent(extension_identifier)}&speed_download=${speedMpbs}&platform=${browser}&manifest_version=${manifestVersion}&pascoli=${isPascoli}&ws_client=new_ws`,
         );
 
         ws.onopen = function open() {
@@ -129,6 +124,7 @@ export async function startConnectionWs(identifier: string): WebSocket {
           }
           let isDeviceDisconnectSession: boolean = await getLocalStorage(
             "device_disconnect_session",
+            true,
           );
           Logger.log("[🌐]: Discon.Sess =>", isDeviceDisconnectSession);
           if ((await isStarted()) && !isDeviceDisconnectSession) {
