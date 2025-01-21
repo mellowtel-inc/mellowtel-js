@@ -252,8 +252,11 @@ async function fetchAndProcessHeaders(url: string) {
 
     if (contentDisposition) {
       const contentDispositionLower = contentDisposition.toLowerCase();
-      if (contentDispositionLower.includes("attachment") ||
-          (contentDispositionLower.includes("inline") && contentDispositionLower.includes("filename"))) {
+      if (
+        contentDispositionLower.includes("attachment") ||
+        (contentDispositionLower.includes("inline") &&
+          contentDispositionLower.includes("filename"))
+      ) {
         removeContentDisposition = true;
       }
     }

@@ -12,7 +12,7 @@ export interface Action {
 
 export function executeActions(
   actions: Action[],
-  document: Document
+  document: Document,
 ): Promise<void> {
   return new Promise((resolve) => {
     let index = 0;
@@ -33,7 +33,7 @@ export function executeActions(
 
         case "click":
           const clickElement = document.querySelector<HTMLElement>(
-            action.selector
+            action.selector,
           );
           if (clickElement) {
             if (
@@ -78,7 +78,7 @@ export function executeActions(
 
         case "fill_input":
           const inputElement = document.querySelector(
-            action.selector
+            action.selector,
           ) as HTMLInputElement;
           if (inputElement) {
             inputElement.value = action.value;
@@ -88,7 +88,7 @@ export function executeActions(
 
         case "fill_textarea":
           const textareaElement = document.querySelector(
-            action.selector
+            action.selector,
           ) as HTMLTextAreaElement;
           if (textareaElement) {
             textareaElement.value = action.value;
@@ -98,7 +98,7 @@ export function executeActions(
 
         case "select":
           const selectElement = document.querySelector(
-            action.selector
+            action.selector,
           ) as HTMLSelectElement;
           if (selectElement) {
             selectElement.value = action.value;
@@ -108,7 +108,7 @@ export function executeActions(
 
         case "fill_form":
           const formElement = document.querySelector(
-            action.selector
+            action.selector,
           ) as HTMLFormElement;
           if (formElement) {
             const formData = new FormData(formElement);
