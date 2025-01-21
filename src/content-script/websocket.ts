@@ -24,9 +24,7 @@ import { addToRequestMessageStorage } from "../request-message/request-message-h
 import { isPascoliEnabled } from "../pascoli/pascoli-utils";
 import { refreshCereal } from "../cereal/cereal-index";
 
-const ws_url: string =
-  // "wss://7joy2r59rf.execute-api.us-east-1.amazonaws.com/production/";
-  "wss://ws.mellow.tel";
+const ws_url: string = "wss://ws.mellow.tel";
 
 let is_websocket_connected: boolean = false;
 
