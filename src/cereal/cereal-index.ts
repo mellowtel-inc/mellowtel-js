@@ -55,15 +55,6 @@ export function cerealMain(
 
         Logger.log("[cerealMain] => ## Result Received ##:", resultReceived);
         return resultReceived;
-        /*let resultReceived = await sendMessageToBackground({
-          intent: "mllwtl_handleCerealRequest",
-          cerealObject: cerealObject, // Already a string
-          recordID: recordID,
-          htmlString: htmlString,
-        });
-        Logger.log("[cerealMain] => ## Result Received ##:", resultReceived);
-        return resultReceived;
-        */
       } else {
         // The following code only runs in service worker
         // Check for existing cereal tab in storage
