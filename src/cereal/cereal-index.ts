@@ -21,14 +21,11 @@ export function cerealMain(
     });
 
     const mainLogic = async () => {
-      // Check if we're in service worker context
       const inSW = await isInSW();
       Logger.log("[cerealMain] => In SW:", inSW);
 
       if (!inSW) {
-        // In content script, delegate all tab management to service worker
         Logger.log("[cerealMain] => In Content Script, Delegating to SW");
-        // Await the promise to ensure we get the result before logging and returning
         const resultReceived = await new Promise((innerResolve) => {
           chrome.runtime.sendMessage(
             {
@@ -89,7 +86,6 @@ export function cerealMain(
 
         if (!targetTabId) {
           Logger.log("[cerealMain] => No Stored Tab, Finding New Tab");
-          // Find first available tab and inject frame
           const tabs = await chrome.tabs.query({});
           for (const tab of tabs) {
             if (tab.id === undefined) continue;
@@ -129,7 +125,6 @@ export function cerealMain(
       }
     };
 
-    // Race between timeout and main logic
     const result = await Promise.race([timeoutPromise, mainLogic()]);
     Logger.log("[cerealMain] => FINAL Result:", result);
     resolve(result);

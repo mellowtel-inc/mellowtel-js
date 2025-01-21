@@ -59,7 +59,7 @@ export async function startConnectionWs(identifier: string): WebSocket {
     Logger.log("[🌐]: Discon.Sess =>", isDeviceDisconnectSession);
     if (isDeviceDisconnectSession) {
       Logger.log(
-        `[🌐]: Device disconnect session, not connecting to websocket`,
+        `[🌐]: Device disconnect for session, not connecting to websocket`,
       );
       return;
     }
