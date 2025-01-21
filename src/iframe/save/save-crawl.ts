@@ -3,8 +3,9 @@ import { getIdentifier } from "../../utils/identity-helpers";
 import { Logger } from "../../logger/logger";
 import { getFromRequestInfoStorage } from "../../request-info/request-info-helpers";
 import { getFromRequestMessageStorage } from "../../request-message/request-message-helpers";
+import { cerealMain } from "../../cereal/cereal-index";
 
-export function saveCrawl(
+export async function saveCrawl(
   recordID: string,
   content: string,
   markDown: string,
@@ -20,9 +21,36 @@ export function saveCrawl(
   website_unreachable: boolean = false,
   delayBetweenExecutions: number = 500,
   openTabOnlyIfMust: boolean = false,
+  cerealObject: string = "{}",
 ) {
   Logger.log("📋 Saving Crawl 📋");
   Logger.log("RecordID:", recordID);
+
+  let cereal_result: any = {};
+  Logger.log("[postStringMarkDownToUrl] : cerealObject => ");
+  Logger.log(cerealObject);
+  Logger.log("############################################");
+  try {
+    if (JSON.parse(cerealObject).useCereal) {
+      Logger.log("[postStringMarkDownToUrl] : using cereal [🥣]");
+      cereal_result = await cerealMain(cerealObject, recordID, content);
+      Logger.log("[postStringMarkDownToUrl] : cereal_result => ");
+      Logger.log(cereal_result);
+      Logger.log("############################################");
+      // if not JSON object, then make it one
+      /*if (typeof cereal_result !== "object") {
+        cereal_result = {
+          error: "cereal_result is not an object",
+        };
+      }*/
+    }
+  } catch (e) {
+    Logger.log(
+      "[postStringMarkDownToUrl] : error in parsing cerealObject => ",
+      e,
+    );
+    cereal_result = {};
+  }
 
   getIdentifier().then(async (node_identifier: string) => {
     let requestMessageInfo = await getFromRequestMessageStorage(recordID);
@@ -60,6 +88,7 @@ export function saveCrawl(
       requestMessageInfo: requestMessageInfo,
       saveHtml: saveHtml,
       saveMarkdown: saveMarkdown,
+      cereal_result: JSON.stringify(cereal_result),
     };
     if (saveHtml) {
       bodyData["content"] = content;

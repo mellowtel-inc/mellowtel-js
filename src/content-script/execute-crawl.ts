@@ -117,6 +117,15 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
   let pascoli: boolean = dataPacket.hasOwnProperty("pascoli")
     ? dataPacket.pascoli.toString().toLowerCase() === "true"
     : false;
+  let cerealObject: string = dataPacket.hasOwnProperty("cerealObject")
+    ? dataPacket.cerealObject
+    : "{}";
+  let refPolicy: string = dataPacket.hasOwnProperty("refPolicy")
+    ? dataPacket.refPolicy
+    : "";
+  let rawData: boolean = dataPacket.hasOwnProperty("rawData")
+    ? dataPacket.rawData.toString().toLowerCase() === "true"
+    : false;
   return {
     fastLane,
     orgId,
@@ -151,6 +160,9 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
     openTab,
     openTabOnlyIfMust,
     pascoli,
+    cerealObject,
+    refPolicy,
+    rawData,
   };
 }
 
@@ -229,6 +241,9 @@ export async function preProcessCrawl(
       openTab,
       openTabOnlyIfMust,
       pascoli,
+      cerealObject,
+      refPolicy,
+      rawData,
     } = fromDataPacketToNecessaryElements(dataPacket);
 
     promiseArray.push(
@@ -269,6 +284,9 @@ export async function preProcessCrawl(
         openTab,
         openTabOnlyIfMust,
         pascoli,
+        cerealObject,
+        refPolicy,
+        rawData,
       ),
     );
   }
@@ -308,6 +326,9 @@ export async function preProcessCrawl(
         openTab,
         openTabOnlyIfMust,
         pascoli,
+        cerealObject,
+        refPolicy,
+        rawData,
       } = fromDataPacketToNecessaryElements(dataPacketArray[i]);
       let eventData: { [key: string]: any } = {
         isMCrawl: true,
@@ -343,6 +364,9 @@ export async function preProcessCrawl(
         openTab: openTab,
         openTabOnlyIfMust: openTabOnlyIfMust,
         pascoli: pascoli,
+        cerealObject: cerealObject,
+        refPolicy: refPolicy,
+        rawData: rawData,
       };
       let dataToBeQueued = {
         url: dataPacketArray[i].url,
@@ -370,6 +394,9 @@ export async function preProcessCrawl(
         openTab: openTab,
         openTabOnlyIfMust: openTabOnlyIfMust,
         pascoli: pascoli,
+        cerealObject: cerealObject,
+        refPolicy: refPolicy,
+        rawData: rawData,
       };
       Logger.log("📋 Data to be queued 📋");
       Logger.log(dataToBeQueued);
@@ -431,6 +458,9 @@ export function crawlP2P(
   openTab: boolean = false,
   openTabOnlyIfMust: boolean = false,
   pascoli: boolean = false,
+  cerealObject: string = "{}",
+  refPolicy: string = "",
+  rawData: boolean = false,
 ): Promise<string> {
   return new Promise((resolve) => {
     let [url_to_crawl, hostname] = preProcessUrl(url, recordID);
@@ -484,6 +514,9 @@ export function crawlP2P(
         openTab: openTab,
         openTabOnlyIfMust: openTabOnlyIfMust,
         pascoli: pascoli,
+        cerealObject: cerealObject,
+        refPolicy: refPolicy,
+        rawData: rawData,
       };
       let frameCount = getFrameCount(BATCH_execution);
       let max_parallel_executions = BATCH_execution
@@ -515,6 +548,9 @@ export function crawlP2P(
           openTab: openTab,
           openTabOnlyIfMust: openTabOnlyIfMust,
           pascoli: pascoli,
+          cerealObject: cerealObject,
+          refPolicy: refPolicy,
+          rawData: rawData,
         };
         await insertInQueue(dataToBeQueued, BATCH_execution);
       } else {
@@ -544,6 +580,8 @@ export function crawlP2P(
           openTab,
           openTabOnlyIfMust,
           pascoli,
+          cerealObject,
+          refPolicy,
         );
       }
       resolve("done");
@@ -577,6 +615,8 @@ export async function proceedWithActivation(
   openTab: boolean = false,
   openTabOnlyIfMust: boolean = false,
   pascoli: boolean = false,
+  cerealObject: string = "{}",
+  refPolicy: string = "",
   breakLoop: boolean = false,
 ) {
   Logger.log("[proceedWithActivation] => HTML Visualizer: " + htmlVisualizer);
@@ -603,6 +643,8 @@ export async function proceedWithActivation(
       openTabOnlyIfMust: openTabOnlyIfMust,
       saveHtml: eventData.saveHtml,
       saveMarkdown: eventData.saveMarkdown,
+      cerealObject: cerealObject,
+      refPolicy: refPolicy,
     });
   } else if (POST_request) {
     await sendMessageToBackground({
@@ -627,6 +669,8 @@ export async function proceedWithActivation(
       openTabOnlyIfMust: openTabOnlyIfMust,
       saveHtml: eventData.saveHtml,
       saveMarkdown: eventData.saveMarkdown,
+      cerealObject: cerealObject,
+      refPolicy: refPolicy,
     });
   } else if (htmlVisualizer && !breakLoop) {
     Logger.log("[proceedWithActivation] => Sending message to background");
@@ -652,6 +696,8 @@ export async function proceedWithActivation(
       saveHtml: eventData.saveHtml,
       saveMarkdown: eventData.saveMarkdown,
       pascoli: pascoli,
+      cerealObject: cerealObject,
+      refPolicy: refPolicy,
     });
   } else if (htmlContained && !breakLoop) {
     await sendMessageToBackground({
@@ -676,6 +722,8 @@ export async function proceedWithActivation(
       saveHtml: eventData.saveHtml,
       saveMarkdown: eventData.saveMarkdown,
       pascoli: pascoli,
+      cerealObject: cerealObject,
+      refPolicy: refPolicy,
     });
   } else {
     if (triggersDownload) {
@@ -764,6 +812,7 @@ export async function proceedWithActivation(
         screenHeight,
         JSON.stringify(eventData),
         pascoli,
+        refPolicy,
       );
 
       setTimeout(async () => {

@@ -31,6 +31,8 @@ export function handlePostRequest(
   openTabOnlyIfMust: boolean = false,
   saveHtml: boolean = true,
   saveMarkdown: boolean = true,
+  cerealObject: string = "{}",
+  refPolicy: string = "",
 ) {
   return new Promise(async function (res) {
     await disableHeadersForPOST();
@@ -119,6 +121,7 @@ export function handlePostRequest(
                 openTabOnlyIfMust: openTabOnlyIfMust,
                 saveHtml: saveHtml,
                 saveMarkdown: saveMarkdown,
+                cerealObject: cerealObject,
               });
               if (response !== null) {
                 break;

@@ -28,6 +28,8 @@ export function handleGetRequest(
   openTabOnlyIfMust: boolean = false,
   saveHtml: boolean = true,
   saveMarkdown: boolean = true,
+  cerealObject: string = "{}",
+  refPolicy: string = "",
 ) {
   return new Promise(async function (res) {
     await disableHeadersForPOST();
@@ -88,6 +90,7 @@ export function handleGetRequest(
           await addToRequestInfoStorage({
             recordID: recordID,
             isPDF: false,
+            isOfficeDoc: false,
             statusCode: statusCode,
           });
           // not json
@@ -116,6 +119,7 @@ export function handleGetRequest(
                 openTabOnlyIfMust: openTabOnlyIfMust,
                 saveHtml: saveHtml,
                 saveMarkdown: saveMarkdown,
+                cerealObject: cerealObject,
               });
               if (response !== null) {
                 break;

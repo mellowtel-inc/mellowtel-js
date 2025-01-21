@@ -1,5 +1,5 @@
 import { resetAfterCrawl } from "../content-script/reset-crawl";
-import { DATA_ID_IFRAME } from "../constants";
+import { CEREAL_FRAME_ID, DATA_ID_IFRAME } from "../constants";
 import { hideBadgeIfShould } from "../transparency/badge-settings";
 import { getSharedMemoryDOM } from "../content-script/shared-memory";
 import { getIfCurrentlyActiveDOM } from "../elements/elements-utils";
@@ -10,11 +10,38 @@ import {
   proceedWithActivation,
 } from "../content-script/execute-crawl";
 import { Logger } from "../logger/logger";
+import { initCerealFrame } from "../cereal/cereal-utils";
+import { CerealFrameMessage, CerealResponse } from "../cereal/cereal-types";
 
 export async function setUpContentScriptListeners() {
+  // Global map to store pending request resolvers
+  const pendingCerealRequests = new Map();
+
+  // Single event listener for all cereal frame responses
+  window.addEventListener("message", (event) => {
+    // check if event is the one we are listening for
+    Logger.log("[RECEIVED CEREAL? event.data] : ", event.data);
+    let eventType = event.data?.type;
+    if (eventType === "CEREAL_RESPONSE") {
+      let cerealFrame = document.getElementById(
+        CEREAL_FRAME_ID,
+      ) as HTMLIFrameElement;
+      if (!cerealFrame) return;
+      if (event.source === cerealFrame.contentWindow) {
+        const recordID = event.data.recordID;
+        const json = event.data.json;
+        if (recordID && pendingCerealRequests.has(recordID)) {
+          Logger.log("[RECEIVED CEREAL] with recordID : ", recordID);
+          const resolve = pendingCerealRequests.get(recordID);
+          resolve({ success: true, data: json });
+          pendingCerealRequests.delete(recordID);
+        }
+      }
+    }
+  });
   chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
-      (async function () {
+      (function () {
         if (request.target !== "contentScriptM") return false;
         if (request.intent === "deleteIframeM") {
           let recordID = request.recordID;
@@ -25,14 +52,15 @@ export async function setUpContentScriptListeners() {
           );
           if (iframe) iframe.remove();
           if (divIframe) divIframe.remove();
-          await resetAfterCrawl(
+          resetAfterCrawl(
             recordID,
             request.BATCH_execution,
             request.delayBetweenExecutions,
-          );
-          if (dataId === DATA_ID_IFRAME) {
-            await hideBadgeIfShould();
-          }
+          ).then(async () => {
+            if (dataId === DATA_ID_IFRAME) {
+              await hideBadgeIfShould();
+            }
+          });
         }
         if (request.intent === "getSharedMemoryDOM") {
           getSharedMemoryDOM(request.key).then(sendResponse);
@@ -46,7 +74,7 @@ export async function setUpContentScriptListeners() {
           });
         }
         if (request.intent === "handleHTMLVisualizer") {
-          await proceedWithActivation(
+          proceedWithActivation(
             request.url,
             request.recordID,
             JSON.parse(request.eventData),
@@ -72,11 +100,15 @@ export async function setUpContentScriptListeners() {
             request.openTab,
             request.openTabOnlyIfMust,
             request.pascoli,
+            request.cerealObject,
+            request.refPolicy,
             true, // to break the loop
-          );
+          ).then(() => {
+            sendResponse("success");
+          });
         }
         if (request.intent === "handleHTMLContained") {
-          await proceedWithActivation(
+          proceedWithActivation(
             request.url,
             request.recordID,
             JSON.parse(request.eventData),
@@ -102,11 +134,15 @@ export async function setUpContentScriptListeners() {
             request.openTab,
             request.openTabOnlyIfMust,
             request.pascoli,
+            request.cerealObject,
+            request.refPolicy,
             true, // to break the loop
-          );
+          ).then(() => {
+            sendResponse("success");
+          });
         }
         if (request.intent === "processCrawl") {
-          await processCrawl(
+          processCrawl(
             request.recordID,
             false,
             new MessageEvent("message", { data: {} }),
@@ -129,7 +165,11 @@ export async function setUpContentScriptListeners() {
             request.openTabOnlyIfMust,
             request.saveHtml,
             request.saveMarkdown,
-          );
+            request.cerealObject,
+            request.refPolicy,
+          ).then(() => {
+            sendResponse("success");
+          });
         }
         if (request.intent === "preProcessCrawl") {
           sendResponse("success");
@@ -139,13 +179,15 @@ export async function setUpContentScriptListeners() {
           let batch_id = request.batch_id;
           let parallelExecutionsBatch: number = request.parallelExecutionsBatch;
           let delayBetweenExecutions: number = request.delayBetweenExecutions;
-          await preProcessCrawl(
+          preProcessCrawl(
             data,
             BATCH_execution,
             batch_id,
             parallelExecutionsBatch,
             delayBetweenExecutions,
-          );
+          ).then(() => {
+            sendResponse("success");
+          });
         }
         if (request.intent === "ping") {
           Logger.log("[🌐] : ping received, replying...");
@@ -155,21 +197,108 @@ export async function setUpContentScriptListeners() {
         }
         if (request.intent === "triggerEventListener") {
           Logger.log("[🌐] : triggerEventListener...");
-          const initialEventListenerModule = await import(
-            "../iframe/mutation-observer"
+          import("../iframe/mutation-observer").then(
+            (initialEventListenerModule) => {
+              let event = new MessageEvent("message", {
+                data: JSON.parse(request.data),
+              });
+              initialEventListenerModule
+                .initialEventListener(event)
+                .then(() => {
+                  sendResponse();
+                });
+            },
           );
-          let event = new MessageEvent("message", {
-            data: JSON.parse(request.data),
-          });
-          await initialEventListenerModule.initialEventListener(event);
         }
         if (request.intent === "resetAfterCrawl") {
-          sendResponse("success");
-          await resetAfterCrawl(
+          resetAfterCrawl(
             request.recordID,
             request.BATCH_execution,
             request.delayBetweenExecutions,
-          );
+          ).then(() => {
+            sendResponse("success");
+          });
+        }
+        if (request.intent === "mllwtl_initCerealFrame") {
+          Logger.log("[greeting] : ", "mllwtl_initCerealFrame");
+          initCerealFrame(request.cerealObject).then((result) => {
+            sendResponse(result);
+          });
+        }
+        if (request.intent === "mllwtl_processCereal") {
+          Logger.log("[greeting] : ", "mllwtl_processCereal");
+          let frame = document.getElementById(CEREAL_FRAME_ID);
+
+          const processFrame = (iframeElement: HTMLIFrameElement) => {
+            const { recordID, htmlString, cerealObject } = request;
+            Logger.log("[PROCESS_CEREAL => recordID] : ", recordID);
+
+            return new Promise<CerealResponse>((resolve) => {
+              pendingCerealRequests.set(recordID, resolve);
+
+              iframeElement.contentWindow?.postMessage(
+                {
+                  type: "PROCESS_DOCUMENT",
+                  recordID: recordID,
+                  htmlString: htmlString,
+                  cerealObject:
+                    typeof cerealObject === "string"
+                      ? cerealObject
+                      : JSON.stringify(cerealObject),
+                } as CerealFrameMessage,
+                "*",
+              );
+
+              Logger.log("[PROCESS_CEREAL => POSTED THE MESSAGE] : ", recordID);
+
+              setTimeout(() => {
+                if (pendingCerealRequests.has(recordID)) {
+                  pendingCerealRequests.delete(recordID);
+                  resolve({ success: false, error: "timeout" });
+                }
+              }, 10000);
+            });
+          };
+
+          if (!frame) {
+            Logger.log("[PROCESS_CEREAL] Frame not found, initializing");
+            initCerealFrame(request.cerealObject).then(
+              (initResult: CerealResponse) => {
+                if (!initResult.success) {
+                  sendResponse({ success: false, error: "frame_init_failed" });
+                  return;
+                }
+
+                const newFrame = document.getElementById(CEREAL_FRAME_ID);
+                if (!newFrame) {
+                  sendResponse({ success: false, error: "frame_not_found" });
+                  return;
+                }
+
+                processFrame(newFrame as HTMLIFrameElement).then(sendResponse);
+              },
+            );
+          } else {
+            processFrame(frame as HTMLIFrameElement).then(sendResponse);
+          }
+        }
+        if (request.intent === "mllwtl_refreshCerealFrame") {
+          Logger.log("[greeting] : ", "mllwtl_refreshCerealFrame");
+          let frame = document.getElementById(CEREAL_FRAME_ID);
+
+          if (!frame) {
+            Logger.log("[REFRESH_CEREAL] Frame not found, nothing to refresh");
+            sendResponse({ success: false, error: "frame_not_found" });
+          }
+
+          // Type assertion for iframe
+          const iframeElement = frame as HTMLIFrameElement;
+
+          iframeElement.src = iframeElement.src;
+
+          Logger.log("[REFRESH_CEREAL] Frame refreshed");
+
+          sendResponse({ success: true });
         }
       })();
       return true; // return true to indicate you want to send a response asynchronously
@@ -200,6 +329,8 @@ async function processCrawl(
   openTabOnlyIfMust: boolean,
   saveHtml: boolean,
   saveMarkdown: boolean,
+  cerealObject: string,
+  refPolicy: string,
 ) {
   const saveCrawlModule = await import("../iframe/save/save-crawl");
   const {
@@ -311,6 +442,7 @@ async function processCrawl(
           false,
           delayBetweenExecutions,
           openTabOnlyIfMust,
+          cerealObject,
         );
       }
     }
@@ -363,6 +495,7 @@ async function processCrawl(
         false,
         delayBetweenExecutions,
         openTabOnlyIfMust,
+        cerealObject,
       );
     }
   }

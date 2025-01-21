@@ -73,6 +73,7 @@ export default class M {
         let optInStatus: boolean = (await getOptInStatus()).boolean;
         if (optInStatus) {
           await start(metadata_id);
+          // keep service worker alive
         }
       }
     } else {

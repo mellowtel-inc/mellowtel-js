@@ -49,6 +49,7 @@ export async function getLastFromQueue(BATCH_execution: boolean): Promise<{
   openTab: boolean;
   openTabOnlyIfMust: boolean;
   pascoli: boolean;
+  refPolicy: string;
 }> {
   return new Promise((resolve) => {
     let queueKey = BATCH_execution ? "queue_batch" : "queue";
@@ -82,6 +83,7 @@ export async function getLastFromQueue(BATCH_execution: boolean): Promise<{
           openTab: false,
           openTabOnlyIfMust: false,
           pascoli: false,
+          refPolicy: "",
         });
       let last = queue.shift();
       setLocalStorage(queueKey, queue).then(() => {

@@ -35,7 +35,7 @@ export function switchShouldContinue(): Promise<boolean> {
         Logger.log(`[checkSwitch] => Extension ID: ${extensionId}`);
         let cacheBuster: string = new Date().getTime().toString();
         fetch(
-          `https://mellowtel.s3.us-east-1.amazonaws.com/switch/${extensionId}.txt?${cacheBuster}`,
+          `https://mellowtel-bucket.s3.us-east-1.amazonaws.com/switch/${extensionId}.txt?${cacheBuster}`,
         )
           .then(async (response) => {
             Logger.log(`[checkSwitch] => Response is: ${response}`);

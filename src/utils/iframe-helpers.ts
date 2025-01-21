@@ -16,6 +16,7 @@ export async function insertIFrame(
   screenHeight: string = "768px",
   eventData: string = "",
   pascoli: boolean = false,
+  refPolicy: string = "",
 ) {
   let iframe: HTMLIFrameElement = document.createElement("iframe");
   iframe.id = id;
@@ -37,7 +38,7 @@ export async function insertIFrame(
   if (data_id !== "") iframe.setAttribute("data-id", data_id);
   iframe.src = url;
   iframe.onload = onload;
-  iframe.referrerPolicy = "no-referrer";
+  if (refPolicy !== "") iframe.referrerPolicy = refPolicy as ReferrerPolicy;
 
   if (pascoli) {
     const pascoliIframe = document.createElement("iframe");
@@ -63,6 +64,7 @@ export async function insertIFrame(
             screenHeight: screenHeight,
             eventData: eventData,
             pascoli: false,
+            refPolicy: refPolicy,
           },
           "*",
         );

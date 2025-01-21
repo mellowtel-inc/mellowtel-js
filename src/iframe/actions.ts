@@ -1,3 +1,5 @@
+import { Logger } from "../logger/logger";
+
 export interface FormField {
   name: string;
   value: string;
@@ -138,7 +140,7 @@ export function executeActions(
           break;
 
         default:
-          console.warn(`Unknown action type: ${action.type}`);
+          Logger.warn(`Unknown action type: ${action.type}`);
           executeNextAction();
       }
     }

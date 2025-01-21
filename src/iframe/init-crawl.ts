@@ -58,9 +58,16 @@ function initCrawlHelper(event: MessageEvent, numTries: number) {
     let saveMarkdown: boolean = event.data.hasOwnProperty("saveMarkdown")
       ? event.data.saveMarkdown.toString().toLowerCase() === "true"
       : false;
+    let cerealObject: string = event.data.hasOwnProperty("cerealObject")
+      ? event.data.cerealObject
+      : "{}";
+    let rawData: boolean = event.data.hasOwnProperty("rawData")
+      ? event.data.rawData.toString().toLowerCase() === "true"
+      : false;
 
     let waitBeforeScraping = parseInt(event.data.waitBeforeScraping);
     Logger.log("[initCrawl]: waitBeforeScraping " + waitBeforeScraping);
+    Logger.log("[initCrawl]: rawData " + rawData);
     setTimeout(async () => {
       let document_to_use = document;
       let url_check_pdf = window.location.href;
@@ -104,6 +111,8 @@ function initCrawlHelper(event: MessageEvent, numTries: number) {
         removeImages,
         saveHtml,
         saveMarkdown,
+        cerealObject,
+        rawData,
       );
     }, waitBeforeScraping);
   }
@@ -127,6 +136,8 @@ async function processCrawl(
   removeImages: boolean,
   saveHtml: boolean,
   saveMarkdown: boolean,
+  cerealObject: string,
+  rawData: boolean,
 ) {
   if (removeCSSselectors === "default") {
     removeSelectorsFromDocument(document_to_use, []);
@@ -215,12 +226,16 @@ async function processCrawl(
             ? event.data.BATCH_execution
             : false,
           event.data.hasOwnProperty("batch_id") ? event.data.batch_id : "",
+          false,
+          500,
+          false,
+          cerealObject,
         );
       }
     }
   } else {
     Logger.log("[initCrawl 🌐] : it's a PDF");
-    let text: string = await extractTextFromPDF(url_to_crawl);
+    let text: string = await extractTextFromPDF(url_to_crawl, rawData);
     Logger.log("[initCrawl 🌐] : text => " + text);
     if (htmlVisualizer) {
       // SPECIAL LOGIC FOR HTML VISUALIZER
@@ -261,6 +276,10 @@ async function processCrawl(
           ? event.data.BATCH_execution
           : false,
         event.data.hasOwnProperty("batch_id") ? event.data.batch_id : "",
+        false,
+        500,
+        false,
+        cerealObject,
       );
     }
   }

@@ -5,16 +5,10 @@ import {
   MAX_PARALLEL_EXECUTIONS_BATCH,
   MAX_PARALLEL_EXECUTIONS_BATCH_FETCH,
 } from "../constants";
-import { preProcessCrawl } from "./execute-crawl";
-import {
-  getSharedMemory,
-  removeSharedMemory,
-  setSharedMemory,
-} from "./shared-memory";
 import { isStarted } from "../utils/start-stop-helpers";
 import { RateLimiter } from "../local-rate-limiting/rate-limiter";
 import { Logger } from "../logger/logger";
-import { setLocalStorage } from "../storage/storage-helpers";
+import { getLocalStorage, setLocalStorage } from "../storage/storage-helpers";
 import { getExtensionIdentifier } from "../utils/identity-helpers";
 import {
   getEffectiveConnectionType,
@@ -28,9 +22,11 @@ import {
 } from "../utils/messaging-helpers";
 import { addToRequestMessageStorage } from "../request-message/request-message-helpers";
 import { isPascoliEnabled } from "../pascoli/pascoli-utils";
+import { refreshCereal } from "../cereal/cereal-index";
 
-const ws_url: string =
-  "wss://7joy2r59rf.execute-api.us-east-1.amazonaws.com/production/";
+const ws_url: string = "wss://ws.mellow.tel";
+
+let is_websocket_connected: boolean = false;
 
 export async function startConnectionWs(identifier: string): WebSocket {
   // if mv2, we can send message to bg and start the ws there since there is a DOM
@@ -40,8 +36,10 @@ export async function startConnectionWs(identifier: string): WebSocket {
   Logger.log("############################################################");
   Logger.log(`[startConnectionWs]: Manifest version: ${manifestVersion}`);
   Logger.log(`[startConnectionWs]: Is in service worker: ${isInServiceWorker}`);
-  if (manifestVersion.toString() === "2" && !isInServiceWorker) {
-    Logger.log(`[🌐]: MV2 Sending message to background to start websocket...`);
+  if (!isInServiceWorker) {
+    Logger.log(
+      `[🌐]: MV2/MV3 Sending message to background to start websocket...`,
+    );
     await sendMessageToBackground({
       intent: "startWebsocket",
       identifier: identifier,
@@ -54,13 +52,25 @@ export async function startConnectionWs(identifier: string): WebSocket {
       return;
     }
     let webSocketConnected: boolean;
+    let isDeviceDisconnectSession: boolean = await getLocalStorage(
+      "device_disconnect_session",
+      true,
+    );
+    Logger.log("[🌐]: Discon.Sess =>", isDeviceDisconnectSession);
+    if (isDeviceDisconnectSession) {
+      Logger.log(
+        `[🌐]: Device disconnect session, not connecting to websocket`,
+      );
+      return;
+    }
     if (manifestVersion.toString() === "2") {
       Logger.log(`[🌐]: MV2 Getting webSocketConnected from DOM MODEL...`);
       webSocketConnected =
         document.getElementById("webSocketConnected") !== null;
     } else {
       Logger.log(`[🌐]: MV3 Getting webSocketConnected from shared memory...`);
-      webSocketConnected = await getSharedMemory("webSocketConnected");
+      webSocketConnected = is_websocket_connected;
+      // webSocketConnected = await getSharedMemory("webSocketConnected");
     }
     Logger.log(`[🌐]: webSocketConnected: ${webSocketConnected}`);
     if (!webSocketConnected) {
@@ -91,7 +101,7 @@ export async function startConnectionWs(identifier: string): WebSocket {
         Logger.log(`[🌐]: Extension identifier: ${extension_identifier}`);
         Logger.log(`[🌐]: Is Pascoli enabled: ${isPascoli}`);
         const ws = new WebSocket(
-          `${ws_url}?device_id=${identifier}&version=${VERSION}&plugin_id=${encodeURIComponent(extension_identifier)}&speed_download=${speedMpbs}&platform=${browser}&manifest_version=${manifestVersion}&pascoli=${isPascoli}`,
+          `${ws_url}?device_id=${identifier}&version=${VERSION}&plugin_id=${encodeURIComponent(extension_identifier)}&speed_download=${speedMpbs}&platform=${browser}&manifest_version=${manifestVersion}&pascoli=${isPascoli}&ws_client=new_ws`,
         );
 
         ws.onopen = function open() {
@@ -106,7 +116,8 @@ export async function startConnectionWs(identifier: string): WebSocket {
             Logger.log(
               `[🌐]: MV3 Setting webSocketConnected in shared memory...`,
             );
-            setSharedMemory("webSocketConnected", "true");
+            // setSharedMemory("webSocketConnected", "true");
+            is_websocket_connected = true;
           }
           Logger.log(
             `[🌐]: connected with device_id= ${identifier} and version= ${VERSION}`,
@@ -115,11 +126,17 @@ export async function startConnectionWs(identifier: string): WebSocket {
 
         ws.onclose = async function close() {
           if (manifestVersion.toString() === "3") {
-            removeSharedMemory("webSocketConnected");
+            // removeSharedMemory("webSocketConnected");
+            is_websocket_connected = false;
           } else {
             document.getElementById("webSocketConnected")?.remove();
           }
-          if (await isStarted()) {
+          let isDeviceDisconnectSession: boolean = await getLocalStorage(
+            "device_disconnect_session",
+            true,
+          );
+          Logger.log("[🌐]: Discon.Sess =>", isDeviceDisconnectSession);
+          if ((await isStarted()) && !isDeviceDisconnectSession) {
             startConnectionWs(identifier);
           }
         };
@@ -127,10 +144,30 @@ export async function startConnectionWs(identifier: string): WebSocket {
         ws.onmessage = async function incoming(data: any) {
           if (await isStarted()) {
             data = JSON.parse(data.data);
+
             if (
               data.hasOwnProperty("type_event") &&
               data.type_event === "heartbeat"
             ) {
+              return;
+            }
+
+            if (
+              data.hasOwnProperty("type_event") &&
+              data.type_event === "disconnect_device"
+            ) {
+              Logger.log(`[🌐]: Device disconnected, closing connection...`);
+              await setLocalStorage("device_disconnect_session", true);
+              ws.close();
+              return;
+            }
+
+            if (
+              data.hasOwnProperty("type_event") &&
+              data.type_event === "refresh_cereal"
+            ) {
+              Logger.log(`[🌐]: Refreshing cereal frame...`);
+              await refreshCereal();
               return;
             }
 
@@ -155,7 +192,7 @@ export async function startConnectionWs(identifier: string): WebSocket {
             ) {
               BATCH_execution = true;
               batch_id = data.batch_id;
-              let type_batch: string = "request"; // request or fetch
+              let type_batch: string = "request";
               if (data.hasOwnProperty("type_batch"))
                 type_batch = data.type_batch;
               if (data.hasOwnProperty("parallel_executions_batch")) {
@@ -194,45 +231,36 @@ export async function startConnectionWs(identifier: string): WebSocket {
               if (data.hasOwnProperty("recordID")) {
                 await addToRequestMessageStorage(data);
               }
-              if (manifestVersion.toString() === "2") {
-                Logger.log(
-                  "[🌐]: MV2 Sending message to a viable content script...",
-                );
-                // send a message to a content script to execute the crawl
-                // first tab that replies will be the one to execute the crawl
-                let tabReply = false;
-                chrome.tabs.query({}, async (tabs) => {
-                  for (let tab of tabs) {
-                    if (tabReply) {
-                      Logger.log("[🌐]: Tab already replied, breaking...");
-                      break;
-                    }
-                    await sendMessageToContentScript(tab.id!, {
-                      intent: "preProcessCrawl",
-                      data: JSON.stringify(data),
-                      BATCH_execution: BATCH_execution,
-                      batch_id: batch_id,
-                      parallelExecutionsBatch: parallelExecutionsBatch,
-                      delayBetweenExecutions: delayBetweenExecutions,
-                    }).then((response) => {
-                      if (response === "success") {
-                        Logger.log(
-                          "[🌐]: Tab replied success, setting tabReply to true...",
-                        );
-                        tabReply = true;
-                      }
-                    });
+
+              Logger.log(
+                "[🌐]: MV2/MV3 Sending message to a viable content script...",
+              );
+              // send a message to a content script to execute the crawl
+              // first tab that replies will be the one to execute the crawl
+              let tabReply = false;
+              chrome.tabs.query({}, async (tabs) => {
+                for (let tab of tabs) {
+                  if (tabReply) {
+                    Logger.log("[🌐]: Tab already replied, breaking...");
+                    break;
                   }
-                });
-              } else {
-                await preProcessCrawl(
-                  data,
-                  BATCH_execution,
-                  batch_id,
-                  parallelExecutionsBatch,
-                  delayBetweenExecutions,
-                );
-              }
+                  await sendMessageToContentScript(tab.id!, {
+                    intent: "preProcessCrawl",
+                    data: JSON.stringify(data),
+                    BATCH_execution: BATCH_execution,
+                    batch_id: batch_id,
+                    parallelExecutionsBatch: parallelExecutionsBatch,
+                    delayBetweenExecutions: delayBetweenExecutions,
+                  }).then((response) => {
+                    if (response === "success") {
+                      Logger.log(
+                        "[🌐]: Tab replied success, setting tabReply to true...",
+                      );
+                      tabReply = true;
+                    }
+                  });
+                }
+              });
             } else {
               Logger.log("[🌐]: Rate limit reached, closing connection...");
               await setLocalStorage("mllwtl_rate_limit_reached", true);

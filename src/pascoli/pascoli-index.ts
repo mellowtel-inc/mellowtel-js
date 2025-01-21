@@ -23,6 +23,7 @@ export async function initializePascoli() {
       screenHeight,
       eventData,
       pascoli,
+      refPolicy,
     } = event.data;
 
     if (eventData !== undefined) {
@@ -49,6 +50,7 @@ export async function initializePascoli() {
       screenHeight,
       eventData,
       false,
+      refPolicy,
     );
   });
 
