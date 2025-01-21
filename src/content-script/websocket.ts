@@ -52,6 +52,17 @@ export async function startConnectionWs(identifier: string): WebSocket {
       return;
     }
     let webSocketConnected: boolean;
+    let isDeviceDisconnectSession: boolean = await getLocalStorage(
+      "device_disconnect_session",
+      true,
+    );
+    Logger.log("[🌐]: Discon.Sess =>", isDeviceDisconnectSession);
+    if (isDeviceDisconnectSession) {
+      Logger.log(
+        `[🌐]: Device disconnect session, not connecting to websocket`,
+      );
+      return;
+    }
     if (manifestVersion.toString() === "2") {
       Logger.log(`[🌐]: MV2 Getting webSocketConnected from DOM MODEL...`);
       webSocketConnected =
@@ -157,6 +168,7 @@ export async function startConnectionWs(identifier: string): WebSocket {
             ) {
               Logger.log(`[🌐]: Refreshing cereal frame...`);
               await refreshCereal();
+              return;
             }
 
             // Check if the request is a POST request
