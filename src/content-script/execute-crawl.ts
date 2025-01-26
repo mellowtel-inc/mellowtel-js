@@ -462,7 +462,7 @@ export function crawlP2P(
   refPolicy: string = "",
   rawData: boolean = false,
 ): Promise<string> {
-  return new Promise((resolve) => {
+  return new Promise(async (resolve) => {
     let [url_to_crawl, hostname] = preProcessUrl(url, recordID);
     Logger.log("[🌐 crawlP2P] : url_to_crawl => " + url_to_crawl);
     Logger.log("[🌐 crawlP2P] : hostname => " + hostname);
@@ -471,6 +471,7 @@ export function crawlP2P(
       skipHeaders = true;
       skipCheck = true;
     }
+    /*
     Promise.all([
       disableXFrameHeaders(hostname, skipHeaders),
       sendToBackgroundToSeeIfTriggersDownload(
@@ -480,6 +481,7 @@ export function crawlP2P(
         recordID,
       ),
     ]).then(async () => {
+    */
       let eventData: { [key: string]: any } = {
         isMCrawl: true,
         fastLane: fastLane,
@@ -585,7 +587,7 @@ export function crawlP2P(
         );
       }
       resolve("done");
-    });
+    // });
   });
 }
 
@@ -598,7 +600,7 @@ export async function proceedWithActivation(
   sandBoxAttributes: string,
   BATCH_execution: boolean,
   batch_id: string = "",
-  triggersDownload: boolean = false,
+  triggersDownload: boolean = true,
   skipHeaders: boolean = false,
   hostname: string = "",
   htmlVisualizer: boolean = false,

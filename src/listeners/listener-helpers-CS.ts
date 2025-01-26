@@ -20,9 +20,10 @@ export async function setUpContentScriptListeners() {
   // Single event listener for all cereal frame responses
   window.addEventListener("message", (event) => {
     // check if event is the one we are listening for
-    Logger.log("[RECEIVED CEREAL? event.data] : ", event.data);
+    // Logger.log("[RECEIVED CEREAL? event.data] : ", event.data);
     let eventType = event.data?.type;
     if (eventType === "CEREAL_RESPONSE") {
+      Logger.log("[RECEIVED CEREAL] event.data] : ", event.data);
       let cerealFrame = document.getElementById(
         CEREAL_FRAME_ID,
       ) as HTMLIFrameElement;

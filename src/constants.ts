@@ -1,4 +1,4 @@
-export const VERSION: string = "1.5.4";
+export const VERSION: string = "1.5.5";
 export const MAX_PARALLEL_EXECUTIONS: number = 4;
 export const MAX_PARALLEL_EXECUTIONS_BATCH: number = 4;
 export const MAX_PARALLEL_EXECUTIONS_FETCH: number = 10;
@@ -17,6 +17,9 @@ export const RULE_ID_VALUE_TO_MODIFY_CONTENT_TYPE_TO: number = 80048;
 export const RULE_ID_POST_REQUEST: number = 80049;
 export let MAX_DAILY_RATE: number = 500;
 export const BADGE_COLOR: string = "#4CAF50";
+export const LOG_RETENTION_HOURS: number = 2400;
+export const LOG_STORAGE_KEY: string = "mllwtl_logs";
+export const LOG_BATCH_INTERVAL: number = 1000; // 1 second batch window
 
 export const SW_PING_INTERVAL: number = 3 * 1000; // 3 seconds
 export const REFRESH_INTERVAL: number = 1000 * 60 * 60 * 24; // 24 hours

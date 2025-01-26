@@ -38,6 +38,7 @@ export default class M {
   private publishableKey: string;
   private options?: any;
   private disableLogs: boolean = true;
+  private saveLogs: boolean = false;
   private MAX_DAILY_RATE: number = DEFAULT_MAX_DAILY_RATE;
 
   constructor(publishableKey: string, options?: any) {
@@ -45,9 +46,11 @@ export default class M {
     this.options = options;
     this.disableLogs =
       options?.disableLogs !== undefined ? options.disableLogs : true;
+    this.saveLogs = options?.saveLogs !== undefined ? options.saveLogs : false;
     this.MAX_DAILY_RATE = options?.MAX_DAILY_RATE || DEFAULT_MAX_DAILY_RATE;
     RateLimiter.MAX_DAILY_RATE = this.MAX_DAILY_RATE;
     Logger.disableLogs = this.disableLogs;
+    Logger.saveLogs = this.saveLogs;
   }
 
   public async initBackground(
@@ -186,5 +189,9 @@ export default class M {
 
   public async generateAndOpenFeedbackLink(): Promise<string> {
     return generateAndOpenFeedbackLink();
+  }
+
+  public async downloadLogs(): Promise<boolean> {
+    return Logger.downloadLogs();
   }
 }
