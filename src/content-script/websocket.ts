@@ -25,10 +25,27 @@ import { isPascoliEnabled } from "../pascoli/pascoli-utils";
 import { refreshCereal } from "../cereal/cereal-index";
 
 const ws_url: string = "wss://ws.mellow.tel";
+const INITIAL_RETRY_DELAY: number = 30 * 1000; // 30 seconds
+const MAX_RETRY_DELAY: number = 60 * 60 * 1000; // 1 hour
+const RETRY_DELAYS: number[] = [
+  INITIAL_RETRY_DELAY,        // 30 seconds
+  60 * 1000,                  // 1 minute
+  5 * 60 * 1000,             // 5 minutes
+  10 * 60 * 1000,            // 10 minutes
+  20 * 60 * 1000,            // 20 minutes
+  MAX_RETRY_DELAY            // 1 hour
+];
 
 let is_websocket_connected: boolean = false;
+let retryAttempt: number = 0;
+let retryTimeout: any = null;
 
 export async function startConnectionWs(identifier: string): WebSocket {
+  // Clear any existing retry timeout
+  if (retryTimeout) {
+    clearTimeout(retryTimeout);
+    retryTimeout = null;
+  }
   // if mv2, we can send message to bg and start the ws there since there is a DOM
   // in mv3, we need to start the ws here in the content script
   let manifestVersion = getManifestVersion();
@@ -86,6 +103,7 @@ export async function startConnectionWs(identifier: string): WebSocket {
             `[🌐]: Time elapsed is greater than REFRESH_INTERVAL, resetting rate limit data`,
           );
           await setLocalStorage("mllwtl_rate_limit_reached", false);
+          retryAttempt = 0; // Reset retry attempt counter
           await RateLimiter.resetRateLimitData(now, false);
           startConnectionWs(identifier);
         }
@@ -105,6 +123,7 @@ export async function startConnectionWs(identifier: string): WebSocket {
         );
 
         ws.onopen = function open() {
+          retryAttempt = 0; // Reset retry counter on successful connection
           if (manifestVersion.toString() === "2") {
             Logger.log(`[🌐]: MV2 Setting webSocketConnected in DOM MODEL...`);
             let hiddenInput: HTMLInputElement = document.createElement("input");
@@ -137,7 +156,12 @@ export async function startConnectionWs(identifier: string): WebSocket {
           );
           Logger.log("[🌐]: Discon.Sess =>", isDeviceDisconnectSession);
           if ((await isStarted()) && !isDeviceDisconnectSession) {
-            startConnectionWs(identifier);
+            const delay = RETRY_DELAYS[Math.min(retryAttempt, RETRY_DELAYS.length - 1)];
+            Logger.log(`[🌐]: Connection closed. Attempting reconnect in ${delay/1000} seconds...`);
+            retryTimeout = setTimeout(async () => {
+              retryAttempt++;
+              await startConnectionWs(identifier);
+            }, delay);
           }
         };
 
