@@ -10,6 +10,7 @@
   ],
   "scripts": {
     "build": "tsup",
+    "format": "npx prettier . --write",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "mellowtel-inc",

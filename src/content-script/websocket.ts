@@ -28,12 +28,12 @@ const ws_url: string = "wss://ws.mellow.tel";
 const INITIAL_RETRY_DELAY: number = 30 * 1000; // 30 seconds
 const MAX_RETRY_DELAY: number = 60 * 60 * 1000; // 1 hour
 const RETRY_DELAYS: number[] = [
-  INITIAL_RETRY_DELAY,        // 30 seconds
-  60 * 1000,                  // 1 minute
-  5 * 60 * 1000,             // 5 minutes
-  10 * 60 * 1000,            // 10 minutes
-  20 * 60 * 1000,            // 20 minutes
-  MAX_RETRY_DELAY            // 1 hour
+  INITIAL_RETRY_DELAY, // 30 seconds
+  60 * 1000, // 1 minute
+  5 * 60 * 1000, // 5 minutes
+  10 * 60 * 1000, // 10 minutes
+  20 * 60 * 1000, // 20 minutes
+  MAX_RETRY_DELAY, // 1 hour
 ];
 
 let is_websocket_connected: boolean = false;
@@ -156,8 +156,11 @@ export async function startConnectionWs(identifier: string): WebSocket {
           );
           Logger.log("[🌐]: Discon.Sess =>", isDeviceDisconnectSession);
           if ((await isStarted()) && !isDeviceDisconnectSession) {
-            const delay = RETRY_DELAYS[Math.min(retryAttempt, RETRY_DELAYS.length - 1)];
-            Logger.log(`[🌐]: Connection closed. Attempting reconnect in ${delay/1000} seconds...`);
+            const delay =
+              RETRY_DELAYS[Math.min(retryAttempt, RETRY_DELAYS.length - 1)];
+            Logger.log(
+              `[🌐]: Connection closed. Attempting reconnect in ${delay / 1000} seconds...`,
+            );
             retryTimeout = setTimeout(async () => {
               retryAttempt++;
               await startConnectionWs(identifier);
