@@ -15,13 +15,12 @@ export function checkIfInPermissions(permission: string): Promise<boolean> {
   });
 }
 
-export function checkIfInOptionalPermissions(
-  permission: string,
-  callback: (isPresent: boolean) => void,
-): void {
-  const manifest: chrome.runtime.Manifest = chrome.runtime.getManifest();
-  const optionalPermissions: string[] = manifest.optional_permissions || [];
-  callback(optionalPermissions.includes(permission));
+export function checkIfInOptionalPermissions(permission: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const manifest: chrome.runtime.Manifest = chrome.runtime.getManifest();
+    const optionalPermissions: string[] = manifest.optional_permissions || [];
+    resolve(optionalPermissions.includes(permission));
+  });
 }
 
 export function checkHostPermissionsMV2_3(): Promise<boolean> {
@@ -86,39 +85,26 @@ export async function checkRequiredPermissions(
     );
     if (isPresent) {
       isPermissionPresent = true;
-    } else if (
-      permission === "declarativeNetRequest" &&
-      (await checkHostPermissionsMV2_3())
-    ) {
+    } else if (permission === "declarativeNetRequest") {
+      // declarativeNetRequest can't be specified in optional_permissions,
+      // so we check for declarativeNetRequestWithHostAccess and add it to permissionsToRequest,
+      // alongside optional_host_permissions
+      permission = "declarativeNetRequestWithHostAccess";
+      hostPermissions = chrome.runtime.getManifest()
+        .optional_host_permissions || ["https://*/*"];
       Logger.log(
         "declarativeNetRequest is not present in permissions, checking for declarativeNetRequestWithHostAccess",
       );
-      let isHostPermissionPresent = await checkIfInPermissions(
-        "declarativeNetRequestWithHostAccess",
-      );
-      if (isHostPermissionPresent) {
+      const isDNRWithHostAccessInPermissions = await checkIfInPermissions(permission);
+      const isDNRWithHostAccessInOptionalPermissions = await checkIfInOptionalPermissions(permission);
+      if (isDNRWithHostAccessInPermissions) {
         Logger.log("declarativeNetRequestWithHostAccess is present");
         isPermissionPresent = true;
       }
-    } else {
-      Logger.log(
-        "checking for declarativeNetRequestWithHostAccess in optional_permissions",
-      );
-      if (permission === "declarativeNetRequest") {
-        // declarativeNetRequest can't be specified in optional_permissions,
-        // so we check for declarativeNetRequestWithHostAccess and add it to permissionsToRequest,
-        // alongside optional_host_permissions
-        permission = "declarativeNetRequestWithHostAccess";
+      else if (isDNRWithHostAccessInOptionalPermissions) {
+        Logger.log("declarativeNetRequestWithHostAccess is present in optional_permissions");
+        permissionsToRequest.push(permission);
       }
-      checkIfInOptionalPermissions(permission, (isPresent) => {
-        if (isPresent) {
-          permissionsToRequest.push(permission);
-          if (permission === "declarativeNetRequestWithHostAccess") {
-            hostPermissions = chrome.runtime.getManifest()
-              .optional_host_permissions || ["https://*/*"];
-          }
-        }
-      });
     }
 
     Logger.log(
@@ -134,8 +120,8 @@ export async function checkRequiredPermissions(
 
   await checkHostPermissionsMV2_3();
 
-  if (requestAfterChecking && permissionsToRequest.length > 0) {
-    let alreadyGranted = await checkIfPermissionsGranted(permissionsToRequest);
+  if (requestAfterChecking) {
+    const alreadyGranted = await checkIfPermissionsGranted(permissionsToRequest, hostPermissions);
     if (!alreadyGranted) {
       let granted = await requirePermissions(
         permissionsToRequest,
@@ -143,7 +129,7 @@ export async function checkRequiredPermissions(
       );
       if (!granted) {
         throw new Error(
-          `Required permissions ${permissionsToRequest.join(", ")} were not granted`,
+          `Required permissions ${permissionsToRequest.join(", ")}, or Host permissions ${hostPermissions.join(", ")} were not granted`,
         );
       }
     }
@@ -169,11 +155,13 @@ export async function requirePermissions(
 
 export async function checkIfPermissionsGranted(
   permissions: string[],
+  host_permissions: string[],
 ): Promise<boolean> {
   return new Promise((resolve) => {
     chrome.permissions.contains(
       {
         permissions: permissions,
+        origins: host_permissions,
       },
       (granted) => {
         resolve(granted);
