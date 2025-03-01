@@ -37,6 +37,26 @@ export async function saveCrawl(
       Logger.log("[postStringMarkDownToUrl] : cereal_result => ");
       Logger.log(cereal_result);
       Logger.log("############################################");
+
+      // Import the context-aware WebSocket sender
+      const { sendWebSocketMessage } = await import("../../cereal/cereal-send");
+
+      // Send the message using the context-aware sender
+      const success = await sendWebSocketMessage({
+        action: "data",
+        payload: {
+          id: recordID,
+          kind: "cereal",
+          data: cereal_result,
+        }
+      });
+
+      if (success) {
+        Logger.log("[saveCrawl] Successfully sent cereal result to websocket");
+      } else {
+        Logger.log("[saveCrawl] Failed to send cereal result to websocket");
+      }
+
       // if not JSON object, then make it one
       /*if (typeof cereal_result !== "object") {
         cereal_result = {
@@ -52,7 +72,7 @@ export async function saveCrawl(
     cereal_result = {};
   }
 
-  getIdentifier().then(async (node_identifier: string) => {
+  /*getIdentifier().then(async (node_identifier: string) => {
     let requestMessageInfo = await getFromRequestMessageStorage(recordID);
     Logger.log("###### Request Message Info ######");
     Logger.log(requestMessageInfo);
@@ -130,5 +150,5 @@ export async function saveCrawl(
         );
         return error;
       });
-  });
+  });*/
 }

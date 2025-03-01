@@ -38,6 +38,7 @@ import { startConnectionWs } from "../content-script/websocket";
 import { Logger } from "../logger/logger";
 import { cerealMain } from "../cereal/cereal-index";
 import { startPing, stopPing } from "../background-script/keep-ping";
+import {sendWebSocketMessage} from "../cereal/cereal-send";
 
 export async function setUpBackgroundListeners() {
   // Queue to store incoming messages to start websocket
@@ -311,6 +312,10 @@ export async function setUpBackgroundListeners() {
       if (request.intent === "mllwtl_stopPing") {
         stopPing().then(sendResponse);
       }
+      // sendWebSocketMessage
+    if(request.intent === "sendWebSocketMessage") {
+        sendWebSocketMessage(request.messageData).then(sendResponse);
+    }
       return true; // return true to indicate you want to send a response asynchronously
     },
   );
