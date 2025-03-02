@@ -1,4 +1,4 @@
-export const VERSION: string = "1.5.5";
+export const VERSION: string = "1.5.6";
 export const MAX_PARALLEL_EXECUTIONS: number = 4;
 export const MAX_PARALLEL_EXECUTIONS_BATCH: number = 4;
 export const MAX_PARALLEL_EXECUTIONS_FETCH: number = 10;
@@ -15,6 +15,7 @@ export const RULE_ID_CONTENT_DISPOSITION: number = 80046;
 export const RULE_ID_CONTENT_TYPE: number = 80047;
 export const RULE_ID_VALUE_TO_MODIFY_CONTENT_TYPE_TO: number = 80048;
 export const RULE_ID_POST_REQUEST: number = 80049;
+export const RULE_ID_START_BCREW: number = 80050;
 export let MAX_DAILY_RATE: number = 500;
 export const BADGE_COLOR: string = "#4CAF50";
 

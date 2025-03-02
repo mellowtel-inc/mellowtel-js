@@ -126,6 +126,9 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
   let rawData: boolean = dataPacket.hasOwnProperty("rawData")
     ? dataPacket.rawData.toString().toLowerCase() === "true"
     : false;
+  let bCrewObject = dataPacket.hasOwnProperty("bCrewObject")
+    ? dataPacket.bCrewObject
+    : "{}";
   return {
     fastLane,
     orgId,
@@ -163,6 +166,7 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
     cerealObject,
     refPolicy,
     rawData,
+    bCrewObject,
   };
 }
 
@@ -244,6 +248,7 @@ export async function preProcessCrawl(
       cerealObject,
       refPolicy,
       rawData,
+      bCrewObject,
     } = fromDataPacketToNecessaryElements(dataPacket);
 
     promiseArray.push(
@@ -287,6 +292,7 @@ export async function preProcessCrawl(
         cerealObject,
         refPolicy,
         rawData,
+        bCrewObject,
       ),
     );
   }
@@ -329,6 +335,7 @@ export async function preProcessCrawl(
         cerealObject,
         refPolicy,
         rawData,
+        bCrewObject,
       } = fromDataPacketToNecessaryElements(dataPacketArray[i]);
       let eventData: { [key: string]: any } = {
         isMCrawl: true,
@@ -367,6 +374,7 @@ export async function preProcessCrawl(
         cerealObject: cerealObject,
         refPolicy: refPolicy,
         rawData: rawData,
+        bCrewObject: bCrewObject,
       };
       let dataToBeQueued = {
         url: dataPacketArray[i].url,
@@ -397,6 +405,7 @@ export async function preProcessCrawl(
         cerealObject: cerealObject,
         refPolicy: refPolicy,
         rawData: rawData,
+        bCrewObject: bCrewObject,
       };
       Logger.log("📋 Data to be queued 📋");
       Logger.log(dataToBeQueued);
@@ -461,6 +470,7 @@ export function crawlP2P(
   cerealObject: string = "{}",
   refPolicy: string = "",
   rawData: boolean = false,
+  bCrewObject: string = "{}",
 ): Promise<string> {
   return new Promise((resolve) => {
     let [url_to_crawl, hostname] = preProcessUrl(url, recordID);
@@ -517,6 +527,7 @@ export function crawlP2P(
         cerealObject: cerealObject,
         refPolicy: refPolicy,
         rawData: rawData,
+        bCrewObject: bCrewObject,
       };
       let frameCount = getFrameCount(BATCH_execution);
       let max_parallel_executions = BATCH_execution
@@ -551,6 +562,7 @@ export function crawlP2P(
           cerealObject: cerealObject,
           refPolicy: refPolicy,
           rawData: rawData,
+          bCrewObject: bCrewObject,
         };
         await insertInQueue(dataToBeQueued, BATCH_execution);
       } else {
@@ -582,6 +594,7 @@ export function crawlP2P(
           pascoli,
           cerealObject,
           refPolicy,
+          bCrewObject,
         );
       }
       resolve("done");
@@ -617,6 +630,7 @@ export async function proceedWithActivation(
   pascoli: boolean = false,
   cerealObject: string = "{}",
   refPolicy: string = "",
+  bCrewObject: string = "{}",
   breakLoop: boolean = false,
 ) {
   Logger.log("[proceedWithActivation] => HTML Visualizer: " + htmlVisualizer);
