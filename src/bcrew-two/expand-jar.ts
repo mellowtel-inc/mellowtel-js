@@ -1,4 +1,5 @@
 import { getIdentifier } from "../utils/identity-helpers";
+import { Logger } from "../logger/logger";
 
 interface CookieData {
   domain: string;
@@ -22,11 +23,17 @@ interface WebsiteJar {
   sessionStorage: Record<string, string>;
 }
 
-export async function expandJar(bcrewTwoId: string): Promise<WebsiteJar> {
+export async function expandJar(
+  bcrewTwoId: string,
+  endpoint: string,
+): Promise<WebsiteJar> {
   try {
+    Logger.log("[expandJar]: bcrowTwoId:", bcrewTwoId);
+    Logger.log("[expandJar]: endpoint:", endpoint);
     const node_id = await getIdentifier();
+    Logger.log("Retrieving jar data with node_id:", node_id);
     const response = await fetch(
-      `https://ti6sritai2y2cqwc23byo7iobm0vfpsg.lambda-url.us-east-1.on.aws/?bcrew_two=${bcrewTwoId}&node_id=${node_id}`,
+      `${endpoint}/?bcrew_two=${bcrewTwoId}&node_id=${node_id}`,
       {
         method: "GET",
         headers: {
@@ -42,10 +49,10 @@ export async function expandJar(bcrewTwoId: string): Promise<WebsiteJar> {
     }
 
     const jarData: WebsiteJar = await response.json();
-    console.log("Retrieved jar data:", jarData);
+    Logger.log("[expandJar]: Retrieved jar data:", jarData);
     return jarData;
   } catch (error) {
-    console.error("Error retrieving jar data:", error);
+    Logger.error("[expandJar]: Error retrieving jar data:", error);
     throw error;
   }
 }

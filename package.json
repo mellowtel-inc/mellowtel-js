@@ -11,7 +11,8 @@
   "scripts": {
     "build": "tsup",
     "format": "npx prettier . --write",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "npm pack --pack-destination ~/Desktop/mellowtel"
   },
   "author": "mellowtel-inc",
   "license": "LGPL-3.0",
