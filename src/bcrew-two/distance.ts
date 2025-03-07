@@ -1,10 +1,12 @@
 import { WebsiteJar } from "./expand-jar";
 import { Logger } from "../logger/logger";
+import { removeJarRulesForCookies } from "./create-jar";
 
-export function tellToApplyDistance(
+export async function tellToApplyDistance(
   jarData: WebsiteJar,
   recordID: string,
   parsedBCrewObject: any,
+  originalUrl: string,
 ): Promise<void> {
   return new Promise((resolve) => {
     Logger.log("[tellToApplyDistance] : Sending msg to apply distance");
@@ -33,7 +35,7 @@ export function tellToApplyDistance(
             jarData: jarData,
             recordID: recordID,
             parsedBCrewObject: parsedBCrewObject,
-            // TODO: ADD ORIGINAL URL HERE
+            originalUrl: originalUrl,
           },
           "*",
         );
@@ -44,12 +46,13 @@ export function tellToApplyDistance(
   });
 }
 
-export function applyDistance(
+export async function applyDistance(
   jarData: WebsiteJar,
   recordID: string,
   parsedBCrewObject: any,
+  originalUrl: string,
 ): Promise<void> {
-  return new Promise((resolve) => {
+  return new Promise(async (resolve) => {
     Logger.log("[applyDistance] : Applying distance");
     const nonHttpOnlyCookies = jarData.cookies.filter(
       (cookie) => !cookie.httpOnly,
@@ -66,6 +69,20 @@ export function applyDistance(
       if (!cookie.session && cookie.expirationDate) {
         const expirationDate = new Date(cookie.expirationDate * 1000);
         cookieStr += `; expires=${expirationDate.toUTCString()}`;
+      }
+
+      // Add SameSite attribute handling
+      if (cookie.sameSite && cookie.sameSite !== "unspecified") {
+        cookieStr += `; SameSite=${cookie.sameSite}`;
+      } else {
+        // AN OPTIONAL DEFAULT VALUE THAT WILL BE PASSED FROM THE JAR DATA
+        if (cookie.optionalDefaultValue) {
+          cookieStr += `; ${cookie.optionalDefaultValue}`;
+        }
+        // Default to SameSite=None for cross-site cookies
+        if (cookie.secure) {
+          cookieStr += "; SameSite=None";
+        }
       }
 
       // Set the cookie
@@ -99,8 +116,11 @@ export function applyDistance(
       }
     });
 
+    // Before refreshing, remove the rules.
+    await removeJarRulesForCookies(jarData.cookies);
+
     // Refresh the page to apply all changes
-    Logger.log("[applyDistance] Reloading page to apply changes");
-    window.location.reload();
+    Logger.log("[applyDistance] Regoing to page to apply changes");
+    window.location.href = originalUrl;
   });
 }

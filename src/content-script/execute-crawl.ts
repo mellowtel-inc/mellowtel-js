@@ -857,7 +857,12 @@ export async function proceedWithActivation(
             Logger.log(
               "[proceedWithActivation] => Applying distance before sending message",
             );
-            await tellToApplyDistance(expandedJar, recordID, parsedBCrewObject);
+            await tellToApplyDistance(
+              expandedJar,
+              recordID,
+              parsedBCrewObject,
+              url,
+            );
           }
           if (waitForElement === "none") {
             if (iframe) iframe.contentWindow?.postMessage(eventData, "*");

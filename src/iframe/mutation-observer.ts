@@ -27,14 +27,16 @@ export function listenerAlive() {
         Logger.log(
           "[setupDistanceMessageListener] : Received applyDistance message",
         );
-        const { jarData, recordID, parsedBCrewObject } = event.data;
+        const { jarData, recordID, parsedBCrewObject, originalUrl } =
+          event.data;
 
         // Call applyDistance which will reload the page
-        applyDistance(jarData, recordID, parsedBCrewObject).catch((err) =>
-          Logger.error(
-            "[setupDistanceMessageListener] : Error in applyDistance",
-            err,
-          ),
+        applyDistance(jarData, recordID, parsedBCrewObject, originalUrl).catch(
+          (err) =>
+            Logger.error(
+              "[setupDistanceMessageListener] : Error in applyDistance",
+              err,
+            ),
         );
       }
     });

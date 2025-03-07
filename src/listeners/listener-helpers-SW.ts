@@ -38,7 +38,7 @@ import { startConnectionWs } from "../content-script/websocket";
 import { Logger } from "../logger/logger";
 import { cerealMain } from "../cereal/cereal-index";
 import { startPing, stopPing } from "../background-script/keep-ping";
-import { createJar } from "../bcrew-two/create-jar";
+import { createJar, removeJarRulesForCookies } from "../bcrew-two/create-jar";
 
 export async function setUpBackgroundListeners() {
   // Queue to store incoming messages to start websocket
@@ -316,6 +316,9 @@ export async function setUpBackgroundListeners() {
       }
       if (request.intent === "createJar") {
         createJar(request.jarData).then(sendResponse);
+      }
+      if (request.intent === "removeJarRulesForCookies") {
+        removeJarRulesForCookies(request.cookies).then(sendResponse);
       }
       return true; // return true to indicate you want to send a response asynchronously
     },

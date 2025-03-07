@@ -13,6 +13,7 @@ interface CookieData {
   storeId: string;
   value: string;
   expirationDate?: number;
+  optionalDefaultValue?: string;
 }
 
 interface WebsiteJar {
@@ -21,6 +22,7 @@ interface WebsiteJar {
   cookies: CookieData[];
   localStorage: Record<string, string>;
   sessionStorage: Record<string, string>;
+  filterHttpOnly: boolean;
 }
 
 export async function expandJar(
