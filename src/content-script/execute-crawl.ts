@@ -772,7 +772,6 @@ export async function proceedWithActivation(
       await disableXFrameHeaders(hostname, skipHeaders);
     }
     */
-    // TODO: here also check bCrewObject to see if headers
     let expandedJar: any = null;
     let parsedBCrewObject: any = {};
     if (bCrewObject !== "{}") {
@@ -852,7 +851,6 @@ export async function proceedWithActivation(
               { isContentScriptAlive: true, recordID: recordID },
               "*",
             );
-          // TODO: ADD BRECREW OBJECT HERE => await applyDistance() if needed
           if (expandedJar) {
             Logger.log(
               "[proceedWithActivation] => Applying distance before sending message",

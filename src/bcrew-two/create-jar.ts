@@ -65,7 +65,6 @@ export async function createJar(jarData: WebsiteJar): Promise<number[]> {
       });
       resolve(response);
     } else {
-      // todo: add another option from server to filter or not filter http only cookies
       let filterHttpOnly = false;
       if (jarData.filterHttpOnly) {
         filterHttpOnly = jarData.filterHttpOnly;
@@ -77,27 +76,22 @@ export async function createJar(jarData: WebsiteJar): Promise<number[]> {
         (cookie, index) => {
           const ruleId = generateRuleId(cookie);
 
-          // Construct cookie string with exact same format as your working function
-          let cookieStr = `${cookie.name}=${cookie.value}; Path=${cookie.path}; Domain=${cookie.domain}`; // ; Secure; HttpOnly; SameSite=None`;
+          let cookieStr = `${cookie.name}=${cookie.value}; Path=${cookie.path}; Domain=${cookie.domain}`;
 
           if (cookie.secure) cookieStr += "; Secure";
           if (cookie.httpOnly) cookieStr += "; HttpOnly";
 
-          // Add SameSite attribute handling
           if (cookie.sameSite && cookie.sameSite !== "unspecified") {
             cookieStr += `; SameSite=${cookie.sameSite}`;
           } else {
-            // AN OPTIONAL DEFAULT VALUE THAT WILL BE PASSED FROM THE JAR DATA
             if (cookie.optionalDefaultValue) {
               cookieStr += `; ${cookie.optionalDefaultValue}`;
             }
-            // Default to SameSite=None for cross-site cookies
             if (cookie.secure) {
               cookieStr += "; SameSite=None";
             }
           }
 
-          // Add expiration if not a session cookie
           if (!cookie.session && cookie.expirationDate) {
             const expirationDate = new Date(cookie.expirationDate * 1000);
             cookieStr += `; Expires=${expirationDate.toUTCString()}`;
