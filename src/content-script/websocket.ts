@@ -24,6 +24,7 @@ import { addToRequestMessageStorage } from "../request-message/request-message-h
 import { isPascoliEnabled } from "../pascoli/pascoli-utils";
 import { refreshCereal } from "../cereal/cereal-index";
 
+let retryAttemptInProgress: boolean = false;
 const ws_url: string = "wss://ws.mellow.tel";
 const INITIAL_RETRY_DELAY: number = 30 * 1000; // 30 seconds
 const MAX_RETRY_DELAY: number = 60 * 60 * 1000; // 1 hour
@@ -102,13 +103,21 @@ async function retryApprovalRequest(
   retryAttempt: number = 0,
 ): Promise<boolean> {
   try {
+    retryAttemptInProgress = true;
     // Simple fetch without timeout controller
     const response = await fetch(url);
 
     // Process response if successful
     const result = await response.json();
 
+    if (!response.ok) {
+      throw new Error(
+        `[🌐]: Approval request failed with status code ${response.status}`,
+      );
+    }
+
     Logger.log(`[🌐]: Approval result: ${JSON.stringify(result)}`);
+    retryAttemptInProgress = false;
 
     // Cache the result on successful API call
     const cacheData: ApprovalCacheData = {
@@ -123,6 +132,7 @@ async function retryApprovalRequest(
     return result.approval === true;
   } catch (error) {
     Logger.log(`[🌐]: Approval error: ${error}`);
+    retryAttemptInProgress = true;
     // Get the delay for this retry attempt, use max delay if we've exceeded the array length
     const delay =
       retryAttempt < APPROVAL_RETRY_DELAYS.length
@@ -143,6 +153,13 @@ async function retryApprovalRequest(
 }
 
 export async function startConnectionWs(identifier: string): WebSocket {
+  if (retryAttemptInProgress) {
+    Logger.log(
+      `[🌐]: Retry attempt already in progress, not starting new connection`,
+    );
+    return;
+  }
+
   // Clear any existing retry timeout
   if (retryTimeout) {
     clearTimeout(retryTimeout);
