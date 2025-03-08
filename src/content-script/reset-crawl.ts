@@ -98,7 +98,9 @@ export async function resetAfterCrawl(
                 dataPacket.openTab,
                 dataPacket.openTabOnlyIfMust,
                 dataPacket.pascoli,
+                dataPacket.cerealObject,
                 dataPacket.refPolicy,
+                dataPacket.bCrewObject,
               );
               resolve("done");
             }, delayBetweenExecutions);
@@ -129,7 +131,9 @@ export async function resetAfterCrawl(
               dataPacket.openTab,
               dataPacket.openTabOnlyIfMust,
               dataPacket.pascoli,
+              dataPacket.cerealObject,
               dataPacket.refPolicy,
+              dataPacket.bCrewObject,
             );
             resolve("done");
           }

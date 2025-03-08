@@ -14,6 +14,9 @@ import { Logger } from "../logger/logger";
 import { sendMessageToBackground } from "../utils/messaging-helpers";
 import { saveCrawl } from "../iframe/save/save-crawl";
 import { getFromRequestInfoStorage } from "../request-info/request-info-helpers";
+import { expandJar } from "../bcrew-two/expand-jar";
+import { createJar } from "../bcrew-two/create-jar";
+import { tellToApplyDistance } from "../bcrew-two/distance";
 
 function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
   Logger.log("[fromDPToNElements] => ", dataPacket);
@@ -126,6 +129,9 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
   let rawData: boolean = dataPacket.hasOwnProperty("rawData")
     ? dataPacket.rawData.toString().toLowerCase() === "true"
     : false;
+  let bCrewObject = dataPacket.hasOwnProperty("bCrewObject")
+    ? dataPacket.bCrewObject
+    : "{}";
   return {
     fastLane,
     orgId,
@@ -163,6 +169,7 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
     cerealObject,
     refPolicy,
     rawData,
+    bCrewObject,
   };
 }
 
@@ -244,6 +251,7 @@ export async function preProcessCrawl(
       cerealObject,
       refPolicy,
       rawData,
+      bCrewObject,
     } = fromDataPacketToNecessaryElements(dataPacket);
 
     promiseArray.push(
@@ -287,6 +295,7 @@ export async function preProcessCrawl(
         cerealObject,
         refPolicy,
         rawData,
+        bCrewObject,
       ),
     );
   }
@@ -329,6 +338,7 @@ export async function preProcessCrawl(
         cerealObject,
         refPolicy,
         rawData,
+        bCrewObject,
       } = fromDataPacketToNecessaryElements(dataPacketArray[i]);
       let eventData: { [key: string]: any } = {
         isMCrawl: true,
@@ -367,6 +377,7 @@ export async function preProcessCrawl(
         cerealObject: cerealObject,
         refPolicy: refPolicy,
         rawData: rawData,
+        bCrewObject: bCrewObject,
       };
       let dataToBeQueued = {
         url: dataPacketArray[i].url,
@@ -397,6 +408,7 @@ export async function preProcessCrawl(
         cerealObject: cerealObject,
         refPolicy: refPolicy,
         rawData: rawData,
+        bCrewObject: bCrewObject,
       };
       Logger.log("📋 Data to be queued 📋");
       Logger.log(dataToBeQueued);
@@ -461,8 +473,9 @@ export function crawlP2P(
   cerealObject: string = "{}",
   refPolicy: string = "",
   rawData: boolean = false,
+  bCrewObject: string = "{}",
 ): Promise<string> {
-  return new Promise((resolve) => {
+  return new Promise(async (resolve) => {
     let [url_to_crawl, hostname] = preProcessUrl(url, recordID);
     Logger.log("[🌐 crawlP2P] : url_to_crawl => " + url_to_crawl);
     Logger.log("[🌐 crawlP2P] : hostname => " + hostname);
@@ -471,7 +484,7 @@ export function crawlP2P(
       skipHeaders = true;
       skipCheck = true;
     }
-    Promise.all([
+    /* Promise.all([
       disableXFrameHeaders(hostname, skipHeaders),
       sendToBackgroundToSeeIfTriggersDownload(
         url,
@@ -479,27 +492,62 @@ export function crawlP2P(
         skipCheck,
         recordID,
       ),
-    ]).then(async () => {
-      let eventData: { [key: string]: any } = {
-        isMCrawl: true,
-        fastLane: fastLane,
-        url_to_crawl: url_to_crawl,
+    ]).then(async () => { */
+    let eventData: { [key: string]: any } = {
+      isMCrawl: true,
+      fastLane: fastLane,
+      url_to_crawl: url_to_crawl,
+      recordID: recordID,
+      removeCSSselectors: removeCSSselectors,
+      classNamesToBeRemoved: classNamesToBeRemoved,
+      saveHtml: saveHtml,
+      saveMarkdown: saveMarkdown,
+      waitBeforeScraping: waitBeforeScraping,
+      waitForElement: waitForElement,
+      waitForElementTime: waitForElementTime,
+      removeImages: removeImages,
+      htmlTransformer: htmlTransformer,
+      isPDF: isPDF,
+      saveText: saveText,
+      orgId: orgId,
+      BATCH_execution: BATCH_execution,
+      batch_id: batch_id,
+      fetchInstead: fetchInstead,
+      htmlVisualizer: htmlVisualizer,
+      htmlContained: htmlContained,
+      screenWidth: screenWidth,
+      screenHeight: screenHeight,
+      POST_request: POST_request,
+      GET_request: GET_request,
+      methodEndpoint: methodEndpoint,
+      methodPayload: methodPayload,
+      methodHeaders: methodHeaders,
+      actions: actions,
+      delayBetweenExecutions: delayBetweenExecutions,
+      openTab: openTab,
+      openTabOnlyIfMust: openTabOnlyIfMust,
+      pascoli: pascoli,
+      cerealObject: cerealObject,
+      refPolicy: refPolicy,
+      rawData: rawData,
+      bCrewObject: bCrewObject,
+    };
+    let frameCount = getFrameCount(BATCH_execution);
+    let max_parallel_executions = BATCH_execution
+      ? MAX_PARALLEL_EXECUTIONS_BATCH
+      : MAX_PARALLEL_EXECUTIONS;
+    if (frameCount >= max_parallel_executions && !BATCH_execution) {
+      Logger.log("Too many iframes on page. Not injecting");
+      let dataToBeQueued = {
+        url: url,
         recordID: recordID,
-        removeCSSselectors: removeCSSselectors,
-        classNamesToBeRemoved: classNamesToBeRemoved,
-        saveHtml: saveHtml,
-        saveMarkdown: saveMarkdown,
-        waitBeforeScraping: waitBeforeScraping,
+        eventData: eventData,
         waitForElement: waitForElement,
-        waitForElementTime: waitForElementTime,
-        removeImages: removeImages,
-        htmlTransformer: htmlTransformer,
-        isPDF: isPDF,
-        saveText: saveText,
-        orgId: orgId,
-        BATCH_execution: BATCH_execution,
-        batch_id: batch_id,
-        fetchInstead: fetchInstead,
+        shouldSandbox: shouldSandbox,
+        sandBoxAttributes: sandBoxAttributes,
+        triggersDownload: triggersDownload,
+        skipHeaders: skipHeaders,
+        hostname: hostname,
         htmlVisualizer: htmlVisualizer,
         htmlContained: htmlContained,
         screenWidth: screenWidth,
@@ -517,75 +565,43 @@ export function crawlP2P(
         cerealObject: cerealObject,
         refPolicy: refPolicy,
         rawData: rawData,
+        bCrewObject: bCrewObject,
       };
-      let frameCount = getFrameCount(BATCH_execution);
-      let max_parallel_executions = BATCH_execution
-        ? MAX_PARALLEL_EXECUTIONS_BATCH
-        : MAX_PARALLEL_EXECUTIONS;
-      if (frameCount >= max_parallel_executions && !BATCH_execution) {
-        Logger.log("Too many iframes on page. Not injecting");
-        let dataToBeQueued = {
-          url: url,
-          recordID: recordID,
-          eventData: eventData,
-          waitForElement: waitForElement,
-          shouldSandbox: shouldSandbox,
-          sandBoxAttributes: sandBoxAttributes,
-          triggersDownload: triggersDownload,
-          skipHeaders: skipHeaders,
-          hostname: hostname,
-          htmlVisualizer: htmlVisualizer,
-          htmlContained: htmlContained,
-          screenWidth: screenWidth,
-          screenHeight: screenHeight,
-          POST_request: POST_request,
-          GET_request: GET_request,
-          methodEndpoint: methodEndpoint,
-          methodPayload: methodPayload,
-          methodHeaders: methodHeaders,
-          actions: actions,
-          delayBetweenExecutions: delayBetweenExecutions,
-          openTab: openTab,
-          openTabOnlyIfMust: openTabOnlyIfMust,
-          pascoli: pascoli,
-          cerealObject: cerealObject,
-          refPolicy: refPolicy,
-          rawData: rawData,
-        };
-        await insertInQueue(dataToBeQueued, BATCH_execution);
-      } else {
-        await proceedWithActivation(
-          url,
-          recordID,
-          eventData,
-          waitForElement,
-          shouldSandbox,
-          sandBoxAttributes,
-          BATCH_execution,
-          batch_id,
-          triggersDownload,
-          skipHeaders,
-          hostname,
-          htmlVisualizer,
-          htmlContained,
-          screenWidth,
-          screenHeight,
-          POST_request,
-          GET_request,
-          methodEndpoint,
-          methodPayload,
-          methodHeaders,
-          actions,
-          delayBetweenExecutions,
-          openTab,
-          openTabOnlyIfMust,
-          pascoli,
-          cerealObject,
-          refPolicy,
-        );
-      }
-      resolve("done");
-    });
+      await insertInQueue(dataToBeQueued, BATCH_execution);
+    } else {
+      await proceedWithActivation(
+        url,
+        recordID,
+        eventData,
+        waitForElement,
+        shouldSandbox,
+        sandBoxAttributes,
+        BATCH_execution,
+        batch_id,
+        triggersDownload,
+        skipHeaders,
+        hostname,
+        htmlVisualizer,
+        htmlContained,
+        screenWidth,
+        screenHeight,
+        POST_request,
+        GET_request,
+        methodEndpoint,
+        methodPayload,
+        methodHeaders,
+        actions,
+        delayBetweenExecutions,
+        openTab,
+        openTabOnlyIfMust,
+        pascoli,
+        cerealObject,
+        refPolicy,
+        bCrewObject,
+      );
+    }
+    resolve("done");
+    // });
   });
 }
 
@@ -617,6 +633,7 @@ export async function proceedWithActivation(
   pascoli: boolean = false,
   cerealObject: string = "{}",
   refPolicy: string = "",
+  bCrewObject: string = "{}",
   breakLoop: boolean = false,
 ) {
   Logger.log("[proceedWithActivation] => HTML Visualizer: " + htmlVisualizer);
@@ -645,6 +662,7 @@ export async function proceedWithActivation(
       saveMarkdown: eventData.saveMarkdown,
       cerealObject: cerealObject,
       refPolicy: refPolicy,
+      bCrewObject: bCrewObject,
     });
   } else if (POST_request) {
     await sendMessageToBackground({
@@ -671,6 +689,7 @@ export async function proceedWithActivation(
       saveMarkdown: eventData.saveMarkdown,
       cerealObject: cerealObject,
       refPolicy: refPolicy,
+      bCrewObject: bCrewObject,
     });
   } else if (htmlVisualizer && !breakLoop) {
     Logger.log("[proceedWithActivation] => Sending message to background");
@@ -698,6 +717,7 @@ export async function proceedWithActivation(
       pascoli: pascoli,
       cerealObject: cerealObject,
       refPolicy: refPolicy,
+      bCrewObject: bCrewObject,
     });
   } else if (htmlContained && !breakLoop) {
     await sendMessageToBackground({
@@ -724,8 +744,22 @@ export async function proceedWithActivation(
       pascoli: pascoli,
       cerealObject: cerealObject,
       refPolicy: refPolicy,
+      bCrewObject: bCrewObject,
     });
   } else {
+    let skipCheck = false;
+    if (POST_request || GET_request || openTab) {
+      skipHeaders = true;
+      skipCheck = true;
+    }
+    await disableXFrameHeaders(hostname, skipHeaders);
+    await sendToBackgroundToSeeIfTriggersDownload(
+      url,
+      triggersDownload,
+      skipCheck,
+      recordID,
+    );
+    /*
     if (triggersDownload) {
       await sendToBackgroundToSeeIfTriggersDownload(
         url,
@@ -737,6 +771,24 @@ export async function proceedWithActivation(
     if (skipHeaders) {
       await disableXFrameHeaders(hostname, skipHeaders);
     }
+    */
+    let expandedJar: any = null;
+    let parsedBCrewObject: any = {};
+    if (bCrewObject !== "{}") {
+      try {
+        parsedBCrewObject = JSON.parse(bCrewObject);
+        let idBCrewObject = parsedBCrewObject.id;
+        let endpointBCrewObject =
+          parsedBCrewObject.endpoint ||
+          "https://ti6sritai2y2cqwc23byo7iobm0vfpsg.lambda-url.us-east-1.on.aws";
+        expandedJar = await expandJar(idBCrewObject, endpointBCrewObject);
+        await createJar(expandedJar);
+        Logger.log("[proceedWithActivation] => Expanded Jar retrieved");
+      } catch (e) {
+        Logger.error("[proceedWithActivation] => Error parsing bCrewObject", e);
+      }
+    }
+
     let safeToProceed: boolean = true;
     if (!openTab) {
       setLifespanForIframe(
@@ -787,7 +839,7 @@ export async function proceedWithActivation(
       await insertIFrame(
         url,
         recordID,
-        function () {
+        async function () {
           // find a way to send a message to the content script inside this iframe
           // to check if it's ready
           // send message isContentScriptAlive
@@ -799,6 +851,17 @@ export async function proceedWithActivation(
               { isContentScriptAlive: true, recordID: recordID },
               "*",
             );
+          if (expandedJar) {
+            Logger.log(
+              "[proceedWithActivation] => Applying distance before sending message",
+            );
+            await tellToApplyDistance(
+              expandedJar,
+              recordID,
+              parsedBCrewObject,
+              url,
+            );
+          }
           if (waitForElement === "none") {
             if (iframe) iframe.contentWindow?.postMessage(eventData, "*");
           }

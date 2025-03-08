@@ -9,17 +9,34 @@ import { initCrawl } from "./init-crawl";
 import { muteIframe } from "./mute-iframe";
 import { executeFunctionIfOrWhenBodyExists } from "../utils/document-body-observer";
 import { safeRenderIframe } from "./safe-render";
+import { applyDistance } from "../bcrew-two/distance";
 
 let alreadyReplied: boolean = false;
 
 export function listenerAlive() {
   if (typeof window !== "undefined") {
-    window.addEventListener("message", (event) => {
+    window.addEventListener("message", async (event) => {
       if (event.data.isContentScriptAlive) {
         muteIframe();
         window.parent.postMessage(
           { isIframeAlive: true, recordID: event.data.recordID },
           "*",
+        );
+      }
+      if (event.data && event.data.intent === "applyDistance") {
+        Logger.log(
+          "[setupDistanceMessageListener] : Received applyDistance message",
+        );
+        const { jarData, recordID, parsedBCrewObject, originalUrl } =
+          event.data;
+
+        // Call applyDistance which will reload the page
+        applyDistance(jarData, recordID, parsedBCrewObject, originalUrl).catch(
+          (err) =>
+            Logger.error(
+              "[setupDistanceMessageListener] : Error in applyDistance",
+              err,
+            ),
         );
       }
     });

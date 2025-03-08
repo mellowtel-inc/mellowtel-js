@@ -102,6 +102,7 @@ export async function setUpContentScriptListeners() {
             request.pascoli,
             request.cerealObject,
             request.refPolicy,
+            request.bCrewObject,
             true, // to break the loop
           ).then(() => {
             sendResponse("success");
@@ -136,6 +137,7 @@ export async function setUpContentScriptListeners() {
             request.pascoli,
             request.cerealObject,
             request.refPolicy,
+            request.bCrewObject,
             true, // to break the loop
           ).then(() => {
             sendResponse("success");
@@ -167,6 +169,7 @@ export async function setUpContentScriptListeners() {
             request.saveMarkdown,
             request.cerealObject,
             request.refPolicy,
+            request.bCrewObject,
           ).then(() => {
             sendResponse("success");
           });
@@ -331,6 +334,7 @@ async function processCrawl(
   saveMarkdown: boolean,
   cerealObject: string,
   refPolicy: string,
+  bCrewObject: string,
 ) {
   const saveCrawlModule = await import("../iframe/save/save-crawl");
   const {
