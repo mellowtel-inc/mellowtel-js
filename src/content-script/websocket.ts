@@ -40,19 +40,121 @@ let is_websocket_connected: boolean = false;
 let retryAttempt: number = 0;
 let retryTimeout: any = null;
 
+// Approval API - constants
+const APPROVAL_RETRY_DELAYS: number[] = [
+  INITIAL_RETRY_DELAY, // 30 seconds
+  60 * 1000, // 1 minute
+  5 * 60 * 1000, // 5 minutes
+  10 * 60 * 1000, // 10 minutes
+  20 * 60 * 1000, // 20 minutes
+  MAX_RETRY_DELAY, // 1 hour
+];
+const APPROVAL_CHECK_INTERVAL = 30 * 60 * 1000; // 30 minutes
+const APPROVAL_API_URL = "https://api.mellow.tel/approval";
+
+interface ApprovalCacheData {
+  timestamp: number;
+  isApproved: boolean;
+}
+
+async function checkWebsocketApproval(params: {
+  device_id: string;
+  plugin_id: string;
+  version: string;
+  speed_download: number;
+  platform: string;
+  manifest_version: string;
+  pascoli: boolean;
+}): Promise<boolean> {
+  // Check if we have a cached result
+  const cachedData = await getLocalStorage("websocket_approval_cache", true);
+  const now = Date.now();
+
+  if (cachedData) {
+    const data: ApprovalCacheData = JSON.parse(cachedData);
+    if (now - data.timestamp < APPROVAL_CHECK_INTERVAL) {
+      Logger.log(
+        `[🌐]: Using cached websocket approval result with timestamp: ${data.timestamp}. Minutes until expiration: ${
+          (APPROVAL_CHECK_INTERVAL - (now - data.timestamp)) / 60000
+        }`,
+      );
+      return data.isApproved;
+    }
+  }
+
+  // Build query parameters
+  const queryParams = new URLSearchParams({
+    device_id: params.device_id,
+    plugin_id: params.plugin_id,
+    version: params.version,
+    speed_download: params.speed_download.toString(),
+    platform: params.platform,
+    manifest_version: params.manifest_version,
+    pascoli: params.pascoli.toString(),
+    ws_client: "new_ws",
+  });
+
+  return retryApprovalRequest(`${APPROVAL_API_URL}?${queryParams.toString()}`);
+}
+
+async function retryApprovalRequest(
+  url: string,
+  retryAttempt: number = 0,
+): Promise<boolean> {
+  try {
+    // Simple fetch without timeout controller
+    const response = await fetch(url);
+
+    // Process response if successful
+    const result = await response.json();
+
+    Logger.log(`[🌐]: Approval result: ${JSON.stringify(result)}`);
+
+    // Cache the result on successful API call
+    const cacheData: ApprovalCacheData = {
+      timestamp: Date.now(),
+      isApproved: result.approval === true,
+    };
+    await setLocalStorage(
+      "websocket_approval_cache",
+      JSON.stringify(cacheData),
+    );
+
+    return result.approval === true;
+  } catch (error) {
+    Logger.log(`[🌐]: Approval error: ${error}`);
+    // Get the delay for this retry attempt, use max delay if we've exceeded the array length
+    const delay =
+      retryAttempt < APPROVAL_RETRY_DELAYS.length
+        ? APPROVAL_RETRY_DELAYS[retryAttempt]
+        : APPROVAL_RETRY_DELAYS[APPROVAL_RETRY_DELAYS.length - 1]; // Continue with max delay indefinitely
+
+    Logger.log(
+      `[🌐]: Approval request failed (attempt ${retryAttempt + 1}). Retrying in ${delay / 1000} seconds. Will continue indefinitely:`,
+      error,
+    );
+
+    // Wait for the backoff period
+    await new Promise((resolve) => setTimeout(resolve, delay));
+
+    // Retry with incremented attempt counter
+    return retryApprovalRequest(url, retryAttempt + 1);
+  }
+}
+
 export async function startConnectionWs(identifier: string): WebSocket {
   // Clear any existing retry timeout
   if (retryTimeout) {
     clearTimeout(retryTimeout);
     retryTimeout = null;
   }
-  // if mv2, we can send message to bg and start the ws there since there is a DOM
-  // in mv3, we need to start the ws here in the content script
+
   let manifestVersion = getManifestVersion();
   let isInServiceWorker: boolean = await isInSW();
   Logger.log("############################################################");
   Logger.log(`[startConnectionWs]: Manifest version: ${manifestVersion}`);
   Logger.log(`[startConnectionWs]: Is in service worker: ${isInServiceWorker}`);
+
   if (!isInServiceWorker) {
     Logger.log(
       `[🌐]: MV2/MV3 Sending message to background to start websocket...`,
@@ -68,6 +170,7 @@ export async function startConnectionWs(identifier: string): WebSocket {
       Logger.log(`[🌐]: Not connecting to websocket to preserve bandwidth`);
       return;
     }
+
     let webSocketConnected: boolean;
     let isDeviceDisconnectSession: boolean = await getLocalStorage(
       "device_disconnect_session",
@@ -80,6 +183,7 @@ export async function startConnectionWs(identifier: string): WebSocket {
       );
       return;
     }
+
     if (manifestVersion.toString() === "2") {
       Logger.log(`[🌐]: MV2 Getting webSocketConnected from DOM MODEL...`);
       webSocketConnected =
@@ -87,9 +191,9 @@ export async function startConnectionWs(identifier: string): WebSocket {
     } else {
       Logger.log(`[🌐]: MV3 Getting webSocketConnected from shared memory...`);
       webSocketConnected = is_websocket_connected;
-      // webSocketConnected = await getSharedMemory("webSocketConnected");
     }
     Logger.log(`[🌐]: webSocketConnected: ${webSocketConnected}`);
+
     if (!webSocketConnected) {
       let LIMIT_REACHED: boolean = await RateLimiter.getIfRateLimitReached();
       if (LIMIT_REACHED) {
@@ -103,7 +207,7 @@ export async function startConnectionWs(identifier: string): WebSocket {
             `[🌐]: Time elapsed is greater than REFRESH_INTERVAL, resetting rate limit data`,
           );
           await setLocalStorage("mllwtl_rate_limit_reached", false);
-          retryAttempt = 0; // Reset retry attempt counter
+          retryAttempt = 0;
           await RateLimiter.resetRateLimitData(now, false);
           startConnectionWs(identifier);
         }
@@ -113,11 +217,31 @@ export async function startConnectionWs(identifier: string): WebSocket {
         Logger.log(`[🌐]: Connection speed: ${speedMpbs} Mbps`);
         const browser = detectBrowser();
         Logger.log(`[🌐]: Browser: ${browser}`);
-        const manifestVersion = getManifestVersion();
         const isPascoli: boolean = await isPascoliEnabled();
         Logger.log(`[🌐]: Manifest version: ${manifestVersion}`);
         Logger.log(`[🌐]: Extension identifier: ${extension_identifier}`);
         Logger.log(`[🌐]: Is Pascoli enabled: ${isPascoli}`);
+
+        // Check websocket approval before connecting
+        const isApproved = await checkWebsocketApproval({
+          device_id: identifier,
+          plugin_id: extension_identifier,
+          version: VERSION,
+          speed_download: speedMpbs,
+          platform: browser,
+          manifest_version: manifestVersion.toString(),
+          pascoli: isPascoli,
+        });
+
+        if (!isApproved) {
+          Logger.log(`[🌐]: Websocket connection not approved by API`);
+          return;
+        }
+
+        Logger.log(
+          `[🌐]: Websocket connection approved, establishing connection...`,
+        );
+
         const ws = new WebSocket(
           `${ws_url}?device_id=${identifier}&version=${VERSION}&plugin_id=${encodeURIComponent(extension_identifier)}&speed_download=${speedMpbs}&platform=${browser}&manifest_version=${manifestVersion}&pascoli=${isPascoli}&ws_client=new_ws`,
         );
