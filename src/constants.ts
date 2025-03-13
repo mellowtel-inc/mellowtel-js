@@ -10,6 +10,7 @@ export const DATA_ID_IFRAME: string = "data-mllwtl-frame-crwl-ml";
 export const DATA_ID_IFRAME_BATCH: string = "data-mllwtl-frame-batch-crwl-ml";
 export const DATA_ID_STRING: string = "data-mllwtl-frame";
 export const CEREAL_FRAME_ID: string = "mllwtl-cereal-frame-id";
+export const EAGLE_FRAME_ID_PREFIX: string = "mllwtl_eagle_frame_";
 export const RULE_ID_XFRAME: number = 80045;
 export const RULE_ID_CONTENT_DISPOSITION: number = 80046;
 export const RULE_ID_CONTENT_TYPE: number = 80047;

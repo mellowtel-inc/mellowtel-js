@@ -17,6 +17,8 @@ import { getFromRequestInfoStorage } from "../request-info/request-info-helpers"
 import { expandJar } from "../bcrew-two/expand-jar";
 import { createJar } from "../bcrew-two/create-jar";
 import { tellToApplyDistance } from "../bcrew-two/distance";
+import { getLocalStorage, setLocalStorage } from "../utils/storage-helpers";
+import { sendMessageToContentScript } from "../utils/messaging-helpers";
 
 function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
   Logger.log("[fromDPToNElements] => ", dataPacket);
@@ -132,6 +134,9 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
   let bCrewObject = dataPacket.hasOwnProperty("bCrewObject")
     ? dataPacket.bCrewObject
     : "{}";
+  let eagleObject = dataPacket.hasOwnProperty("eagleObject")
+    ? dataPacket.eagleObject
+    : "{}";
   return {
     fastLane,
     orgId,
@@ -170,6 +175,7 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
     refPolicy,
     rawData,
     bCrewObject,
+    eagleObject,
   };
 }
 
@@ -184,12 +190,6 @@ export async function preProcessCrawl(
   Logger.log(dataPacket);
   Logger.log("📋 ----------- 📋");
 
-  // if BATCH_execution is true:
-  // dataPacket has batch_array (which we have to JSON.parse) and batch_id.
-  // In that case Promise.all over all the batch_array elements
-  // + can avoid getting frameCount and just insert in queue (a different queue)
-  // Inject 4 at a time. Keep the rest in queue and slowly inject them as the
-  // previous ones finish.
   let promiseArray: Promise<any>[] = [];
   let dataPacketArray = [];
   let index_to_arrive: number = 1;
@@ -252,6 +252,7 @@ export async function preProcessCrawl(
       refPolicy,
       rawData,
       bCrewObject,
+      eagleObject,
     } = fromDataPacketToNecessaryElements(dataPacket);
 
     promiseArray.push(
@@ -296,6 +297,7 @@ export async function preProcessCrawl(
         refPolicy,
         rawData,
         bCrewObject,
+        eagleObject,
       ),
     );
   }
@@ -339,6 +341,7 @@ export async function preProcessCrawl(
         refPolicy,
         rawData,
         bCrewObject,
+        eagleObject,
       } = fromDataPacketToNecessaryElements(dataPacketArray[i]);
       let eventData: { [key: string]: any } = {
         isMCrawl: true,
@@ -378,6 +381,7 @@ export async function preProcessCrawl(
         refPolicy: refPolicy,
         rawData: rawData,
         bCrewObject: bCrewObject,
+        eagleObject: eagleObject,
       };
       let dataToBeQueued = {
         url: dataPacketArray[i].url,
@@ -409,6 +413,7 @@ export async function preProcessCrawl(
         refPolicy: refPolicy,
         rawData: rawData,
         bCrewObject: bCrewObject,
+        eagleObject: eagleObject,
       };
       Logger.log("📋 Data to be queued 📋");
       Logger.log(dataToBeQueued);
@@ -474,6 +479,7 @@ export function crawlP2P(
   refPolicy: string = "",
   rawData: boolean = false,
   bCrewObject: string = "{}",
+  eagleObject: string = "{}",
 ): Promise<string> {
   return new Promise(async (resolve) => {
     let [url_to_crawl, hostname] = preProcessUrl(url, recordID);
@@ -531,6 +537,7 @@ export function crawlP2P(
       refPolicy: refPolicy,
       rawData: rawData,
       bCrewObject: bCrewObject,
+      eagleObject: eagleObject,
     };
     let frameCount = getFrameCount(BATCH_execution);
     let max_parallel_executions = BATCH_execution
@@ -566,6 +573,7 @@ export function crawlP2P(
         refPolicy: refPolicy,
         rawData: rawData,
         bCrewObject: bCrewObject,
+        eagleObject: eagleObject,
       };
       await insertInQueue(dataToBeQueued, BATCH_execution);
     } else {
@@ -598,6 +606,7 @@ export function crawlP2P(
         cerealObject,
         refPolicy,
         bCrewObject,
+        eagleObject,
       );
     }
     resolve("done");
@@ -634,6 +643,7 @@ export async function proceedWithActivation(
   cerealObject: string = "{}",
   refPolicy: string = "",
   bCrewObject: string = "{}",
+  eagleObject: string = "{}",
   breakLoop: boolean = false,
 ) {
   Logger.log("[proceedWithActivation] => HTML Visualizer: " + htmlVisualizer);
@@ -663,6 +673,7 @@ export async function proceedWithActivation(
       cerealObject: cerealObject,
       refPolicy: refPolicy,
       bCrewObject: bCrewObject,
+      eagleObject: eagleObject,
     });
   } else if (POST_request) {
     await sendMessageToBackground({
@@ -690,6 +701,7 @@ export async function proceedWithActivation(
       cerealObject: cerealObject,
       refPolicy: refPolicy,
       bCrewObject: bCrewObject,
+      eagleObject: eagleObject,
     });
   } else if (htmlVisualizer && !breakLoop) {
     Logger.log("[proceedWithActivation] => Sending message to background");
@@ -718,6 +730,7 @@ export async function proceedWithActivation(
       cerealObject: cerealObject,
       refPolicy: refPolicy,
       bCrewObject: bCrewObject,
+      eagleObject: eagleObject,
     });
   } else if (htmlContained && !breakLoop) {
     await sendMessageToBackground({
@@ -745,6 +758,7 @@ export async function proceedWithActivation(
       cerealObject: cerealObject,
       refPolicy: refPolicy,
       bCrewObject: bCrewObject,
+      eagleObject: eagleObject,
     });
   } else {
     let skipCheck = false;
@@ -791,6 +805,7 @@ export async function proceedWithActivation(
 
     let safeToProceed: boolean = true;
     if (!openTab) {
+      // TODO: ONLY SET LIFESPAN IF EAGLE FLAG IS NOT SET
       setLifespanForIframe(
         recordID,
         parseInt(eventData.waitBeforeScraping),
@@ -836,6 +851,85 @@ export async function proceedWithActivation(
           "",
         );
       }
+
+      // TODO: BEFORE LOADING FRAME, CHECK EAGLE FLAG
+      let eagleObject: any = {};
+      try {
+        eagleObject = JSON.parse(eagleObject);
+      } catch (e) {
+        Logger.log("[proceedWithActivation] => Error parsing eagleObject", e);
+      }
+
+      if (eagleObject.eagleEnabled === true && eagleObject.eagleId) {
+        Logger.log(
+          "[proceedWithActivation] => Eagle enabled, checking for existing tab",
+        );
+        const storedTab = await getLocalStorage("mllwtl_eagle_frame_tab", true);
+        Logger.log("[proceedWithActivation] => Stored Tab:", storedTab);
+        let targetTabId: number | null = storedTab?.tabId ?? null;
+        Logger.log("[proceedWithActivation] => Target Tab ID:", targetTabId);
+
+        if (targetTabId) {
+          // Verify tab still exists
+          try {
+            const tabExists = await new Promise<boolean>((resolve) => {
+              chrome.tabs.get(targetTabId!, (tab) => {
+                resolve(!chrome.runtime.lastError && !!tab);
+              });
+            });
+
+            if (!tabExists) {
+              targetTabId = null;
+            }
+          } catch {
+            targetTabId = null;
+          }
+        }
+
+        if (!targetTabId) {
+          Logger.log(
+            "[proceedWithActivation] => No stored tab, searching for viable tab",
+          );
+          const tabs = await chrome.tabs.query({});
+          for (const tab of tabs) {
+            if (tab.id === undefined) continue;
+
+            try {
+              const response = await sendMessageToContentScript(tab.id, {
+                intent: "mllwtl_initEagleFrame",
+                eagleObject: bCrewObject,
+                eagleId: eagleObject.eagleId,
+              });
+
+              if (response?.success) {
+                targetTabId = tab.id;
+                Logger.log(
+                  "[proceedWithActivation] => Found suitable tab:",
+                  targetTabId,
+                );
+                await setLocalStorage("mllwtl_eagle_frame_tab", {
+                  tabId: targetTabId,
+                });
+                break;
+              }
+            } catch {
+              continue;
+            }
+          }
+        }
+
+        if (targetTabId) {
+          // Send message to existing tab to handle the request
+          await sendMessageToContentScript(targetTabId, {
+            intent: "mllwtl_processEagle",
+            url: url,
+            recordID: recordID,
+            eagleObject: bCrewObject,
+          });
+          return;
+        }
+      }
+
       await insertIFrame(
         url,
         recordID,

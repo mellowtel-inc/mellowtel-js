@@ -12,10 +12,13 @@ import {
 import { Logger } from "../logger/logger";
 import { initCerealFrame } from "../cereal/cereal-utils";
 import { CerealFrameMessage, CerealResponse } from "../cereal/cereal-types";
+import { initEagleFrame } from "../eagle/eagle-utils";
+import { EagleFrameMessage, EagleResponse } from "../eagle/eagle-types";
 
 export async function setUpContentScriptListeners() {
   // Global map to store pending request resolvers
   const pendingCerealRequests = new Map();
+  const pendingEagleRequests = new Map();
 
   // Single event listener for all cereal frame responses
   window.addEventListener("message", (event) => {
@@ -36,6 +39,15 @@ export async function setUpContentScriptListeners() {
           resolve({ success: true, data: json });
           pendingCerealRequests.delete(recordID);
         }
+      }
+    } else if (eventType === "EAGLE_RESPONSE") {
+      const recordID = event.data.recordID;
+      const content = event.data.content;
+      if (recordID && pendingEagleRequests.has(recordID)) {
+        Logger.log("[RECEIVED EAGLE] with recordID : ", recordID);
+        const resolve = pendingEagleRequests.get(recordID);
+        resolve({ success: true, data: content });
+        pendingEagleRequests.delete(recordID);
       }
     }
   });
@@ -103,6 +115,7 @@ export async function setUpContentScriptListeners() {
             request.cerealObject,
             request.refPolicy,
             request.bCrewObject,
+            request.eagleObject,
             true, // to break the loop
           ).then(() => {
             sendResponse("success");
@@ -138,6 +151,7 @@ export async function setUpContentScriptListeners() {
             request.cerealObject,
             request.refPolicy,
             request.bCrewObject,
+            request.eagleObject,
             true, // to break the loop
           ).then(() => {
             sendResponse("success");
@@ -302,6 +316,68 @@ export async function setUpContentScriptListeners() {
           Logger.log("[REFRESH_CEREAL] Frame refreshed");
 
           sendResponse({ success: true });
+        }
+        if (request.intent === "mllwtl_initEagleFrame") {
+          Logger.log("[greeting] : ", "mllwtl_initEagleFrame");
+          const { eagleObject, eagleId } = request;
+          initEagleFrame(eagleObject, eagleId).then((result) => {
+            sendResponse(result);
+          });
+        }
+        if (request.intent === "mllwtl_processEagle") {
+          Logger.log("[greeting] : ", "mllwtl_processEagle");
+          const { url, recordID, eagleObject } = request;
+
+          const processEagle = (frameId: string) => {
+            return new Promise<EagleResponse>((resolve) => {
+              pendingEagleRequests.set(recordID, resolve);
+
+              const frame = document.getElementById(
+                frameId,
+              ) as HTMLIFrameElement;
+              if (!frame) {
+                resolve({ success: false, error: "frame_not_found" });
+                return;
+              }
+
+              frame.contentWindow?.postMessage(
+                {
+                  type: "FETCH_URL",
+                  recordID: recordID,
+                  url: url,
+                  eagleObject:
+                    typeof eagleObject === "string"
+                      ? eagleObject
+                      : JSON.stringify(eagleObject),
+                } as EagleFrameMessage,
+                "*",
+              );
+
+              setTimeout(() => {
+                if (pendingEagleRequests.has(recordID)) {
+                  pendingEagleRequests.delete(recordID);
+                  resolve({ success: false, error: "timeout" });
+                }
+              }, 10000);
+            });
+          };
+
+          const parsedEagleObject = JSON.parse(eagleObject);
+          const frameId = `mllwl_eagle_frame_${parsedEagleObject.eagleId}`;
+
+          if (!document.getElementById(frameId)) {
+            initEagleFrame(eagleObject, parsedEagleObject.eagleId).then(
+              (initResult: EagleResponse) => {
+                if (!initResult.success) {
+                  sendResponse({ success: false, error: "frame_init_failed" });
+                  return;
+                }
+                processEagle(frameId).then(sendResponse);
+              },
+            );
+          } else {
+            processEagle(frameId).then(sendResponse);
+          }
         }
       })();
       return true; // return true to indicate you want to send a response asynchronously

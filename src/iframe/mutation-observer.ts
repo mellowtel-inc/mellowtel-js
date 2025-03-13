@@ -39,6 +39,34 @@ export function listenerAlive() {
             ),
         );
       }
+      if (event.data && event.data.type === "FETCH_URL") {
+        Logger.log("[Eagle] Received FETCH_URL message:", event.data);
+        const { recordID, url, eagleObject } = event.data;
+
+        fetch(url)
+          .then((response) => response.text())
+          .then((content) => {
+            window.parent.postMessage(
+              {
+                type: "EAGLE_RESPONSE",
+                recordID: recordID,
+                content: content,
+              },
+              "*",
+            );
+          })
+          .catch((error) => {
+            Logger.error("[Eagle] Error fetching URL:", error);
+            window.parent.postMessage(
+              {
+                type: "EAGLE_RESPONSE",
+                recordID: recordID,
+                error: error.message,
+              },
+              "*",
+            );
+          });
+      }
     });
   }
 }
