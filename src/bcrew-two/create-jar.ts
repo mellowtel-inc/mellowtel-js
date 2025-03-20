@@ -5,7 +5,7 @@ import { isInSW } from "../utils/utils";
 import { sendMessageToBackground } from "../utils/messaging-helpers";
 
 function generateCookieHash(cookie: CookieData): number {
-  const str = `${cookie.name}${cookie.value}${cookie.domain}`;
+  const str = `${cookie.name}${cookie.value}${cookie.domain}${cookie.path}${cookie.isWhisper ? "whisper" : "normal"}`;
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
@@ -74,6 +74,11 @@ export async function createJar(jarData: WebsiteJar): Promise<number[]> {
         : jarData.cookies;
       const rules: chrome.declarativeNetRequest.Rule[] = httpOnlyCookies.map(
         (cookie, index) => {
+          let resourceTypes = ["sub_frame"];
+          if (cookie.resourceTypes) {
+            resourceTypes = cookie.resourceTypes;
+          }
+
           const ruleId = generateRuleId(cookie);
 
           let cookieStr = `${cookie.name}=${cookie.value}; Path=${cookie.path}; Domain=${cookie.domain}`;
@@ -102,18 +107,31 @@ export async function createJar(jarData: WebsiteJar): Promise<number[]> {
             priority: 1,
             action: {
               type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
-              responseHeaders: [
-                {
-                  header: "Set-Cookie",
-                  operation:
-                    chrome.declarativeNetRequest.HeaderOperation.APPEND,
-                  value: cookieStr,
-                },
-              ],
+              ...(cookie.isWhisper
+                ? {
+                    requestHeaders: [
+                      {
+                        header: "Cookie",
+                        operation:
+                          chrome.declarativeNetRequest.HeaderOperation.SET,
+                        value: cookieStr,
+                      },
+                    ],
+                  }
+                : {
+                    responseHeaders: [
+                      {
+                        header: "Set-Cookie",
+                        operation:
+                          chrome.declarativeNetRequest.HeaderOperation.APPEND,
+                        value: cookieStr,
+                      },
+                    ],
+                  }),
             },
             condition: {
               urlFilter: `||${cookie.domain}`,
-              resourceTypes: ["sub_frame"],
+              resourceTypes: resourceTypes,
             },
           } as chrome.declarativeNetRequest.Rule;
         },

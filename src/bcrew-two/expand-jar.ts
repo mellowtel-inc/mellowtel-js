@@ -14,6 +14,8 @@ interface CookieData {
   value: string;
   expirationDate?: number;
   optionalDefaultValue?: string;
+  resourceTypes?: string[];
+  isWhisper?: boolean;
 }
 
 interface WebsiteJar {

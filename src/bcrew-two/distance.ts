@@ -106,7 +106,7 @@ export async function applyDistance(
       }
     });
 
-    await removeJarRulesForCookies(jarData.cookies);
+    // await removeJarRulesForCookies(jarData.cookies);
 
     Logger.log("[applyDistance] Regoing to page to apply changes");
     window.location.href = originalUrl;
