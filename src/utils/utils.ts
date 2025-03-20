@@ -50,7 +50,7 @@ export function detectBrowser() {
 export function isInSW(): Promise<boolean> {
   return new Promise((resolve) => {
     try {
-      chrome.declarativeNetRequest.getDynamicRules((rules) => {
+      chrome.declarativeNetRequest.getSessionRules((rules) => {
         if (chrome.runtime.lastError) {
           resolve(false);
         } else {

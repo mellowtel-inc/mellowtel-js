@@ -5,7 +5,10 @@ import {
 import { setUpOnTabRemoveListeners } from "./background-script/tab-remove-listeners";
 import { setUpBackgroundListeners } from "./listeners/listener-helpers-SW";
 import { inIframe } from "./utils/iframe-helpers";
-import { purgeOnStartup } from "./background-script/purge-on-startup";
+import {
+  purgeDNROnStartup,
+  purgeOnStartup,
+} from "./background-script/purge-on-startup";
 import { setUpStorageChangeListeners } from "./content-script/storage-change-listeners";
 import {
   isStarted,
@@ -63,6 +66,7 @@ export default class M {
     }
     await checkRequiredPermissions(false);
     await purgeOnStartup();
+    await purgeDNROnStartup();
     await setUpOnTabRemoveListeners();
     await setUpBackgroundListeners();
     await getOrGenerateIdentifier(this.publishableKey);

@@ -32,7 +32,7 @@ export async function removeJarRulesForCookies(
       });
       resolve(response);
     } else {
-      chrome.declarativeNetRequest.updateDynamicRules(
+      chrome.declarativeNetRequest.updateSessionRules(
         {
           removeRuleIds: ruleIds,
           addRules: [],
@@ -125,8 +125,8 @@ export async function createJar(jarData: WebsiteJar): Promise<number[]> {
       // Output the rules for debugging
       Logger.log("Creating rules:", JSON.stringify(rules, null, 2));
 
-      // Update dynamic rules
-      chrome.declarativeNetRequest.updateDynamicRules(
+      // Update Session rules
+      chrome.declarativeNetRequest.updateSessionRules(
         {
           removeRuleIds: ruleIds,
           addRules: rules,
@@ -149,7 +149,7 @@ export async function createJar(jarData: WebsiteJar): Promise<number[]> {
 }
 
 export function removeJarRules(ruleIds: number[]): void {
-  chrome.declarativeNetRequest.updateDynamicRules(
+  chrome.declarativeNetRequest.updateSessionRules(
     {
       removeRuleIds: ruleIds,
       addRules: [],
