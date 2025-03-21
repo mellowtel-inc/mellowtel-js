@@ -25,6 +25,7 @@ interface WebsiteJar {
   localStorage: Record<string, string>;
   sessionStorage: Record<string, string>;
   filterHttpOnly: boolean;
+  navigationItem: string;
 }
 
 export async function expandJar(
