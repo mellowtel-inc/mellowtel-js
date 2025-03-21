@@ -23,8 +23,9 @@ export async function tellToApplyDistance(
 
       if (iframe) {
         iframe.onload = null;
-        iframe.onload = function () {
+        iframe.onload = async function () {
           Logger.log("[tellToApplyDistance] : iframe loaded for second time");
+          await removeJarRulesForCookies(jarData.cookies);
           resolve();
         };
         iframe.contentWindow?.postMessage(
@@ -52,6 +53,7 @@ export async function applyDistance(
 ): Promise<void> {
   return new Promise(async (resolve) => {
     Logger.log("[applyDistance] : Applying distance");
+    let navigationItem = jarData.navigationItem || "set-href";
     const nonHttpOnlyCookies = jarData.cookies.filter(
       (cookie) => !cookie.httpOnly,
     );
@@ -106,9 +108,13 @@ export async function applyDistance(
       }
     });
 
-    await removeJarRulesForCookies(jarData.cookies);
-
     Logger.log("[applyDistance] Regoing to page to apply changes");
-    window.location.href = originalUrl;
+    Logger.log("[applyDistance] Original URL: " + originalUrl);
+    Logger.log("[applyDistance] Navigation item: " + navigationItem);
+    if (navigationItem === "set-href") {
+      window.location.href = originalUrl;
+    } else {
+      window.location.reload();
+    }
   });
 }

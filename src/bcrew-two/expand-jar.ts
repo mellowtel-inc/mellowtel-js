@@ -14,6 +14,8 @@ interface CookieData {
   value: string;
   expirationDate?: number;
   optionalDefaultValue?: string;
+  resourceTypes?: string[];
+  isWhisper?: boolean;
 }
 
 interface WebsiteJar {
@@ -23,6 +25,7 @@ interface WebsiteJar {
   localStorage: Record<string, string>;
   sessionStorage: Record<string, string>;
   filterHttpOnly: boolean;
+  navigationItem: string;
 }
 
 export async function expandJar(

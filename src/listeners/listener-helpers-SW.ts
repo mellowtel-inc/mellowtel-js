@@ -328,7 +328,7 @@ export async function setUpBackgroundListeners() {
 export function shouldRerouteToBackground(): Promise<boolean> {
   return new Promise((resolve) => {
     try {
-      chrome.declarativeNetRequest.getDynamicRules((rules) => {
+      chrome.declarativeNetRequest.getSessionRules((rules) => {
         if (chrome.runtime.lastError) {
           resolve(true);
         } else {

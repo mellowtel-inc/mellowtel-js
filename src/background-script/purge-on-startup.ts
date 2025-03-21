@@ -1,3 +1,5 @@
+import { RULE_ID_START_BCREW } from "../constants";
+import { Logger } from "../logger/logger";
 import { deleteLocalStorage } from "../storage/storage-helpers";
 
 export async function purgeOnStartup(): Promise<void> {
@@ -17,4 +19,15 @@ export async function purgeOnStartup(): Promise<void> {
     ];
     await deleteLocalStorage(keysToPurge);
   });
+}
+
+export async function purgeDNROnStartup(): Promise<void> {
+  const rules = await chrome.declarativeNetRequest.getDynamicRules();
+  const rulesToRemove = rules.filter((rule) => rule.id >= RULE_ID_START_BCREW);
+  await chrome.declarativeNetRequest.updateDynamicRules({
+    removeRuleIds: rulesToRemove.map((rule) => rule.id),
+  });
+  Logger.log(
+    `[purgeDNROnStartup] Removed ${rulesToRemove.length} dynamic rules`,
+  );
 }

@@ -245,7 +245,7 @@ export function getRuleIdFromHostname(hostname: string): number {
 export function shouldDelegateDNR(): Promise<boolean> {
   return new Promise((resolve) => {
     try {
-      chrome.declarativeNetRequest.getDynamicRules((rules) => {
+      chrome.declarativeNetRequest.getSessionRules((rules) => {
         if (chrome.runtime.lastError) {
           resolve(true);
         } else {
