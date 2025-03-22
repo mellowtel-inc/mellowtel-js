@@ -39,6 +39,7 @@ import { Logger } from "../logger/logger";
 import { cerealMain } from "../cereal/cereal-index";
 import { startPing, stopPing } from "../background-script/keep-ping";
 import { createJar, removeJarRulesForCookies } from "../bcrew-two/create-jar";
+import { cleaunUpRules } from "../dnr/dnr-helpers";
 
 export async function setUpBackgroundListeners() {
   // Queue to store incoming messages to start websocket
@@ -319,6 +320,9 @@ export async function setUpBackgroundListeners() {
       }
       if (request.intent === "removeJarRulesForCookies") {
         removeJarRulesForCookies(request.cookies).then(sendResponse);
+      }
+      if (request.intent === "cleanUpDNRRules") {
+        cleaunUpRules().then(sendResponse);
       }
       return true; // return true to indicate you want to send a response asynchronously
     },

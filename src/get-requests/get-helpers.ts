@@ -130,7 +130,8 @@ export function handleGetRequest(
         await enableHeadersForPOST();
         res(true);
       })
-      .catch((error) => {
+      .catch(async (error) => {
+        await enableHeadersForPOST();
         Logger.log("Error:", error);
       });
   });
