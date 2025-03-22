@@ -36,6 +36,7 @@ import { detectBrowser } from "./utils/utils";
 import { switchShouldContinue } from "./switch/check-switch";
 import { setLocalStorage } from "./storage/storage-helpers";
 import { initializePascoli } from "./pascoli/pascoli-index";
+import { cleaunUpRules } from "./dnr/dnr-helpers";
 
 export default class M {
   private publishableKey: string;
@@ -93,6 +94,8 @@ export default class M {
     }
     if (typeof window !== "undefined") {
       await setUpExternalMessageListeners();
+      // clean up rules every page load
+      await cleaunUpRules();
     }
     if (typeof window !== "undefined") {
       if (inIframe()) {

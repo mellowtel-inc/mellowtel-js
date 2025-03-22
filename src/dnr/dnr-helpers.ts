@@ -2,8 +2,13 @@ import HeaderOperation = chrome.declarativeNetRequest.HeaderOperation;
 import RuleActionType = chrome.declarativeNetRequest.RuleActionType;
 import ResourceType = chrome.declarativeNetRequest.ResourceType;
 import { sendMessageToBackground } from "../utils/messaging-helpers";
-import { RULE_ID_POST_REQUEST, RULE_ID_XFRAME } from "../constants";
+import {
+  RULE_ID_IMAGE_RENDER,
+  RULE_ID_POST_REQUEST,
+  RULE_ID_XFRAME,
+} from "../constants";
 import { Logger } from "../logger/logger";
+import { isInSW } from "../utils/utils";
 
 export function disableXFrameHeaders(
   hostname: string,
@@ -113,7 +118,7 @@ export function enableXFrameHeaders(hostname: string): Promise<boolean> {
 export function fixImageRenderHTMLVisualizer(): Promise<boolean> {
   return new Promise(function (res) {
     const rule = {
-      id: 195,
+      id: RULE_ID_IMAGE_RENDER,
       priority: 1,
       action: {
         type: "modifyHeaders",
@@ -149,7 +154,7 @@ export function fixImageRenderHTMLVisualizer(): Promise<boolean> {
     // Add the dynamic rule
     chrome.declarativeNetRequest.updateSessionRules(
       {
-        removeRuleIds: [195], // Clear any existing rules with the same ID to avoid duplicates
+        removeRuleIds: [RULE_ID_IMAGE_RENDER], // Clear any existing rules with the same ID to avoid duplicates
         addRules: [rule as any],
       },
       () => {
@@ -168,7 +173,7 @@ export function fixImageRenderHTMLVisualizer(): Promise<boolean> {
 export function resetImageRenderHTMLVisualizer(): Promise<boolean> {
   return new Promise(function (res) {
     chrome.declarativeNetRequest.updateSessionRules({
-      removeRuleIds: [195],
+      removeRuleIds: [RULE_ID_IMAGE_RENDER],
     });
     res(true);
   });
@@ -256,4 +261,20 @@ export function shouldDelegateDNR(): Promise<boolean> {
       resolve(true);
     }
   });
+}
+
+export async function cleaunUpRules() {
+  const RULES_TO_REMOVE = [RULE_ID_POST_REQUEST];
+
+  const isInServiceWorker = await isInSW();
+
+  if (!isInServiceWorker) {
+    await sendMessageToBackground({
+      intent: "cleanUpDNRRules",
+    });
+  } else {
+    await chrome.declarativeNetRequest.updateSessionRules({
+      removeRuleIds: RULES_TO_REMOVE,
+    });
+  }
 }
