@@ -7,8 +7,10 @@ const KEEP_PING_STATUS = "keep_ping_status";
 let keepAliveInterval: number | null = null;
 
 const keepAlive = () => {
-  chrome.runtime.sendMessage("ping").catch((error) => {
-    // Logger.log("[keepAlive] Error sending ping:", error);
+  chrome.runtime.sendMessage("ping", (response) => {
+    if (chrome.runtime.lastError) {
+      // Logger.log("[keepAlive] Error sending ping:", chrome.runtime.lastError.message);
+    }
   });
 };
 
