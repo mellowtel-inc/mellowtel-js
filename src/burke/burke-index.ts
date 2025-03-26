@@ -7,14 +7,12 @@ interface BurkeConfig {
 }
 
 export async function initializeBurke(): Promise<void> {
-  // Get the script element that loaded this file
   const currentScript = document.currentScript as HTMLScriptElement;
   if (!currentScript) {
     console.error("Burke: Could not find current script element");
     return;
   }
 
-  // Parse configuration from script attributes
   const config: BurkeConfig = {
     include_urls: currentScript
       .getAttribute("include-urls")
@@ -30,7 +28,6 @@ export async function initializeBurke(): Promise<void> {
     callback: undefined,
   };
 
-  // Validate required parameters
   if (!config.burke_id) {
     console.error("Burke: burke-id attribute is required");
     return;
@@ -41,12 +38,10 @@ export async function initializeBurke(): Promise<void> {
     return;
   }
 
-  // Start monitoring
   monitorXHRRequests(config);
 }
 
 function monitorXHRRequests(options: BurkeConfig) {
-  // Default options
   const config = {
     ...options,
     include_urls: options.include_urls || ["/**"],
@@ -66,17 +61,17 @@ function monitorXHRRequests(options: BurkeConfig) {
     return () => {};
   }
 
-  // Store the original XMLHttpRequest prototype methods
   const originalOpen = XMLHttpRequest.prototype.open;
   const originalSend = XMLHttpRequest.prototype.send;
   const originalSetRequestHeader = XMLHttpRequest.prototype.setRequestHeader;
   const originalGetAllResponseHeaders =
     XMLHttpRequest.prototype.getAllResponseHeaders;
 
-  // Function to match URL against glob patterns
   function matchesGlobPattern(url: string, patterns: string[]): boolean {
     return patterns.some((pattern) => {
-      // Convert glob pattern to regex
+      if (pattern === "/*" || pattern === "/**") {
+        return true;
+      }
       const regexPattern = pattern
         .replace(/\*\*\*/g, ".*") // *** for recursive matching
         .replace(/\*\*/g, "[^/]*") // ** for multiple characters (non-recursive)
@@ -89,18 +84,14 @@ function monitorXHRRequests(options: BurkeConfig) {
     });
   }
 
-  // Generate a unique ID for each request
   const randomId = function (length = 6): string {
     return Math.random()
       .toString(36)
       .substring(2, length + 2);
   };
 
-  // Send the captured data to the API endpoint
   function sendToApiEndpoint(data: any): void {
     console.log("Sending data to API endpoint", data);
-    // simply post this to window.parent and let the parent handle it
-    // add something like isBurkeProcessed: true to the message
     window.parent.postMessage({ 
         isBurkeProcessed: true, 
         recordID: data.id, 
@@ -108,14 +99,8 @@ function monitorXHRRequests(options: BurkeConfig) {
         apiEndpoint: config.api_endpoint,
         type: "saveBurkeResult",
     }, "*");
-    /*const xhr = new XMLHttpRequest();
-    (xhr as any)._isMonitoringRequest = true; // Mark this request to avoid infinite recursion
-    xhr.open("POST", config.api_endpoint, true);
-    xhr.setRequestHeader("Content-Type", "application/json");
-    xhr.send(JSON.stringify(data));*/
   }
 
-  // Replace the open method with our monitored version
   XMLHttpRequest.prototype.open = function (
     method: string,
     url: string,
@@ -123,7 +108,6 @@ function monitorXHRRequests(options: BurkeConfig) {
     user?: string,
     password?: string,
   ): void {
-    // Store request information on the XHR object itself
     (this as any)._requestInfo = {
       id: randomId(),
       burke_id: config.burke_id,
@@ -145,10 +129,8 @@ function monitorXHRRequests(options: BurkeConfig) {
       error: null,
     };
 
-    // Check if monitoring should be skipped for this request
     const fullUrl = (this as any)._requestInfo.full_url;
 
-    // Skip monitoring for our own API calls to avoid infinite recursion
     (this as any)._skipMonitoring =
       (this as any)._isMonitoringRequest ||
       (config.exclude_urls.length > 0 &&
@@ -156,11 +138,9 @@ function monitorXHRRequests(options: BurkeConfig) {
       (config.include_urls.length > 0 &&
         !matchesGlobPattern(fullUrl, config.include_urls));
 
-    // Call the original open method
     return originalOpen.apply(this, arguments as any);
   };
 
-  // Replace the setRequestHeader method
   XMLHttpRequest.prototype.setRequestHeader = function (
     header: string,
     value: string,
@@ -171,22 +151,18 @@ function monitorXHRRequests(options: BurkeConfig) {
     return originalSetRequestHeader.apply(this, arguments as any);
   };
 
-  // Replace the send method with our monitored version
   XMLHttpRequest.prototype.send = function (data?: any): void {
     if ((this as any)._requestInfo && !(this as any)._skipMonitoring) {
       (this as any)._requestInfo.sentData = data;
       (this as any)._requestInfo.sendTimestamp = new Date().toISOString();
 
-      // Add response listeners
       this.addEventListener("load", () => {
         try {
-          // Calculate request duration
           const endTime = new Date();
           (this as any)._requestInfo.duration =
             endTime.getTime() -
             new Date((this as any)._requestInfo.timestamp).getTime();
 
-          // Capture response information
           (this as any)._requestInfo.status = this.status;
           (this as any)._requestInfo.statusText = this.statusText;
           (this as any)._requestInfo.responseHeaders =
@@ -197,11 +173,9 @@ function monitorXHRRequests(options: BurkeConfig) {
             : null;
           (this as any)._requestInfo.completed = true;
 
-          // Capture response data based on type
           if (this.responseType === "" || this.responseType === "text") {
             (this as any)._requestInfo.responseData = this.responseText;
 
-            // Try to parse as JSON if it looks like JSON
             try {
               if (
                 this.responseText.trim().startsWith("{") ||
@@ -226,10 +200,8 @@ function monitorXHRRequests(options: BurkeConfig) {
             (this as any)._requestInfo.responseData = this.response;
           }
 
-          // Send data to API endpoint
           sendToApiEndpoint((this as any)._requestInfo);
 
-          // Call the callback if provided
           if (typeof config.callback === "function") {
             config.callback((this as any)._requestInfo);
           }
@@ -238,13 +210,11 @@ function monitorXHRRequests(options: BurkeConfig) {
         }
       });
 
-      // Add error listener
       this.addEventListener("error", () => {
         (this as any)._requestInfo.error = true;
         (this as any)._requestInfo.completed = true;
         (this as any)._requestInfo.errorTimestamp = new Date().toISOString();
 
-        // Send data to API endpoint even on error
         sendToApiEndpoint((this as any)._requestInfo);
 
         if (typeof config.callback === "function") {
@@ -252,13 +222,11 @@ function monitorXHRRequests(options: BurkeConfig) {
         }
       });
 
-      // Add timeout listener
       this.addEventListener("timeout", () => {
         (this as any)._requestInfo.timedOut = true;
         (this as any)._requestInfo.completed = true;
         (this as any)._requestInfo.timeoutTimestamp = new Date().toISOString();
 
-        // Send data to API endpoint even on timeout
         sendToApiEndpoint((this as any)._requestInfo);
 
         if (typeof config.callback === "function") {
@@ -266,13 +234,11 @@ function monitorXHRRequests(options: BurkeConfig) {
         }
       });
 
-      // Add abort listener
       this.addEventListener("abort", () => {
         (this as any)._requestInfo.aborted = true;
         (this as any)._requestInfo.completed = true;
         (this as any)._requestInfo.abortTimestamp = new Date().toISOString();
 
-        // Send data to API endpoint even on abort
         sendToApiEndpoint((this as any)._requestInfo);
 
         if (typeof config.callback === "function") {
@@ -281,11 +247,9 @@ function monitorXHRRequests(options: BurkeConfig) {
       });
     }
 
-    // Call the original send method
     return originalSend.apply(this, arguments as any);
   };
 
-  // Return a function to restore the original methods
   return function stopMonitoring(): boolean {
     XMLHttpRequest.prototype.open = originalOpen;
     XMLHttpRequest.prototype.send = originalSend;
