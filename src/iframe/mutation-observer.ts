@@ -43,19 +43,15 @@ export function listenerAlive() {
         Logger.log("[setupBurkeListener] : Received burkeTrigger message");
         Logger.log(event.data);
         Logger.log("########################");
-        // send message to acknowledge the message
         window.parent.postMessage(
           { isBurkeReply: true, recordID: event.data.recordID },
           "*",
         );
-        // now we can start the correct listeners after parsing the burkeObject
         try {
           const burkeObject = JSON.parse(event.data.burkeObject);
 
-          // Create a function to append the Burke script
           const appendBurkeScript = async () => {
             try {
-              // Get the Burke script URL from localStorage
               const burkeJSFileName = await getLocalStorage(
                 "mllwtl_BurkeJSFileName",
                 true,
@@ -71,14 +67,11 @@ export function listenerAlive() {
                 return;
               }
 
-              // Get the full URL using chrome.runtime.getURL
               const burkeScriptUrl = chrome.runtime.getURL(burkeJSFileName);
 
-              // Create the script element
               const script = document.createElement("script");
               script.src = burkeScriptUrl;
 
-              // Set configuration attributes from burkeObject
               if (burkeObject.xhr_options?.include_urls) {
                 script.setAttribute(
                   "include-urls",
@@ -94,7 +87,6 @@ export function listenerAlive() {
               script.setAttribute("burke-id", event.data.recordID);
               script.setAttribute("api-endpoint", burkeObject.endpoint);
 
-              // Append to head
               document.head.appendChild(script);
               Logger.log(
                 "[appendBurkeScript]: Burke script appended successfully",
