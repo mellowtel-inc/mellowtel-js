@@ -86,13 +86,16 @@ function monitorXHRRequests(options: BurkeConfig) {
   };
 
   function sendToApiEndpoint(data: any): void {
-    window.parent.postMessage({ 
-        isBurkeProcessed: true, 
-        recordID: data.id, 
+    window.parent.postMessage(
+      {
+        isBurkeProcessed: true,
+        recordID: data.id,
         resultToSave: JSON.stringify(data),
         apiEndpoint: config.api_endpoint,
         type: "saveBurkeResult",
-    }, "*");
+      },
+      "*",
+    );
   }
 
   XMLHttpRequest.prototype.open = function (
@@ -199,8 +202,7 @@ function monitorXHRRequests(options: BurkeConfig) {
           if (typeof config.callback === "function") {
             config.callback((this as any)._requestInfo);
           }
-        } catch (e) {
-        }
+        } catch (e) {}
       });
 
       this.addEventListener("error", () => {
