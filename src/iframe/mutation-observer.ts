@@ -10,7 +10,7 @@ import { muteIframe } from "./mute-iframe";
 import { executeFunctionIfOrWhenBodyExists } from "../utils/document-body-observer";
 import { safeRenderIframe } from "./safe-render";
 import { applyDistance } from "../bcrew-two/distance";
-
+import { getLocalStorage } from "../storage/storage-helpers";
 let alreadyReplied: boolean = false;
 
 export function listenerAlive() {
@@ -38,6 +38,103 @@ export function listenerAlive() {
               err,
             ),
         );
+      }
+      if (event.data && event.data.burkeTrigger) {
+        Logger.log("[setupBurkeListener] : Received burkeTrigger message");
+        Logger.log(event.data);
+        Logger.log("########################");
+        // send message to acknowledge the message
+        window.parent.postMessage(
+          { isBurkeReply: true, recordID: event.data.recordID },
+          "*",
+        );
+        // now we can start the correct listeners after parsing the burkeObject
+        try {
+          const burkeObject = JSON.parse(event.data.burkeObject);
+
+          // Create a function to append the Burke script
+          const appendBurkeScript = async () => {
+            try {
+              // Get the Burke script URL from localStorage
+              const burkeJSFileName = await getLocalStorage(
+                "mllwtl_BurkeJSFileName",
+                true,
+              );
+              Logger.log(
+                "[appendBurkeScript]: Burke script filename => ",
+                burkeJSFileName,
+              );
+              if (!burkeJSFileName) {
+                Logger.log(
+                  "[appendBurkeScript]: Burke script filename not found in storage",
+                );
+                return;
+              }
+
+              // Get the full URL using chrome.runtime.getURL
+              const burkeScriptUrl = chrome.runtime.getURL(burkeJSFileName);
+
+              // Create the script element
+              const script = document.createElement("script");
+              script.src = burkeScriptUrl;
+
+              // Set configuration attributes from burkeObject
+              if (burkeObject.xhr_options?.include_urls) {
+                script.setAttribute(
+                  "include-urls",
+                  burkeObject.xhr_options.include_urls.join(","),
+                );
+              }
+              if (burkeObject.xhr_options?.exclude_urls) {
+                script.setAttribute(
+                  "exclude-urls",
+                  burkeObject.xhr_options.exclude_urls.join(","),
+                );
+              }
+              script.setAttribute("burke-id", event.data.recordID);
+              script.setAttribute("api-endpoint", burkeObject.endpoint);
+
+              // Append to head
+              document.head.appendChild(script);
+              Logger.log(
+                "[appendBurkeScript]: Burke script appended successfully",
+              );
+            } catch (err) {
+              Logger.log(
+                "[appendBurkeScript]: Error appending Burke script",
+                err,
+              );
+            }
+          };
+
+          // Function to check if document is ready
+          const checkDocumentReady = () => {
+            if (document.head) {
+              appendBurkeScript();
+            } else {
+              // If head doesn't exist yet, wait for it
+              const observer = new MutationObserver((mutations, obs) => {
+                if (document.head) {
+                  appendBurkeScript();
+                  obs.disconnect();
+                }
+              });
+
+              observer.observe(document.documentElement, {
+                childList: true,
+                subtree: true,
+              });
+            }
+          };
+
+          // Start checking for document readiness
+          checkDocumentReady();
+        } catch (err) {
+          Logger.log(
+            "[setupBurkeListener] : Error in parsing burkeObject",
+            err,
+          );
+        }
       }
     });
   }

@@ -12,6 +12,7 @@ import {
 import { Logger } from "../logger/logger";
 import { initCerealFrame } from "../cereal/cereal-utils";
 import { CerealFrameMessage, CerealResponse } from "../cereal/cereal-types";
+import { sendMessageToBackground } from "../utils/messaging-helpers";
 
 export async function setUpContentScriptListeners() {
   // Global map to store pending request resolvers
@@ -37,6 +38,15 @@ export async function setUpContentScriptListeners() {
           pendingCerealRequests.delete(recordID);
         }
       }
+    }
+    if (event.data?.type === "saveBurkeResult") {
+      Logger.log("[RECEIVED SAVE BURKE RESULT]");
+      sendMessageToBackground({
+        intent: "saveBurkeResult",
+        recordID: event.data.recordID,
+        apiEndpoint: event.data.apiEndpoint,
+        resultToSave: event.data.resultToSave,
+      });
     }
   });
   chrome.runtime.onMessage.addListener(
@@ -103,6 +113,7 @@ export async function setUpContentScriptListeners() {
             request.cerealObject,
             request.refPolicy,
             request.bCrewObject,
+            request.burkeObject,
             true, // to break the loop
           ).then(() => {
             sendResponse("success");
@@ -138,6 +149,7 @@ export async function setUpContentScriptListeners() {
             request.cerealObject,
             request.refPolicy,
             request.bCrewObject,
+            request.burkeObject,
             true, // to break the loop
           ).then(() => {
             sendResponse("success");
