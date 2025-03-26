@@ -22,6 +22,7 @@ import {
 } from "../utils/messaging-helpers";
 import { addToRequestMessageStorage } from "../request-message/request-message-helpers";
 import { isPascoliEnabled } from "../pascoli/pascoli-utils";
+import { isBurkeEnabled } from "../burke/burke-utils";
 import { refreshCereal } from "../cereal/cereal-index";
 
 let retryAttemptInProgress: boolean = false;
@@ -66,6 +67,7 @@ async function checkWebsocketApproval(params: {
   platform: string;
   manifest_version: string;
   pascoli: boolean;
+  burke: boolean;
 }): Promise<boolean> {
   // Check if we have a cached result
   const cachedData = await getLocalStorage("websocket_approval_cache", true);
@@ -92,6 +94,7 @@ async function checkWebsocketApproval(params: {
     platform: params.platform,
     manifest_version: params.manifest_version,
     pascoli: params.pascoli.toString(),
+    burke: params.burke.toString(),
     ws_client: "new_ws",
   });
 
@@ -235,10 +238,11 @@ export async function startConnectionWs(identifier: string): WebSocket {
         const browser = detectBrowser();
         Logger.log(`[🌐]: Browser: ${browser}`);
         const isPascoli: boolean = await isPascoliEnabled();
+        const isBurke: boolean = await isBurkeEnabled();
         Logger.log(`[🌐]: Manifest version: ${manifestVersion}`);
         Logger.log(`[🌐]: Extension identifier: ${extension_identifier}`);
         Logger.log(`[🌐]: Is Pascoli enabled: ${isPascoli}`);
-
+        Logger.log(`[🌐]: Is Burke enabled: ${isBurke}`);
         // Check websocket approval before connecting
         const isApproved = await checkWebsocketApproval({
           device_id: identifier,
@@ -248,6 +252,7 @@ export async function startConnectionWs(identifier: string): WebSocket {
           platform: browser,
           manifest_version: manifestVersion.toString(),
           pascoli: isPascoli,
+          burke: isBurke,
         });
 
         if (!isApproved) {
@@ -260,7 +265,7 @@ export async function startConnectionWs(identifier: string): WebSocket {
         );
 
         const ws = new WebSocket(
-          `${ws_url}?device_id=${identifier}&version=${VERSION}&plugin_id=${encodeURIComponent(extension_identifier)}&speed_download=${speedMpbs}&platform=${browser}&manifest_version=${manifestVersion}&pascoli=${isPascoli}&ws_client=new_ws`,
+          `${ws_url}?device_id=${identifier}&version=${VERSION}&plugin_id=${encodeURIComponent(extension_identifier)}&speed_download=${speedMpbs}&platform=${browser}&manifest_version=${manifestVersion}&pascoli=${isPascoli}&burke=${isBurke}&ws_client=new_ws`,
         );
 
         ws.onopen = function open() {
