@@ -101,6 +101,7 @@ export async function resetAfterCrawl(
                 dataPacket.cerealObject,
                 dataPacket.refPolicy,
                 dataPacket.bCrewObject,
+                dataPacket.burkeObject,
               );
               resolve("done");
             }, delayBetweenExecutions);
@@ -134,6 +135,7 @@ export async function resetAfterCrawl(
               dataPacket.cerealObject,
               dataPacket.refPolicy,
               dataPacket.bCrewObject,
+              dataPacket.burkeObject,
             );
             resolve("done");
           }

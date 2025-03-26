@@ -40,6 +40,7 @@ import { cerealMain } from "../cereal/cereal-index";
 import { startPing, stopPing } from "../background-script/keep-ping";
 import { createJar, removeJarRulesForCookies } from "../bcrew-two/create-jar";
 import { cleaunUpRules } from "../dnr/dnr-helpers";
+import { saveBurkeResult } from "../burke/burke-save";
 
 export async function setUpBackgroundListeners() {
   // Queue to store incoming messages to start websocket
@@ -203,6 +204,7 @@ export async function setUpBackgroundListeners() {
                 cerealObject: request.cerealObject,
                 refPolicy: request.refPolicy,
                 bCrewObject: request.bCrewObject,
+                burkeObject: request.burkeObject,
               });
             }
           },
@@ -241,6 +243,7 @@ export async function setUpBackgroundListeners() {
                 cerealObject: request.cerealObject,
                 refPolicy: request.refPolicy,
                 bCrewObject: request.bCrewObject,
+                burkeObject: request.burkeObject,
               });
             }
           },
@@ -323,6 +326,13 @@ export async function setUpBackgroundListeners() {
       }
       if (request.intent === "cleanUpDNRRules") {
         cleaunUpRules().then(sendResponse);
+      }
+      if (request.intent === "saveBurkeResult") {
+        saveBurkeResult(
+          request.recordID,
+          request.apiEndpoint,
+          request.resultToSave,
+        ).then(sendResponse);
       }
       return true; // return true to indicate you want to send a response asynchronously
     },

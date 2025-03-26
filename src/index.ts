@@ -37,6 +37,7 @@ import { switchShouldContinue } from "./switch/check-switch";
 import { setLocalStorage } from "./storage/storage-helpers";
 import { initializePascoli } from "./pascoli/pascoli-index";
 import { cleaunUpRules } from "./dnr/dnr-helpers";
+import { initializeBurke } from "./burke/burke-index";
 
 export default class M {
   private publishableKey: string;
@@ -88,14 +89,17 @@ export default class M {
 
   public async initContentScript(
     pascoliHTMLFileName?: string | undefined,
+    burkeJSFileName?: string | undefined,
   ): Promise<void> {
     if (typeof pascoliHTMLFileName !== "undefined") {
       await setLocalStorage("mllwtl_HTMLFileName", pascoliHTMLFileName);
     }
+    if (typeof burkeJSFileName !== "undefined") {
+      await setLocalStorage("mllwtl_BurkeJSFileName", burkeJSFileName);
+    }
     if (typeof window !== "undefined") {
       await setUpExternalMessageListeners();
-      // clean up rules every page load
-      await cleaunUpRules();
+      await cleaunUpRules(); // clean up rules every page load
     }
     if (typeof window !== "undefined") {
       if (inIframe()) {
@@ -124,6 +128,12 @@ export default class M {
   public async initPascoli(): Promise<void> {
     if (typeof window !== "undefined") {
       await initializePascoli();
+    }
+  }
+
+  public async initBurke(): Promise<void> {
+    if (typeof window !== "undefined") {
+      await initializeBurke();
     }
   }
 

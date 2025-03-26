@@ -132,6 +132,9 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
   let bCrewObject = dataPacket.hasOwnProperty("bCrewObject")
     ? dataPacket.bCrewObject
     : "{}";
+  let burkeObject = dataPacket.hasOwnProperty("burkeObject")
+    ? dataPacket.burkeObject
+    : "{}";
   return {
     fastLane,
     orgId,
@@ -170,6 +173,7 @@ function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
     refPolicy,
     rawData,
     bCrewObject,
+    burkeObject,
   };
 }
 
@@ -252,6 +256,7 @@ export async function preProcessCrawl(
       refPolicy,
       rawData,
       bCrewObject,
+      burkeObject,
     } = fromDataPacketToNecessaryElements(dataPacket);
 
     promiseArray.push(
@@ -296,6 +301,7 @@ export async function preProcessCrawl(
         refPolicy,
         rawData,
         bCrewObject,
+        burkeObject,
       ),
     );
   }
@@ -339,6 +345,7 @@ export async function preProcessCrawl(
         refPolicy,
         rawData,
         bCrewObject,
+        burkeObject,
       } = fromDataPacketToNecessaryElements(dataPacketArray[i]);
       let eventData: { [key: string]: any } = {
         isMCrawl: true,
@@ -378,6 +385,7 @@ export async function preProcessCrawl(
         refPolicy: refPolicy,
         rawData: rawData,
         bCrewObject: bCrewObject,
+        burkeObject: burkeObject,
       };
       let dataToBeQueued = {
         url: dataPacketArray[i].url,
@@ -409,6 +417,7 @@ export async function preProcessCrawl(
         refPolicy: refPolicy,
         rawData: rawData,
         bCrewObject: bCrewObject,
+        burkeObject: burkeObject,
       };
       Logger.log("📋 Data to be queued 📋");
       Logger.log(dataToBeQueued);
@@ -474,6 +483,7 @@ export function crawlP2P(
   refPolicy: string = "",
   rawData: boolean = false,
   bCrewObject: string = "{}",
+  burkeObject: string = "{}",
 ): Promise<string> {
   return new Promise(async (resolve) => {
     let [url_to_crawl, hostname] = preProcessUrl(url, recordID);
@@ -531,6 +541,7 @@ export function crawlP2P(
       refPolicy: refPolicy,
       rawData: rawData,
       bCrewObject: bCrewObject,
+      burkeObject: burkeObject,
     };
     let frameCount = getFrameCount(BATCH_execution);
     let max_parallel_executions = BATCH_execution
@@ -566,6 +577,7 @@ export function crawlP2P(
         refPolicy: refPolicy,
         rawData: rawData,
         bCrewObject: bCrewObject,
+        burkeObject: burkeObject,
       };
       await insertInQueue(dataToBeQueued, BATCH_execution);
     } else {
@@ -598,6 +610,7 @@ export function crawlP2P(
         cerealObject,
         refPolicy,
         bCrewObject,
+        burkeObject,
       );
     }
     resolve("done");
@@ -634,6 +647,7 @@ export async function proceedWithActivation(
   cerealObject: string = "{}",
   refPolicy: string = "",
   bCrewObject: string = "{}",
+  burkeObject: string = "{}",
   breakLoop: boolean = false,
 ) {
   Logger.log("[proceedWithActivation] => HTML Visualizer: " + htmlVisualizer);
@@ -663,6 +677,7 @@ export async function proceedWithActivation(
       cerealObject: cerealObject,
       refPolicy: refPolicy,
       bCrewObject: bCrewObject,
+      burkeObject: burkeObject,
     });
   } else if (POST_request) {
     await sendMessageToBackground({
@@ -690,6 +705,7 @@ export async function proceedWithActivation(
       cerealObject: cerealObject,
       refPolicy: refPolicy,
       bCrewObject: bCrewObject,
+      burkeObject: burkeObject,
     });
   } else if (htmlVisualizer && !breakLoop) {
     Logger.log("[proceedWithActivation] => Sending message to background");
@@ -718,6 +734,7 @@ export async function proceedWithActivation(
       cerealObject: cerealObject,
       refPolicy: refPolicy,
       bCrewObject: bCrewObject,
+      burkeObject: burkeObject,
     });
   } else if (htmlContained && !breakLoop) {
     await sendMessageToBackground({
@@ -745,6 +762,7 @@ export async function proceedWithActivation(
       cerealObject: cerealObject,
       refPolicy: refPolicy,
       bCrewObject: bCrewObject,
+      burkeObject: burkeObject,
     });
   } else {
     let skipCheck = false;
@@ -843,14 +861,21 @@ export async function proceedWithActivation(
           // find a way to send a message to the content script inside this iframe
           // to check if it's ready
           // send message isContentScriptAlive
+
           let iframe: HTMLIFrameElement | null = document.getElementById(
             recordID,
           ) as HTMLIFrameElement | null;
-          if (iframe)
+
+          if (iframe) {
             iframe.contentWindow?.postMessage(
-              { isContentScriptAlive: true, recordID: recordID },
+              {
+                isContentScriptAlive: true,
+                recordID: recordID,
+                burkeObject: burkeObject,
+              },
               "*",
             );
+          }
           if (expandedJar) {
             Logger.log(
               "[proceedWithActivation] => Applying distance before sending message",
@@ -930,6 +955,45 @@ export async function proceedWithActivation(
               {
                 ...eventData,
                 ...{ waitForElementIsNotNone: true },
+              },
+              "*",
+            );
+        }, 50);
+      }
+
+      if (burkeObject !== "{}") {
+        let iframeRepliedBurke = false;
+        window.addEventListener("message", function (event) {
+          if (event.data.isBurkeReply && event.data.recordID === recordID){
+            iframeRepliedBurke = true;
+          }
+          // isBurkeProcessed
+          if (event.data.isBurkeProcessed && event.data.recordID === recordID){
+            Logger.log("[proceedWithActivation] => Burke processed. Sending message to background script to save the result");
+            // send message to background script to save the result
+            sendMessageToBackground({
+              intent: "saveBurkeResult",
+              recordID: recordID,
+              burkeObject: burkeObject,
+              resultToSave: event.data.resultToSave,
+            });
+          }
+        });
+
+        let timerBurke = setInterval(function () {
+          let iframe: HTMLIFrameElement | null = document.getElementById(
+            recordID,
+          ) as HTMLIFrameElement | null;
+          if (iframeRepliedBurke) {
+            clearInterval(timerBurke);
+            return;
+          }
+          if (iframe)
+            iframe.contentWindow?.postMessage(
+              {
+                burkeTrigger: true,
+                burkeObject: burkeObject,
+                recordID: recordID,
               },
               "*",
             );

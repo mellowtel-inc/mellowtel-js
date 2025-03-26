@@ -10,7 +10,7 @@ import { muteIframe } from "./mute-iframe";
 import { executeFunctionIfOrWhenBodyExists } from "../utils/document-body-observer";
 import { safeRenderIframe } from "./safe-render";
 import { applyDistance } from "../bcrew-two/distance";
-
+import { getLocalStorage } from "../storage/storage-helpers";
 let alreadyReplied: boolean = false;
 
 export function listenerAlive() {
@@ -38,6 +38,95 @@ export function listenerAlive() {
               err,
             ),
         );
+      }
+      if (event.data && event.data.burkeTrigger) {
+        Logger.log("[setupBurkeListener] : Received burkeTrigger message");
+        Logger.log(event.data);
+        Logger.log("########################");
+        window.parent.postMessage(
+          { isBurkeReply: true, recordID: event.data.recordID },
+          "*",
+        );
+        try {
+          const burkeObject = JSON.parse(event.data.burkeObject);
+
+          const appendBurkeScript = async () => {
+            try {
+              const burkeJSFileName = await getLocalStorage(
+                "mllwtl_BurkeJSFileName",
+                true,
+              );
+              Logger.log(
+                "[appendBurkeScript]: Burke script filename => ",
+                burkeJSFileName,
+              );
+              if (!burkeJSFileName) {
+                Logger.log(
+                  "[appendBurkeScript]: Burke script filename not found in storage",
+                );
+                return;
+              }
+
+              const burkeScriptUrl = chrome.runtime.getURL(burkeJSFileName);
+
+              const script = document.createElement("script");
+              script.src = burkeScriptUrl;
+
+              if (burkeObject.xhr_options?.include_urls) {
+                script.setAttribute(
+                  "include-urls",
+                  burkeObject.xhr_options.include_urls.join(","),
+                );
+              }
+              if (burkeObject.xhr_options?.exclude_urls) {
+                script.setAttribute(
+                  "exclude-urls",
+                  burkeObject.xhr_options.exclude_urls.join(","),
+                );
+              }
+              script.setAttribute("burke-id", event.data.recordID);
+              script.setAttribute("api-endpoint", burkeObject.endpoint);
+
+              document.head.appendChild(script);
+              Logger.log(
+                "[appendBurkeScript]: Burke script appended successfully",
+              );
+            } catch (err) {
+              Logger.log(
+                "[appendBurkeScript]: Error appending Burke script",
+                err,
+              );
+            }
+          };
+
+          // Function to check if document is ready
+          const checkDocumentReady = () => {
+            if (document.head) {
+              appendBurkeScript();
+            } else {
+              // If head doesn't exist yet, wait for it
+              const observer = new MutationObserver((mutations, obs) => {
+                if (document.head) {
+                  appendBurkeScript();
+                  obs.disconnect();
+                }
+              });
+
+              observer.observe(document.documentElement, {
+                childList: true,
+                subtree: true,
+              });
+            }
+          };
+
+          // Start checking for document readiness
+          checkDocumentReady();
+        } catch (err) {
+          Logger.log(
+            "[setupBurkeListener] : Error in parsing burkeObject",
+            err,
+          );
+        }
       }
     });
   }
