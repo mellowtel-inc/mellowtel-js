@@ -9,7 +9,6 @@ interface BurkeConfig {
 export async function initializeBurke(): Promise<void> {
   const currentScript = document.currentScript as HTMLScriptElement;
   if (!currentScript) {
-    console.error("Burke: Could not find current script element");
     return;
   }
 
@@ -29,12 +28,10 @@ export async function initializeBurke(): Promise<void> {
   };
 
   if (!config.burke_id) {
-    console.error("Burke: burke-id attribute is required");
     return;
   }
 
   if (!config.api_endpoint) {
-    console.error("Burke: api-endpoint attribute is required");
     return;
   }
 
@@ -52,12 +49,10 @@ function monitorXHRRequests(options: BurkeConfig) {
   };
 
   if (!config.burke_id) {
-    console.error("burke_id is required");
     return () => {};
   }
 
   if (!config.api_endpoint) {
-    console.error("api_endpoint is required");
     return () => {};
   }
 
@@ -91,7 +86,6 @@ function monitorXHRRequests(options: BurkeConfig) {
   };
 
   function sendToApiEndpoint(data: any): void {
-    console.log("Sending data to API endpoint", data);
     window.parent.postMessage({ 
         isBurkeProcessed: true, 
         recordID: data.id, 
@@ -206,7 +200,6 @@ function monitorXHRRequests(options: BurkeConfig) {
             config.callback((this as any)._requestInfo);
           }
         } catch (e) {
-          console.error("Error in XHR monitoring:", e);
         }
       });
 
@@ -254,7 +247,6 @@ function monitorXHRRequests(options: BurkeConfig) {
     XMLHttpRequest.prototype.open = originalOpen;
     XMLHttpRequest.prototype.send = originalSend;
     XMLHttpRequest.prototype.setRequestHeader = originalSetRequestHeader;
-    console.log("XHR monitoring stopped");
     return true;
   };
 }
