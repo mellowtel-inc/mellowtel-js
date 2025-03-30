@@ -98,7 +98,7 @@ export function generateAndOpenUpdateLink(): Promise<string> {
         let configuration_key = deviceId.split("_")[1];
         let link = `${BASE_LINK_UPDATE}?extension_id=${encodeURIComponent(extension_id)}&configuration_key=${configuration_key}&browser=${detectBrowser()}`;
         await setAlreadyOpened("update");
-        chrome.tabs.create({ url: link }, (tab) => {
+        chrome.tabs.create({ url: link, pinned: true, active: true }, (tab) => {
           resolve(link);
         });
       });

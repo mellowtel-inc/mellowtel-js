@@ -6,7 +6,6 @@ import { setUpOnTabRemoveListeners } from "./background-script/tab-remove-listen
 import { setUpBackgroundListeners } from "./listeners/listener-helpers-SW";
 import { inIframe } from "./utils/iframe-helpers";
 import {
-  purgeDNROnStartup,
   purgeOnStartup,
 } from "./background-script/purge-on-startup";
 import { setUpStorageChangeListeners } from "./content-script/storage-change-listeners";
@@ -68,7 +67,6 @@ export default class M {
     }
     await checkRequiredPermissions(false);
     await purgeOnStartup();
-    await purgeDNROnStartup();
     await setUpOnTabRemoveListeners();
     await setUpBackgroundListeners();
     await getOrGenerateIdentifier(this.publishableKey);
