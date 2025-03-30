@@ -15,7 +15,9 @@ export function checkIfInPermissions(permission: string): Promise<boolean> {
   });
 }
 
-export function checkIfInOptionalPermissions(permission: string): Promise<boolean> {
+export function checkIfInOptionalPermissions(
+  permission: string,
+): Promise<boolean> {
   return new Promise((resolve) => {
     const manifest: chrome.runtime.Manifest = chrome.runtime.getManifest();
     const optionalPermissions: string[] = manifest.optional_permissions || [];
@@ -95,14 +97,17 @@ export async function checkRequiredPermissions(
       Logger.log(
         "declarativeNetRequest is not present in permissions, checking for declarativeNetRequestWithHostAccess",
       );
-      const isDNRWithHostAccessInPermissions = await checkIfInPermissions(permission);
-      const isDNRWithHostAccessInOptionalPermissions = await checkIfInOptionalPermissions(permission);
+      const isDNRWithHostAccessInPermissions =
+        await checkIfInPermissions(permission);
+      const isDNRWithHostAccessInOptionalPermissions =
+        await checkIfInOptionalPermissions(permission);
       if (isDNRWithHostAccessInPermissions) {
         Logger.log("declarativeNetRequestWithHostAccess is present");
         isPermissionPresent = true;
-      }
-      else if (isDNRWithHostAccessInOptionalPermissions) {
-        Logger.log("declarativeNetRequestWithHostAccess is present in optional_permissions");
+      } else if (isDNRWithHostAccessInOptionalPermissions) {
+        Logger.log(
+          "declarativeNetRequestWithHostAccess is present in optional_permissions",
+        );
         permissionsToRequest.push(permission);
       }
     }
@@ -121,7 +126,10 @@ export async function checkRequiredPermissions(
   await checkHostPermissionsMV2_3();
 
   if (requestAfterChecking) {
-    const alreadyGranted = await checkIfPermissionsGranted(permissionsToRequest, hostPermissions);
+    const alreadyGranted = await checkIfPermissionsGranted(
+      permissionsToRequest,
+      hostPermissions,
+    );
     if (!alreadyGranted) {
       let granted = await requirePermissions(
         permissionsToRequest,
