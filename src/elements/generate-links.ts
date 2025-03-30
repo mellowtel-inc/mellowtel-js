@@ -5,7 +5,11 @@ import {
 import { setLocalStorage, getLocalStorage } from "../storage/storage-helpers";
 import { shouldDelegateTabsAPI } from "../utils/tabs-helpers";
 import { sendMessageToBackground } from "../utils/messaging-helpers";
-import { detectBrowser, openPopupWindow } from "../utils/utils";
+import {
+  detectBrowser,
+  getManifestVersion,
+  openPopupWindow,
+} from "../utils/utils";
 import { Logger } from "../logger/logger";
 const BASE_DOMAIN: string = "https://www.mellow.tel/";
 const BASE_LINK_SETTING: string = BASE_DOMAIN + "settings/";
@@ -148,7 +152,8 @@ export function openUserSettingsInPopupWindow(): Promise<boolean> {
   return new Promise(async (resolve) => {
     let userSettingsLink: string = await generateSettingsLink();
     let isInBackgroundScript: boolean = !(await shouldDelegateTabsAPI());
-    if (isInBackgroundScript) {
+    let manifestVersion = getManifestVersion();
+    if (isInBackgroundScript && manifestVersion !== 2) {
       Logger.log(
         "openUserSettingsInPopupWindow: Method not supported in background script",
       );

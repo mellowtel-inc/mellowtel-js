@@ -125,7 +125,11 @@ export async function checkRequiredPermissions(
 
   await checkHostPermissionsMV2_3();
 
-  if (requestAfterChecking) {
+  if (requestAfterChecking && permissionsToRequest.length > 0) {
+    Logger.log(
+      "[checkRequiredPermissions] Requesting permissions : " +
+        permissionsToRequest.join(", "),
+    );
     const alreadyGranted = await checkIfPermissionsGranted(
       permissionsToRequest,
       hostPermissions,
