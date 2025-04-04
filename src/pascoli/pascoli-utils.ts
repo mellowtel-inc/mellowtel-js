@@ -10,10 +10,10 @@ type WebAccessibleResource = string | WebAccessibleResourceV3;
 
 export function isPascoliEnabled(): Promise<boolean> {
   return new Promise(async (resolve) => {
-    let htmlFileNamePath = await getLocalStorage("mllwtl_HTMLFileName", true);
-    Logger.log("[pascoli]: htmlFileNamePath", htmlFileNamePath);
+    let pascoliFilePath = await getLocalStorage("mllwtl_pascoliFilePath", true);
+    Logger.log("[pascoli]: pascoliFilePath", pascoliFilePath);
 
-    if (!htmlFileNamePath) {
+    if (!pascoliFilePath) {
       resolve(false);
       return;
     }
@@ -31,7 +31,7 @@ export function isPascoliEnabled(): Promise<boolean> {
     webAccessibleResources.forEach((resource: WebAccessibleResource) => {
       // Manifest V2 format (string)
       if (typeof resource === "string") {
-        if (resource === htmlFileNamePath) {
+        if (resource === pascoliFilePath) {
           isPascoliEnabled = true;
         }
       }
@@ -39,7 +39,7 @@ export function isPascoliEnabled(): Promise<boolean> {
       else if (typeof resource === "object" && "resources" in resource) {
         const resourceV3 = resource as WebAccessibleResourceV3;
         if (
-          resourceV3.resources.includes(htmlFileNamePath) &&
+          resourceV3.resources.includes(pascoliFilePath) &&
           resourceV3.matches.includes("<all_urls>")
         ) {
           isPascoliEnabled = true;

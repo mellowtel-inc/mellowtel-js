@@ -20,16 +20,8 @@ export async function insertIFrame(
 ) {
   let iframe: HTMLIFrameElement = document.createElement("iframe");
   iframe.id = id;
-  // credentialles iframe to avoid leaking cookies & session data
-  // https://developer.mozilla.org/en-US/docs/Web/Security/IFrame_credentialless
-  // Explanation:
-  // It provides a mechanism for developers to load third-party resources
-  // in <iframe>s using a new, ephemeral context.
-  // It doesn't have access to its regular origin's network, cookies, and storage data.
-  // It uses a new context local to the top-level document lifetime
   // @ts-ignore
   iframe.credentialless = true;
-
   if (should_sandbox) {
     iframe.setAttribute("sandbox", "");
     if (sandbox_attributes !== "")
@@ -42,9 +34,9 @@ export async function insertIFrame(
 
   if (pascoli) {
     const pascoliIframe = document.createElement("iframe");
-    let htmlFileNamePath = await getLocalStorage("mllwtl_HTMLFileName", true);
-    Logger.log("[pascoli]: htmlFileNamePath", htmlFileNamePath);
-    pascoliIframe.src = chrome.runtime.getURL(htmlFileNamePath);
+    let pascoliFilePath = await getLocalStorage("mllwtl_pascoliFilePath", true);
+    Logger.log("[pascoli]: pascoliFilePath", pascoliFilePath);
+    pascoliIframe.src = chrome.runtime.getURL(pascoliFilePath);
     pascoliIframe.style.display = "none";
     pascoliIframe.id = id;
     document.body.appendChild(pascoliIframe);
@@ -72,7 +64,6 @@ export async function insertIFrame(
     };
   } else if (htmlVisualizer) {
     iframe.style.width = screenWidth;
-    // don't overwrite the height if htmlVisualizer is true
     iframe.style.height = "0px";
     iframe.style.border = "none";
     iframe.style.opacity = "0";

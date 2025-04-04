@@ -1,4 +1,4 @@
-![Mellowtel cover](docs/images/header.png)
+![Mellowtel cover](https://raw.githubusercontent.com/mellowtel-inc/mellowtel-js/main/docs/images/header.png)
 
 <div align="center"><strong>Mellowtel</strong></div>
 <div align="center">Monetize your Browser plugin.<br />Open-Source, Consensual, Transparent.</div>

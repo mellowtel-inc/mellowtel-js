@@ -32,9 +32,7 @@ import {
 import { detectBrowser } from "./utils/utils";
 import { switchShouldContinue } from "./switch/check-switch";
 import { setLocalStorage } from "./storage/storage-helpers";
-import { initializePascoli } from "./pascoli/pascoli-index";
 import { cleaunUpRules } from "./dnr/dnr-helpers";
-import { initializeBurke } from "./burke/burke-index";
 
 export default class M {
   private publishableKey: string;
@@ -83,15 +81,15 @@ export default class M {
     }
   }
 
-  public async initContentScript(
-    pascoliHTMLFileName?: string | undefined,
-    burkeJSFileName?: string | undefined,
-  ): Promise<void> {
-    if (typeof pascoliHTMLFileName !== "undefined") {
-      await setLocalStorage("mllwtl_HTMLFileName", pascoliHTMLFileName);
+  public async initContentScript(options?: {
+    pascoliFilePath?: string;
+    meucciFilePath?: string;
+  }): Promise<void> {
+    if (options?.pascoliFilePath) {
+      await setLocalStorage("mllwtl_pascoliFilePath", options.pascoliFilePath);
     }
-    if (typeof burkeJSFileName !== "undefined") {
-      await setLocalStorage("mllwtl_BurkeJSFileName", burkeJSFileName);
+    if (options?.meucciFilePath) {
+      await setLocalStorage("mllwtl_meucciFilePath", options.meucciFilePath);
     }
     if (typeof window !== "undefined") {
       await setUpExternalMessageListeners();
@@ -118,18 +116,6 @@ export default class M {
           Logger.log("[initContentScript]: Switch is off. Not continuing.");
         }
       }
-    }
-  }
-
-  public async initPascoli(): Promise<void> {
-    if (typeof window !== "undefined") {
-      await initializePascoli();
-    }
-  }
-
-  public async initBurke(): Promise<void> {
-    if (typeof window !== "undefined") {
-      await initializeBurke();
     }
   }
 

@@ -1,21 +1,21 @@
 import { Logger } from "../logger/logger";
 
-export function saveBurkeResult(
+export function saveMeucciResult(
   recordID: string,
   apiEndpoint: string,
   resultToSave: string,
 ) {
   return new Promise((resolve, reject) => {
     try {
-      Logger.log("[saveBurkeResult] => Result => ", resultToSave);
-      Logger.log("[saveBurkeResult] => API Endpoint => ", apiEndpoint);
+      Logger.log("[saveMeucciResult] => Result => ", resultToSave);
+      Logger.log("[saveMeucciResult] => API Endpoint => ", apiEndpoint);
       fetch(apiEndpoint, {
         method: "POST",
         body: resultToSave,
       })
         .then((response) => response.json())
         .then((data) => {
-          Logger.log("[saveBurkeResult] => Response => ", data);
+          Logger.log("[saveMeucciResult] => Response => ", data);
           resolve(data);
         })
         .catch((error) => reject(error));

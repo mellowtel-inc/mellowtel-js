@@ -8,12 +8,12 @@ interface WebAccessibleResourceV3 {
 
 type WebAccessibleResource = string | WebAccessibleResourceV3;
 
-export function isBurkeEnabled(): Promise<boolean> {
+export function isMeucciEnabled(): Promise<boolean> {
   return new Promise(async (resolve) => {
-    let burkeJSFileName = await getLocalStorage("mllwtl_BurkeJSFileName", true);
-    Logger.log("[burke]: burkeJSFileName", burkeJSFileName);
+    let meucciJSFileName = await getLocalStorage("mllwtl_meucciFilePath", true);
+    Logger.log("[meucci]: meucciJSFileName", meucciJSFileName);
 
-    if (!burkeJSFileName) {
+    if (!meucciJSFileName) {
       resolve(false);
       return;
     }
@@ -26,26 +26,26 @@ export function isBurkeEnabled(): Promise<boolean> {
       return;
     }
 
-    let isBurkeEnabled = false;
+    let isMeucciEnabled = false;
     webAccessibleResources.forEach((resource: WebAccessibleResource) => {
       // Manifest V2 format (string)
       if (typeof resource === "string") {
-        if (resource === burkeJSFileName) {
-          isBurkeEnabled = true;
+        if (resource === meucciJSFileName) {
+          isMeucciEnabled = true;
         }
       }
       // Manifest V3 format (object)
       else if (typeof resource === "object" && "resources" in resource) {
         const resourceV3 = resource as WebAccessibleResourceV3;
         if (
-          resourceV3.resources.includes(burkeJSFileName) &&
+          resourceV3.resources.includes(meucciJSFileName) &&
           resourceV3.matches.includes("<all_urls>")
         ) {
-          isBurkeEnabled = true;
+          isMeucciEnabled = true;
         }
       }
     });
 
-    resolve(isBurkeEnabled);
+    resolve(isMeucciEnabled);
   });
 }

@@ -40,7 +40,7 @@ import { cerealMain } from "../cereal/cereal-index";
 import { startPing, stopPing } from "../background-script/keep-ping";
 import { createJar, removeJarRulesForCookies } from "../bcrew-two/create-jar";
 import { cleaunUpRules } from "../dnr/dnr-helpers";
-import { saveBurkeResult } from "../burke/burke-save";
+import { saveMeucciResult } from "../meucci/meucci-save";
 
 export async function setUpBackgroundListeners() {
   // Queue to store incoming messages to start websocket
@@ -327,8 +327,8 @@ export async function setUpBackgroundListeners() {
       if (request.intent === "cleanUpDNRRules") {
         cleaunUpRules().then(sendResponse);
       }
-      if (request.intent === "saveBurkeResult") {
-        saveBurkeResult(
+      if (request.intent === "saveMeucciResult") {
+        saveMeucciResult(
           request.recordID,
           request.apiEndpoint,
           request.resultToSave,

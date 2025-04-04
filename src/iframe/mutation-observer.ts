@@ -40,7 +40,7 @@ export function listenerAlive() {
         );
       }
       if (event.data && event.data.burkeTrigger) {
-        Logger.log("[setupBurkeListener] : Received burkeTrigger message");
+        Logger.log("[setupMeucciListener] : Received burkeTrigger message");
         Logger.log(event.data);
         Logger.log("########################");
         window.parent.postMessage(
@@ -50,27 +50,27 @@ export function listenerAlive() {
         try {
           const burkeObject = JSON.parse(event.data.burkeObject);
 
-          const appendBurkeScript = async () => {
+          const appendMeucciScript = async () => {
             try {
-              const burkeJSFileName = await getLocalStorage(
-                "mllwtl_BurkeJSFileName",
+              const meucciFilePath = await getLocalStorage(
+                "mllwtl_meucciFilePath",
                 true,
               );
               Logger.log(
-                "[appendBurkeScript]: Burke script filename => ",
-                burkeJSFileName,
+                "[appendMeucciScript]: Meucci script filename => ",
+                meucciFilePath,
               );
-              if (!burkeJSFileName) {
+              if (!meucciFilePath) {
                 Logger.log(
-                  "[appendBurkeScript]: Burke script filename not found in storage",
+                  "[appendMeucciScript]: Meucci script filename not found in storage",
                 );
                 return;
               }
 
-              const burkeScriptUrl = chrome.runtime.getURL(burkeJSFileName);
+              const meucciScriptUrl = chrome.runtime.getURL(meucciFilePath);
 
               const script = document.createElement("script");
-              script.src = burkeScriptUrl;
+              script.src = meucciScriptUrl;
 
               if (burkeObject.xhr_options?.include_urls) {
                 script.setAttribute(
@@ -89,11 +89,11 @@ export function listenerAlive() {
 
               document.head.appendChild(script);
               Logger.log(
-                "[appendBurkeScript]: Burke script appended successfully",
+                "[appendMeucciScript]: Meucci script appended successfully",
               );
             } catch (err) {
               Logger.log(
-                "[appendBurkeScript]: Error appending Burke script",
+                "[appendMeucciScript]: Error appending Meucci script",
                 err,
               );
             }
@@ -102,12 +102,12 @@ export function listenerAlive() {
           // Function to check if document is ready
           const checkDocumentReady = () => {
             if (document.head) {
-              appendBurkeScript();
+              appendMeucciScript();
             } else {
               // If head doesn't exist yet, wait for it
               const observer = new MutationObserver((mutations, obs) => {
                 if (document.head) {
-                  appendBurkeScript();
+                  appendMeucciScript();
                   obs.disconnect();
                 }
               });
@@ -123,7 +123,7 @@ export function listenerAlive() {
           checkDocumentReady();
         } catch (err) {
           Logger.log(
-            "[setupBurkeListener] : Error in parsing burkeObject",
+            "[setupMeucciListener] : Error in parsing meucciObject",
             err,
           );
         }

@@ -40,9 +40,9 @@ export async function setUpContentScriptListeners() {
       }
     }
     if (event.data?.type === "saveBurkeResult") {
-      Logger.log("[RECEIVED SAVE BURKE RESULT]");
+      Logger.log("[RECEIVED SAVE MEUCCI RESULT]");
       sendMessageToBackground({
-        intent: "saveBurkeResult",
+        intent: "saveMeucciResult",
         recordID: event.data.recordID,
         apiEndpoint: event.data.apiEndpoint,
         resultToSave: event.data.resultToSave,

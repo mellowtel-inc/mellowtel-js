@@ -967,19 +967,6 @@ export async function proceedWithActivation(
           if (event.data.isBurkeReply && event.data.recordID === recordID) {
             iframeRepliedBurke = true;
           }
-          // isBurkeProcessed
-          if (event.data.isBurkeProcessed && event.data.recordID === recordID) {
-            Logger.log(
-              "[proceedWithActivation] => Burke processed. Sending message to background script to save the result",
-            );
-            // send message to background script to save the result
-            sendMessageToBackground({
-              intent: "saveBurkeResult",
-              recordID: recordID,
-              burkeObject: burkeObject,
-              resultToSave: event.data.resultToSave,
-            });
-          }
         });
 
         let timerBurke = setInterval(function () {
