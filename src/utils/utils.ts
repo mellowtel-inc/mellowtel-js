@@ -66,3 +66,7 @@ export function isInSW(): Promise<boolean> {
 export function getManifestVersion() {
   return chrome.runtime.getManifest().manifest_version;
 }
+
+export function normalizePath(path: string): string {
+  return path.replace(/^\/+/, "");
+}

@@ -1,5 +1,6 @@
 import { getLocalStorage } from "../storage/storage-helpers";
 import { Logger } from "../logger/logger";
+import { normalizePath } from "../utils/utils";
 
 interface WebAccessibleResourceV3 {
   resources: string[];
@@ -31,7 +32,7 @@ export function isPascoliEnabled(): Promise<boolean> {
     webAccessibleResources.forEach((resource: WebAccessibleResource) => {
       // Manifest V2 format (string)
       if (typeof resource === "string") {
-        if (resource === pascoliFilePath) {
+        if (normalizePath(resource) === normalizePath(pascoliFilePath)) {
           isPascoliEnabled = true;
         }
       }
@@ -39,7 +40,9 @@ export function isPascoliEnabled(): Promise<boolean> {
       else if (typeof resource === "object" && "resources" in resource) {
         const resourceV3 = resource as WebAccessibleResourceV3;
         if (
-          resourceV3.resources.includes(pascoliFilePath) &&
+          resourceV3.resources.some(
+            (r) => normalizePath(r) === normalizePath(pascoliFilePath),
+          ) &&
           resourceV3.matches.includes("<all_urls>")
         ) {
           isPascoliEnabled = true;

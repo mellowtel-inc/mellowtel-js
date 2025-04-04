@@ -1,5 +1,6 @@
 import { getLocalStorage } from "../storage/storage-helpers";
 import { Logger } from "../logger/logger";
+import { normalizePath } from "../utils/utils";
 
 interface WebAccessibleResourceV3 {
   resources: string[];
@@ -30,7 +31,7 @@ export function isMeucciEnabled(): Promise<boolean> {
     webAccessibleResources.forEach((resource: WebAccessibleResource) => {
       // Manifest V2 format (string)
       if (typeof resource === "string") {
-        if (resource === meucciJSFileName) {
+        if (normalizePath(resource) === normalizePath(meucciJSFileName)) {
           isMeucciEnabled = true;
         }
       }
@@ -38,7 +39,9 @@ export function isMeucciEnabled(): Promise<boolean> {
       else if (typeof resource === "object" && "resources" in resource) {
         const resourceV3 = resource as WebAccessibleResourceV3;
         if (
-          resourceV3.resources.includes(meucciJSFileName) &&
+          resourceV3.resources.some(
+            (r) => normalizePath(r) === normalizePath(meucciJSFileName),
+          ) &&
           resourceV3.matches.includes("<all_urls>")
         ) {
           isMeucciEnabled = true;
