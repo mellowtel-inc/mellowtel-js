@@ -432,13 +432,7 @@ export async function preProcessCrawl(
 export function preProcessUrl(url: string, recordID: string): string[] {
   if (url.startsWith("http://")) url = url.replace("http://", "https://");
   let urlObj = new URL(url);
-  let params = new URLSearchParams(urlObj.search);
-  params.append("sb-p2p", "true");
-  params.append("should-crawl", "true");
-  params.append("record-id", recordID);
-  urlObj.search = params.toString();
   let hostname: string = urlObj.hostname;
-  url = urlObj.toString();
   return [url, hostname];
 }
 

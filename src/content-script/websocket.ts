@@ -4,6 +4,8 @@ import {
   REFRESH_INTERVAL,
   MAX_PARALLEL_EXECUTIONS_BATCH,
   MAX_PARALLEL_EXECUTIONS_BATCH_FETCH,
+  WS_MESSAGE_RATE_LIMIT_MAX_REQUESTS,
+  WS_MESSAGE_RATE_LIMIT_TIME_WINDOW,
 } from "../constants";
 import { isStarted } from "../utils/start-stop-helpers";
 import { RateLimiter } from "../local-rate-limiting/rate-limiter";
@@ -41,6 +43,26 @@ const RETRY_DELAYS: number[] = [
 let is_websocket_connected: boolean = false;
 let retryAttempt: number = 0;
 let retryTimeout: any = null;
+
+let wsMessageTimestamps: number[] = [];
+
+function checkWebSocketMessageRateLimit(): boolean {
+  Logger.log(`[🌐]: Checking WebSocket message rate limit...`);
+  const now = Date.now();
+  const cutoffTime = now - WS_MESSAGE_RATE_LIMIT_TIME_WINDOW;
+  Logger.log(`[🌐]: Now: ${now}`);
+  Logger.log(`[🌐]: Cutoff time: ${cutoffTime}`);
+  
+  wsMessageTimestamps = wsMessageTimestamps.filter(timestamp => timestamp > cutoffTime);
+  Logger.log(`[🌐]: Filtered timestamps: ${wsMessageTimestamps}`);
+  if (wsMessageTimestamps.length >= WS_MESSAGE_RATE_LIMIT_MAX_REQUESTS) {
+    Logger.log(`[🌐]: WebSocket message rate limit exceeded. ${wsMessageTimestamps.length} messages in last ${WS_MESSAGE_RATE_LIMIT_TIME_WINDOW / 1000} seconds. Ignoring message.`);
+    return false;
+  }
+  
+  wsMessageTimestamps.push(now);
+  return true;
+}
 
 // Approval API - constants
 const APPROVAL_RETRY_DELAYS: number[] = [
@@ -345,6 +367,11 @@ export async function startConnectionWs(identifier: string): WebSocket {
               Logger.log(`[🌐]: Refreshing cereal frame...`);
               await refreshCereal();
               return;
+            }
+
+            if (!checkWebSocketMessageRateLimit()) {
+              Logger.log(`[🌐]: Local WebSocket Rate limit exceeded, ignoring message...`);
+              return; // Ignore the message if rate limit exceeded
             }
 
             // Check if the request is a POST request

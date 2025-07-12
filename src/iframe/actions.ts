@@ -139,6 +139,94 @@ export function executeActions(
           executeNextAction();
           break;
 
+          case "waitFor":
+            Logger.log(
+              "[executeNextAction] waiting for element",
+              action.selector,
+            );
+            const timeout = action.timeout || 60000;
+            const startTime = Date.now();
+            function checkForElement() {
+              const element = document.querySelector(action.selector);
+              if (element) {
+                Logger.log("[executeNextAction] element found!", action.selector);
+                executeNextAction();
+                return;
+              }
+              const elapsedTime = Date.now() - startTime;
+              if (elapsedTime >= timeout) {
+                Logger.warn(`Timeout waiting for selector: ${action.selector}`);
+                executeNextAction();
+                return;
+              }
+              setTimeout(checkForElement, 100);
+            }
+            checkForElement();
+            break;
+  
+          case "real_input_g":
+            const element = document.querySelector(action.selector);
+            if (element && element.isContentEditable) {
+              element.focus();
+  
+              const text = action.text || "";
+  
+              const selection = window.getSelection();
+  
+              if (selection && selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+                range.deleteContents();
+  
+                if (
+                  element.innerHTML.trim() === "" ||
+                  element.innerHTML === "<br>"
+                ) {
+                  const paragraph = document.createElement("p");
+                  const textNode = document.createTextNode(text);
+                  paragraph.appendChild(textNode);
+                  element.innerHTML = "";
+                  element.appendChild(paragraph);
+                } else {
+                  const textNode = document.createTextNode(text);
+                  range.insertNode(textNode);
+  
+                  range.setStartAfter(textNode);
+                  range.setEndAfter(textNode);
+                  selection.removeAllRanges();
+                  selection.addRange(range);
+                }
+              } else {
+                const paragraph =
+                  element.querySelector("p") || document.createElement("p");
+                if (!paragraph.parentNode) {
+                  element.appendChild(paragraph);
+                }
+                paragraph.textContent = text;
+              }
+  
+              if (element.classList.contains("ql-blank")) {
+                element.classList.remove("ql-blank");
+              }
+  
+              const inputEvent = new InputEvent("input", {
+                bubbles: true,
+                cancelable: true,
+                inputType: "insertText",
+                data: text,
+              });
+              element.dispatchEvent(inputEvent);
+              const changeEvent = new Event("change", {
+                bubbles: true,
+                cancelable: true,
+              });
+              element.dispatchEvent(changeEvent);
+            } else {
+              Logger.warn(
+                `Element for real_input not found or not contenteditable: ${action.selector}`,
+              );
+            }
+            executeNextAction();
+            break;
         default:
           Logger.warn(`Unknown action type: ${action.type}`);
           executeNextAction();
