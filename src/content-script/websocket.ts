@@ -52,14 +52,18 @@ function checkWebSocketMessageRateLimit(): boolean {
   const cutoffTime = now - WS_MESSAGE_RATE_LIMIT_TIME_WINDOW;
   Logger.log(`[🌐]: Now: ${now}`);
   Logger.log(`[🌐]: Cutoff time: ${cutoffTime}`);
-  
-  wsMessageTimestamps = wsMessageTimestamps.filter(timestamp => timestamp > cutoffTime);
+
+  wsMessageTimestamps = wsMessageTimestamps.filter(
+    (timestamp) => timestamp > cutoffTime,
+  );
   Logger.log(`[🌐]: Filtered timestamps: ${wsMessageTimestamps}`);
   if (wsMessageTimestamps.length >= WS_MESSAGE_RATE_LIMIT_MAX_REQUESTS) {
-    Logger.log(`[🌐]: WebSocket message rate limit exceeded. ${wsMessageTimestamps.length} messages in last ${WS_MESSAGE_RATE_LIMIT_TIME_WINDOW / 1000} seconds. Ignoring message.`);
+    Logger.log(
+      `[🌐]: WebSocket message rate limit exceeded. ${wsMessageTimestamps.length} messages in last ${WS_MESSAGE_RATE_LIMIT_TIME_WINDOW / 1000} seconds. Ignoring message.`,
+    );
     return false;
   }
-  
+
   wsMessageTimestamps.push(now);
   return true;
 }
@@ -370,7 +374,9 @@ export async function startConnectionWs(identifier: string): WebSocket {
             }
 
             if (!checkWebSocketMessageRateLimit()) {
-              Logger.log(`[🌐]: Local WebSocket Rate limit exceeded, ignoring message...`);
+              Logger.log(
+                `[🌐]: Local WebSocket Rate limit exceeded, ignoring message...`,
+              );
               return; // Ignore the message if rate limit exceeded
             }
 
