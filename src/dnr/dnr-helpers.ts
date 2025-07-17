@@ -19,6 +19,8 @@ export function disableXFrameHeaders(
       res(false);
     } else {
       let ruleId = getRuleIdFromHostname(hostname);
+      Logger.log("Disabling X-Frame-Options for hostname:", hostname);
+      Logger.log("Rule ID:", ruleId);
       shouldDelegateDNR().then((delegate) => {
         if (delegate) {
           sendMessageToBackground({
@@ -46,18 +48,6 @@ export function disableXFrameHeaders(
                       header: "content-security-policy",
                       operation: "remove" as HeaderOperation,
                     },
-                    /*{
-                      header: "X-Frame-Options",
-                      operation: "remove" as HeaderOperation,
-                    },
-                    {
-                      header: "Content-Security-Policy",
-                      operation: "remove" as HeaderOperation,
-                    },
-                    {
-                      header: "Frame-Options",
-                      operation: "remove" as HeaderOperation,
-                    },*/
                     {
                       header: "cross-origin-embedder-policy",
                       operation: "remove" as HeaderOperation,
@@ -78,11 +68,7 @@ export function disableXFrameHeaders(
                 },
                 condition: {
                   resourceTypes: ["sub_frame" as ResourceType],
-                  urlFilter: "*://*/*",
-                  // `*${hostname}*`, --> specific filter disabled because
-                  // there are internal redirects that need to be handled.
-                  // Need to find a way to handle redirects and disable headers
-                  // for all of them (while leaving them on for other sites).
+                  urlFilter: `*${hostname}*`
                 },
               },
             ],
@@ -94,9 +80,11 @@ export function disableXFrameHeaders(
   });
 }
 
-export function enableXFrameHeaders(hostname: string): Promise<boolean> {
+export async function enableXFrameHeaders(hostname: string): Promise<boolean> {
   return new Promise(function (res) {
     let ruleId = getRuleIdFromHostname(hostname);
+    Logger.log("Enabling X-Frame-Options for hostname:", hostname);
+    Logger.log("Rule ID:", ruleId);
     shouldDelegateDNR().then((delegate) => {
       if (delegate) {
         sendMessageToBackground({
@@ -234,17 +222,11 @@ export function enableHeadersForPOST(): Promise<boolean> {
 }
 
 export function getRuleIdFromHostname(hostname: string): number {
-  // Disabled because a hostname can redirect to another hostname.
-  // We need to disable the headers for the redirected hostname too.
-  // TODO: Find a way to "map out" the redirects and disable the headers for all of them.
-  /*
   let hashNumber = 0;
   for (let i = 0; i < hostname.length; i++) {
     hashNumber += hostname.charCodeAt(i);
   }
   return hashNumber;
-  */
-  return RULE_ID_XFRAME;
 }
 
 export function shouldDelegateDNR(): Promise<boolean> {

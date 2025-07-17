@@ -4,6 +4,7 @@ import { Logger } from "../../logger/logger";
 import { getFromRequestInfoStorage } from "../../request-info/request-info-helpers";
 import { getFromRequestMessageStorage } from "../../request-message/request-message-helpers";
 import { cerealMain } from "../../cereal/cereal-index";
+import { getFinalUrl } from "../../utils/utils";
 
 export async function saveCrawl(
   recordID: string,
@@ -82,7 +83,7 @@ export async function saveCrawl(
       node_identifier: node_identifier,
       BATCH_execution: BATCH_execution,
       batch_id: batch_id,
-      final_url: window.location.href,
+      final_url: getFinalUrl(),
       website_unreachable: website_unreachable,
       statusCode: moreInfo.statusCode,
       requestMessageInfo: requestMessageInfo,
@@ -118,6 +119,7 @@ export async function saveCrawl(
           recordID,
           BATCH_execution,
           delayBetweenExecutions,
+          url,
         );
         return data;
       })
@@ -127,6 +129,7 @@ export async function saveCrawl(
           recordID,
           BATCH_execution,
           delayBetweenExecutions,
+          url,
         );
         return error;
       });

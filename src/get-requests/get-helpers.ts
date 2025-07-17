@@ -78,6 +78,7 @@ export function handleGetRequest(
             recordID,
             BATCH_execution,
             delayBetweenExecutions,
+            method_endpoint,
           );
         } catch (_) {
           Logger.log("[handleGetRequest]: Not JSON");

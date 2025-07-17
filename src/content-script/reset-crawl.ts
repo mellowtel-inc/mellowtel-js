@@ -16,10 +16,22 @@ import { deleteFromRequestMessageStorage } from "../request-message/request-mess
 import { sendMessageToContentScript } from "../utils/messaging-helpers";
 import { waitForResetInterval } from "../utils/trigger-storage";
 
+function getHostname(url: string) {
+  try {
+    url = url.toString();
+    let hostname = new URL(url).hostname;
+    return hostname;
+  } catch (error) {
+    Logger.log("[getHostname] : Error getting hostname => " + error);
+    return "";
+  }
+}
+
 export async function resetAfterCrawl(
   recordID: string,
   BATCH_execution: boolean,
   delayBetweenExecutions: number = 500,
+  url: string,
 ) {
   return new Promise(async (resolve) => {
     if (await isInSW()) {
@@ -33,6 +45,7 @@ export async function resetAfterCrawl(
             recordID: recordID,
             BATCH_execution: BATCH_execution,
             delayBetweenExecutions: delayBetweenExecutions,
+            url: url,
           });
           if (response !== null) {
             break;
@@ -71,7 +84,9 @@ export async function resetAfterCrawl(
                 delayBetweenExecutions,
             );
             // if fetching during batch execution, wait delayBetweenExecutions before proceeding
-            setTimeout(() => {
+            setTimeout(async () => {
+              let hostname = getHostname(url);
+              await enableXFrameHeaders(hostname);
               proceedWithActivation(
                 dataPacket.url,
                 dataPacket.recordID,
@@ -106,6 +121,8 @@ export async function resetAfterCrawl(
               resolve("done");
             }, delayBetweenExecutions);
           } else {
+            let hostname = getHostname(url);
+            await enableXFrameHeaders(hostname);
             await proceedWithActivation(
               dataPacket.url,
               dataPacket.recordID,
@@ -140,6 +157,8 @@ export async function resetAfterCrawl(
             resolve("done");
           }
         } else {
+          let hostname = getHostname(url);
+          await enableXFrameHeaders(hostname);
           resolve("done");
         }
       } else {
@@ -153,7 +172,8 @@ export async function resetAfterCrawl(
           );
           if (frameCountTotal === 0 && !BATCH_execution) {
             Logger.log("[🌐] : Resetting headers!");
-            enableXFrameHeaders("");
+            let hostname = getHostname(url);
+            await enableXFrameHeaders(hostname);
             Logger.log("[🌐] : Waiting for minimum reset interval...");
             await waitForResetInterval();
             Logger.log("[🌐] : Resetting headers!");
@@ -163,17 +183,20 @@ export async function resetAfterCrawl(
             // wait for 1 minute before resetting headers
             setTimeout(async () => {
               Logger.log("[🌐] : Resetting headers (BATCH_execution)!");
-              enableXFrameHeaders("");
+              let hostname = getHostname(url);
+              await enableXFrameHeaders(hostname);
               Logger.log("[🌐] : Waiting for minimum reset interval...");
               await waitForResetInterval();
               Logger.log("[🌐] : Resetting headers!");
               resetTriggersDownload();
               resolve("done");
             }, 60000);
-          } /* else {
-        resetAfterCrawl(recordID, BATCH_execution);
-      }*/
-        }, 15000);
+          } else {
+            let hostname = getHostname(url);
+            await enableXFrameHeaders(hostname);
+            resolve("done");
+          }
+        }, 5000);
       }
     }
   });
@@ -184,6 +207,7 @@ export function setLifespanForIframe(
   waitBeforeScraping: number,
   BATCH_execution: boolean,
   delayBetweenExecutions: number = 500,
+  url: string,
 ) {
   Logger.log(
     "Setting lifespan for iframe => " +
@@ -197,7 +221,7 @@ export function setLifespanForIframe(
     let divIframe = document.getElementById("div-" + recordID);
     if (iframe) iframe.remove();
     if (divIframe) divIframe.remove();
-    await resetAfterCrawl(recordID, BATCH_execution, delayBetweenExecutions);
+    await resetAfterCrawl(recordID, BATCH_execution, delayBetweenExecutions, url);
     if (dataId === DATA_ID_IFRAME) {
       await hideBadgeIfShould();
     }

@@ -96,6 +96,7 @@ export async function setUpBackgroundListeners() {
           recordID: request.recordID,
           BATCH_execution: request.BATCH_execution,
           delayBetweenExecutions: request.delayBetweenExecutions,
+          url: request.url,
         }).then(sendResponse);
       }
       if (request.intent === "handlePOSTRequest") {
