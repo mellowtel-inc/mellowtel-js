@@ -12,6 +12,7 @@ export function MeasureConnectionSpeed(): Promise<number> {
     let speedTestTimestamp = savedSpeedTestResults.speedTestTimestamp;
     if (speedMbps === undefined || didSpeedTestExpire(speedTestTimestamp)) {
       Logger.log("[MeasureConnectionSpeed]: Running speed test...");
+      await saveSpeedTestResults(0);
       shouldRerouteToBackground().then((reroute) => {
         if (reroute) {
           sendMessageToBackground({
@@ -28,7 +29,7 @@ export function MeasureConnectionSpeed(): Promise<number> {
         } else {
           const speedTest = new SpeedTest({
             autoStart: false,
-            measurements: [{ type: "download", bytes: 10e6, count: 1 }],
+            measurements: [{ type: "download", bytes: 1e6, count: 1 }],
           });
 
           speedTest.onFinish = async (results) => {
