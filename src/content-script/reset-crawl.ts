@@ -7,7 +7,6 @@ import {
 } from "../constants";
 import { proceedWithActivation } from "./execute-crawl";
 import { getFrameCount, isInSW } from "../utils/utils";
-import { enableXFrameHeaders } from "../dnr/dnr-helpers";
 import { Logger } from "../logger/logger";
 import { resetTriggersDownload } from "../utils/triggers-download-helpers";
 import { hideBadgeIfShould } from "../transparency/badge-settings";
@@ -152,8 +151,6 @@ export async function resetAfterCrawl(
               frameCountTotal,
           );
           if (frameCountTotal === 0 && !BATCH_execution) {
-            Logger.log("[🌐] : Resetting headers!");
-            enableXFrameHeaders("");
             Logger.log("[🌐] : Waiting for minimum reset interval...");
             await waitForResetInterval();
             Logger.log("[🌐] : Resetting headers!");
@@ -162,8 +159,6 @@ export async function resetAfterCrawl(
           } else if (frameCountTotal === 0 && BATCH_execution) {
             // wait for 1 minute before resetting headers
             setTimeout(async () => {
-              Logger.log("[🌐] : Resetting headers (BATCH_execution)!");
-              enableXFrameHeaders("");
               Logger.log("[🌐] : Waiting for minimum reset interval...");
               await waitForResetInterval();
               Logger.log("[🌐] : Resetting headers!");

@@ -1,7 +1,4 @@
 import { sendMessageToContentScript } from "../utils/messaging-helpers";
-import { getLocalStorage, setLocalStorage } from "../storage/storage-helpers";
-import { start } from "../utils/start-stop-helpers";
-import { getOptInStatus, optIn } from "../utils/opt-in-out-helpers";
 import { Logger } from "../logger/logger";
 
 export async function setUpOnTabRemoveListeners(): Promise<void> {

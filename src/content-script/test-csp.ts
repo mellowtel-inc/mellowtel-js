@@ -20,7 +20,7 @@ export function isCSPEnabled(): Promise<boolean> {
     document.addEventListener("securitypolicyviolation", (e) => {
       if (
         e.blockedURI ===
-        "https://m-bucket-light.s3.amazonaws.com/lightning-boltrepo-com.svg"
+        "https://mellowtel-bucket.s3.us-east-1.amazonaws.com/lightning-boltrepo-com.svg"
       ) {
         removeCSPTestImage();
         resolve(true);

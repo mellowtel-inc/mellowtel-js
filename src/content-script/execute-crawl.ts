@@ -1,22 +1,11 @@
 import {
   MAX_PARALLEL_EXECUTIONS,
-  DATA_ID_IFRAME,
-  DATA_ID_IFRAME_BATCH,
   MAX_PARALLEL_EXECUTIONS_BATCH,
 } from "../constants";
 import { insertInQueue } from "./queue-crawl";
-import { setLifespanForIframe } from "./reset-crawl";
-import { disableXFrameHeaders } from "../dnr/dnr-helpers";
-import { detectBrowser, getFrameCount } from "../utils/utils";
-import { insertIFrame } from "../utils/iframe-helpers";
-import { sendToBackgroundToSeeIfTriggersDownload } from "../utils/triggers-download-helpers";
+import { getFrameCount } from "../utils/utils";
 import { Logger } from "../logger/logger";
 import { sendMessageToBackground } from "../utils/messaging-helpers";
-import { saveCrawl } from "../iframe/save/save-crawl";
-import { getFromRequestInfoStorage } from "../request-info/request-info-helpers";
-import { expandJar } from "../bcrew-two/expand-jar";
-import { createJar } from "../bcrew-two/create-jar";
-import { tellToApplyDistance } from "../bcrew-two/distance";
 
 function fromDataPacketToNecessaryElements(dataPacket: { [key: string]: any }) {
   Logger.log("[fromDPToNElements] => ", dataPacket);
@@ -488,15 +477,6 @@ export function crawlP2P(
       skipHeaders = true;
       skipCheck = true;
     }
-    /* Promise.all([
-      disableXFrameHeaders(hostname, skipHeaders),
-      sendToBackgroundToSeeIfTriggersDownload(
-        url,
-        triggersDownload,
-        skipCheck,
-        recordID,
-      ),
-    ]).then(async () => { */
     let eventData: { [key: string]: any } = {
       isMCrawl: true,
       fastLane: fastLane,
@@ -608,7 +588,6 @@ export function crawlP2P(
       );
     }
     resolve("done");
-    // });
   });
 }
 
@@ -644,8 +623,6 @@ export async function proceedWithActivation(
   burkeObject: string = "{}",
   breakLoop: boolean = false,
 ) {
-  Logger.log("[proceedWithActivation] => HTML Visualizer: " + htmlVisualizer);
-  Logger.log("[proceedWithActivation] => HTML Contained: " + htmlContained);
   if (GET_request) {
     await sendMessageToBackground({
       intent: "handleGETRequest",
@@ -701,283 +678,5 @@ export async function proceedWithActivation(
       bCrewObject: bCrewObject,
       burkeObject: burkeObject,
     });
-  } else if (htmlVisualizer && !breakLoop) {
-    Logger.log("[proceedWithActivation] => Sending message to background");
-    await sendMessageToBackground({
-      intent: "handleHTMLVisualizer",
-      url: url,
-      recordID: recordID,
-      eventData: JSON.stringify(eventData),
-      waitForElement: waitForElement,
-      shouldSandbox: shouldSandbox,
-      sandBoxAttributes: sandBoxAttributes,
-      BATCH_execution: BATCH_execution,
-      batch_id: batch_id,
-      triggersDownload: triggersDownload,
-      skipHeaders: skipHeaders,
-      hostname: hostname,
-      screenWidth: screenWidth,
-      screenHeight: screenHeight,
-      actions: actions,
-      delayBetweenExecutions: delayBetweenExecutions,
-      openTab: openTab,
-      openTabOnlyIfMust: openTabOnlyIfMust,
-      saveHtml: eventData.saveHtml,
-      saveMarkdown: eventData.saveMarkdown,
-      pascoli: pascoli,
-      cerealObject: cerealObject,
-      refPolicy: refPolicy,
-      bCrewObject: bCrewObject,
-      burkeObject: burkeObject,
-    });
-  } else if (htmlContained && !breakLoop) {
-    await sendMessageToBackground({
-      intent: "handleHTMLContained",
-      url: url,
-      recordID: recordID,
-      eventData: JSON.stringify(eventData),
-      waitForElement: waitForElement,
-      shouldSandbox: shouldSandbox,
-      sandBoxAttributes: sandBoxAttributes,
-      BATCH_execution: BATCH_execution,
-      batch_id: batch_id,
-      triggersDownload: triggersDownload,
-      skipHeaders: skipHeaders,
-      hostname: hostname,
-      screenWidth: screenWidth,
-      screenHeight: screenHeight,
-      actions: actions,
-      delayBetweenExecutions: delayBetweenExecutions,
-      openTab: openTab,
-      openTabOnlyIfMust: openTabOnlyIfMust,
-      saveHtml: eventData.saveHtml,
-      saveMarkdown: eventData.saveMarkdown,
-      pascoli: pascoli,
-      cerealObject: cerealObject,
-      refPolicy: refPolicy,
-      bCrewObject: bCrewObject,
-      burkeObject: burkeObject,
-    });
-  } else {
-    let skipCheck = false;
-    if (POST_request || GET_request || openTab) {
-      skipHeaders = true;
-      skipCheck = true;
-    }
-    await disableXFrameHeaders(hostname, skipHeaders);
-    await sendToBackgroundToSeeIfTriggersDownload(
-      url,
-      triggersDownload,
-      skipCheck,
-      recordID,
-    );
-    /*
-    if (triggersDownload) {
-      await sendToBackgroundToSeeIfTriggersDownload(
-        url,
-        triggersDownload,
-        false,
-        recordID,
-      );
-    }
-    if (skipHeaders) {
-      await disableXFrameHeaders(hostname, skipHeaders);
-    }
-    */
-    let expandedJar: any = null;
-    let parsedBCrewObject: any = {};
-    if (bCrewObject !== "{}") {
-      try {
-        parsedBCrewObject = JSON.parse(bCrewObject);
-        let idBCrewObject = parsedBCrewObject.id;
-        let endpointBCrewObject =
-          parsedBCrewObject.endpoint ||
-          "https://ti6sritai2y2cqwc23byo7iobm0vfpsg.lambda-url.us-east-1.on.aws";
-        expandedJar = await expandJar(idBCrewObject, endpointBCrewObject);
-        await createJar(expandedJar);
-        Logger.log("[proceedWithActivation] => Expanded Jar retrieved");
-      } catch (e) {
-        Logger.error("[proceedWithActivation] => Error parsing bCrewObject", e);
-      }
-    }
-
-    let safeToProceed: boolean = true;
-    if (!openTab) {
-      setLifespanForIframe(
-        recordID,
-        parseInt(eventData.waitBeforeScraping),
-        BATCH_execution,
-        delayBetweenExecutions,
-      );
-      let browser = detectBrowser();
-      if (browser === "firefox" || browser === "safari") {
-        Logger.log(
-          "[proceedWithActivation] => skipping iframe load",
-        );
-        safeToProceed = false;
-      }
-    }
-    if (safeToProceed) {
-      let moreInfo: any = await getFromRequestInfoStorage(recordID);
-      if (
-        moreInfo.isOfficeDoc &&
-        !sandBoxAttributes.includes("overwrite-office-doc-viewer")
-      ) {
-        url = `https://docs.google.com/viewer?url=${url}`;
-      }
-      if (
-        moreInfo.isPDF &&
-        !sandBoxAttributes.includes("overwrite-pdf-no-sandbox")
-      ) {
-        shouldSandbox = false;
-      }
-      if (
-        sandBoxAttributes.includes("overwrite-pdf-no-sandbox") ||
-        sandBoxAttributes.includes("overwrite-office-doc-viewer")
-      ) {
-        sandBoxAttributes = sandBoxAttributes.replace(
-          "overwrite-pdf-no-sandbox",
-          "",
-        );
-        sandBoxAttributes = sandBoxAttributes.replace(
-          "overwrite-office-doc-viewer",
-          "",
-        );
-      }
-      await insertIFrame(
-        url,
-        recordID,
-        async function () {
-          // find a way to send a message to the content script inside this iframe
-          // to check if it's ready
-          // send message isContentScriptAlive
-
-          let iframe: HTMLIFrameElement | null = document.getElementById(
-            recordID,
-          ) as HTMLIFrameElement | null;
-
-          if (iframe) {
-            iframe.contentWindow?.postMessage(
-              {
-                isContentScriptAlive: true,
-                recordID: recordID,
-                burkeObject: burkeObject,
-              },
-              "*",
-            );
-          }
-          if (expandedJar) {
-            Logger.log(
-              "[proceedWithActivation] => Applying distance before sending message",
-            );
-            await tellToApplyDistance(
-              expandedJar,
-              recordID,
-              parsedBCrewObject,
-              url,
-            );
-          }
-          if (waitForElement === "none") {
-            if (iframe) iframe.contentWindow?.postMessage(eventData, "*");
-          }
-        },
-        BATCH_execution ? DATA_ID_IFRAME_BATCH : DATA_ID_IFRAME,
-        shouldSandbox,
-        sandBoxAttributes,
-        htmlVisualizer,
-        htmlContained,
-        screenWidth,
-        screenHeight,
-        JSON.stringify(eventData),
-        pascoli,
-        refPolicy,
-      );
-
-      setTimeout(async () => {
-        Logger.log("[proceedWithActivation] => More Info:", moreInfo);
-        // if status code starts with 5, set as website unreachable
-        if (moreInfo.statusCode.toString().startsWith("5")) {
-          // SET AS NOT WORKING WEBSITE
-          // hit endpoint to save result
-          Logger.log(
-            "[proceedWithActivation] => Website unreachable, saving it",
-          );
-          saveCrawl(
-            recordID,
-            "",
-            "",
-            eventData.hasOwnProperty("fastLane")
-              ? eventData.fastLane.toString() === "true"
-              : false,
-            url,
-            eventData.hasOwnProperty("htmlTransformer")
-              ? eventData.htmlTransformer
-              : "none",
-            eventData.hasOwnProperty("orgId") ? eventData.orgId : "",
-            eventData.hasOwnProperty("saveText") ? eventData.saveText : "false",
-            true,
-            true,
-            BATCH_execution,
-            batch_id,
-            true,
-          );
-        }
-      }, 500);
-      // if waitForElement isn't none, don't
-      // wait to load the iframe, but keep
-      // sending message until iframe replies.
-      if (waitForElement !== "none") {
-        let iFrameReplied = false;
-        window.addEventListener("message", function (event) {
-          if (event.data.isMReply && event.data.recordID === recordID)
-            iFrameReplied = true;
-        });
-        let timer = setInterval(function () {
-          let iframe: HTMLIFrameElement | null = document.getElementById(
-            recordID,
-          ) as HTMLIFrameElement | null;
-          if (iFrameReplied) {
-            clearInterval(timer);
-            return;
-          }
-          if (iframe)
-            iframe.contentWindow?.postMessage(
-              {
-                ...eventData,
-                ...{ waitForElementIsNotNone: true },
-              },
-              "*",
-            );
-        }, 50);
-      }
-
-      if (burkeObject !== "{}") {
-        let iframeRepliedBurke = false;
-        window.addEventListener("message", function (event) {
-          if (event.data.isBurkeReply && event.data.recordID === recordID) {
-            iframeRepliedBurke = true;
-          }
-        });
-
-        let timerBurke = setInterval(function () {
-          let iframe: HTMLIFrameElement | null = document.getElementById(
-            recordID,
-          ) as HTMLIFrameElement | null;
-          if (iframeRepliedBurke) {
-            clearInterval(timerBurke);
-            return;
-          }
-          if (iframe)
-            iframe.contentWindow?.postMessage(
-              {
-                burkeTrigger: true,
-                burkeObject: burkeObject,
-                recordID: recordID,
-              },
-              "*",
-            );
-        }, 50);
-      }
-    }
   }
 }

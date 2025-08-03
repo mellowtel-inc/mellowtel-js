@@ -1,10 +1,4 @@
 import {
-  disableXFrameHeaders,
-  enableXFrameHeaders,
-  fixImageRenderHTMLVisualizer,
-  resetImageRenderHTMLVisualizer,
-} from "../dnr/dnr-helpers";
-import {
   getSharedMemoryBCK,
   setSharedMemoryBCK,
 } from "../content-script/shared-memory";
@@ -38,9 +32,7 @@ import { startConnectionWs } from "../content-script/websocket";
 import { Logger } from "../logger/logger";
 import { cerealMain } from "../cereal/cereal-index";
 import { startPing, stopPing } from "../background-script/keep-ping";
-import { createJar, removeJarRulesForCookies } from "../bcrew-two/create-jar";
 import { cleaunUpRules } from "../dnr/dnr-helpers";
-import { saveMeucciResult } from "../meucci/meucci-save";
 
 export async function setUpBackgroundListeners() {
   // Queue to store incoming messages to start websocket
@@ -66,14 +58,6 @@ export async function setUpBackgroundListeners() {
 
   chrome.runtime.onMessage.addListener(
     function (request, sender, sendResponse) {
-      if (request.intent == "disableXFrameHeaders") {
-        disableXFrameHeaders(request.hostname, request.skipHeaders).then(
-          sendResponse,
-        );
-      }
-      if (request.intent == "enableXFrameHeaders") {
-        enableXFrameHeaders(request.hostname).then(sendResponse);
-      }
       if (request.intent == "resetTriggersDownload") {
         resetTriggersDownload().then(sendResponse);
       }
@@ -271,12 +255,6 @@ export async function setUpBackgroundListeners() {
           request.htmlContainedString,
         ).then(sendResponse);
       }
-      if (request.intent === "fixImageRenderHTMLVisualizer") {
-        fixImageRenderHTMLVisualizer().then(sendResponse);
-      }
-      if (request.intent === "resetImageRenderHTMLVisualizer") {
-        resetImageRenderHTMLVisualizer().then(sendResponse);
-      }
       if (request.intent === "getIfCurrentlyActiveBCK") {
         getIfCurrentlyActiveBCK().then(sendResponse);
       }
@@ -318,21 +296,8 @@ export async function setUpBackgroundListeners() {
       if (request.intent === "mllwtl_stopPing") {
         stopPing().then(sendResponse);
       }
-      if (request.intent === "createJar") {
-        createJar(request.jarData).then(sendResponse);
-      }
-      if (request.intent === "removeJarRulesForCookies") {
-        removeJarRulesForCookies(request.cookies).then(sendResponse);
-      }
       if (request.intent === "cleanUpDNRRules") {
         cleaunUpRules().then(sendResponse);
-      }
-      if (request.intent === "saveMeucciResult") {
-        saveMeucciResult(
-          request.recordID,
-          request.apiEndpoint,
-          request.resultToSave,
-        ).then(sendResponse);
       }
       return true; // return true to indicate you want to send a response asynchronously
     },

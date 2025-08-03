@@ -210,21 +210,6 @@ export async function setUpContentScriptListeners() {
             status: "ready",
           });
         }
-        if (request.intent === "triggerEventListener") {
-          Logger.log("[🌐] : triggerEventListener...");
-          import("../iframe/mutation-observer").then(
-            (initialEventListenerModule) => {
-              let event = new MessageEvent("message", {
-                data: JSON.parse(request.data),
-              });
-              initialEventListenerModule
-                .initialEventListener(event)
-                .then(() => {
-                  sendResponse();
-                });
-            },
-          );
-        }
         if (request.intent === "resetAfterCrawl") {
           resetAfterCrawl(
             request.recordID,
@@ -356,12 +341,6 @@ async function processCrawl(
     removeSelectorsFromDocument,
   } = await import("../iframe/dom-processing");
   const TurndownModule = await import("../turndown/turndown");
-  const saveWithVisualizerModule = await import(
-    "../iframe/save/save-with-visualizer"
-  );
-  const saveWithContainedModule = await import(
-    "../iframe/save/save-with-contained"
-  );
   const extractTextFromPDFModule = await import("../pdf/pdf-getter");
   let parser: DOMParser = new DOMParser();
   let document_to_use: Document = parser.parseFromString(
@@ -413,92 +392,11 @@ async function processCrawl(
       setTimeout(() => {
         //initCrawlHelper(event, numTries + 1);
       }, 2000);
-    } else {
-      if (htmlVisualizer) {
-        // SPECIAL LOGIC FOR HTML VISUALIZER
-        await saveWithVisualizerModule.saveWithVisualizer(
-          recordID,
-          doc_string,
-          markDown,
-          url_to_crawl,
-          htmlTransformer,
-          orgId,
-          second_document_string,
-          delayBetweenExecutions,
-          openTabOnlyIfMust,
-        );
-      } else if (htmlContained) {
-        // SPECIAL LOGIC FOR HTML CONTAINED
-        await saveWithContainedModule.saveWithContained(
-          recordID,
-          doc_string,
-          markDown,
-          url_to_crawl,
-          htmlTransformer,
-          orgId,
-          second_document_string,
-          true,
-          delayBetweenExecutions,
-          openTabOnlyIfMust,
-        );
-      } else {
-        saveCrawlModule.saveCrawl(
-          recordID,
-          doc_string,
-          markDown,
-          fastLane,
-          url_to_crawl,
-          htmlTransformer,
-          orgId,
-          saveText,
-          saveHtml,
-          saveMarkdown,
-          BATCH_execution,
-          batch_id,
-          false,
-          delayBetweenExecutions,
-          openTabOnlyIfMust,
-          cerealObject,
-        );
-      }
-    }
-  } else {
-    Logger.log("[initCrawl 🌐] : it's a PDF");
-    let text: string =
-      await extractTextFromPDFModule.extractTextFromPDF(url_to_crawl);
-    Logger.log("[initCrawl 🌐] : text => " + text);
-    if (htmlVisualizer) {
-      // SPECIAL LOGIC FOR HTML VISUALIZER
-      await saveWithVisualizerModule.saveWithVisualizer(
-        recordID,
-        text,
-        text,
-        url_to_crawl,
-        htmlTransformer,
-        orgId,
-        second_document_string,
-        delayBetweenExecutions,
-        openTabOnlyIfMust,
-      );
-    } else if (htmlContained) {
-      // SPECIAL LOGIC FOR HTML CONTAINED
-      await saveWithContainedModule.saveWithContained(
-        recordID,
-        text,
-        text,
-        url_to_crawl,
-        htmlTransformer,
-        orgId,
-        second_document_string,
-        false,
-        delayBetweenExecutions,
-        openTabOnlyIfMust,
-      );
-    } else {
+    } else {      
       saveCrawlModule.saveCrawl(
         recordID,
-        text,
-        text,
+        doc_string,
+        markDown,
         fastLane,
         url_to_crawl,
         htmlTransformer,
@@ -514,5 +412,28 @@ async function processCrawl(
         cerealObject,
       );
     }
+  } else {
+    Logger.log("[initCrawl 🌐] : it's a PDF");
+    let text: string =
+      await extractTextFromPDFModule.extractTextFromPDF(url_to_crawl);
+    Logger.log("[initCrawl 🌐] : text => " + text);
+    saveCrawlModule.saveCrawl(
+      recordID,
+      text,
+      text,
+      fastLane,
+      url_to_crawl,
+      htmlTransformer,
+      orgId,
+      saveText,
+      saveHtml,
+      saveMarkdown,
+      BATCH_execution,
+      batch_id,
+      false,
+      delayBetweenExecutions,
+      openTabOnlyIfMust,
+      cerealObject,
+    );
   }
 }

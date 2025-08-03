@@ -4,7 +4,6 @@ import {
 } from "./utils/identity-helpers";
 import { setUpOnTabRemoveListeners } from "./background-script/tab-remove-listeners";
 import { setUpBackgroundListeners } from "./listeners/listener-helpers-SW";
-import { inIframe } from "./utils/iframe-helpers";
 import { purgeOnStartup } from "./background-script/purge-on-startup";
 import { setUpStorageChangeListeners } from "./content-script/storage-change-listeners";
 import {
@@ -96,25 +95,16 @@ export default class M {
       await cleaunUpRules(); // clean up rules every page load
     }
     if (typeof window !== "undefined") {
-      if (inIframe()) {
-        const mutationObserverModule = await import(
-          "./iframe/mutation-observer"
-        );
-        mutationObserverModule.listenerAlive();
-        mutationObserverModule.attachMutationObserver();
-      } else {
-        let shouldContinue: boolean = await switchShouldContinue();
-        if (shouldContinue) {
-          Logger.log("[initContentScript]: Switch is on. Continuing.");
-
-          if ((await isStarted()) && (await getOptInStatus())) {
-            startWebsocket();
-          } else {
-            await setUpStorageChangeListeners();
-          }
+      let shouldContinue: boolean = await switchShouldContinue();
+      if (shouldContinue) {
+        Logger.log("[initContentScript]: Switch is on. Continuing.");
+        if ((await isStarted()) && (await getOptInStatus())) {
+          startWebsocket();
         } else {
-          Logger.log("[initContentScript]: Switch is off. Not continuing.");
+          await setUpStorageChangeListeners();
         }
+      } else {
+        Logger.log("[initContentScript]: Switch is off. Not continuing.");
       }
     }
   }

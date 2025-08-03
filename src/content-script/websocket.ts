@@ -23,8 +23,6 @@ import {
   sendMessageToContentScript,
 } from "../utils/messaging-helpers";
 import { addToRequestMessageStorage } from "../request-message/request-message-helpers";
-import { isPascoliEnabled } from "../pascoli/pascoli-utils";
-import { isMeucciEnabled } from "../meucci/meucci-utils";
 import { refreshCereal } from "../cereal/cereal-index";
 
 let retryAttemptInProgress: boolean = false;
@@ -265,8 +263,8 @@ export async function startConnectionWs(identifier: string): WebSocket {
         Logger.log(`[🌐]: Connection speed: ${speedMpbs} Mbps`);
         const browser = detectBrowser();
         Logger.log(`[🌐]: Browser: ${browser}`);
-        const isPascoli: boolean = await isPascoliEnabled();
-        const isMeucci: boolean = await isMeucciEnabled();
+        const isPascoli: boolean = false;
+        const isMeucci: boolean = false;
         Logger.log(`[🌐]: Manifest version: ${manifestVersion}`);
         Logger.log(`[🌐]: Extension identifier: ${extension_identifier}`);
         Logger.log(`[🌐]: Is Pascoli enabled: ${isPascoli}`);
@@ -294,7 +292,7 @@ export async function startConnectionWs(identifier: string): WebSocket {
         );
 
         const ws = new WebSocket(
-          `${ws_url}?device_id=${identifier}&version=${VERSION}&plugin_id=${encodeURIComponent(extension_identifier)}&speed_download=${speedMpbs}&platform=${browser}&manifest_version=${manifestVersion}&pascoli=${isPascoli}&burke=${isMeucci}&meucci=${isMeucci}&ws_client=new_ws`,
+          `${ws_url}?device_id=${identifier}&version=${VERSION}&plugin_id=${encodeURIComponent(extension_identifier)}&speed_download=${speedMpbs}&platform=${browser}&manifest_version=${manifestVersion}&pascoli=${isPascoli}&burke=${isMeucci}&meucci=${isMeucci}&ws_client=new_ws&lib_type=lite`,
         );
 
         ws.onopen = function open() {

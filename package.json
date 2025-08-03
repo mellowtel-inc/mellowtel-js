@@ -1,7 +1,7 @@
 {
-  "name": "mellowtel",
-  "version": "1.6.3",
-  "description": "",
+  "name": "mellowtel-lite",
+  "version": "0.0.1",
+  "description": "Mellowtel Lite",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -12,7 +12,7 @@
     "build": "tsup",
     "format": "npx prettier . --write",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "npm pack --pack-destination ~/Desktop/mellowtel"
+    "dev": "npm pack --pack-destination ~/Desktop/mellowtel-lite"
   },
   "author": "mellowtel-inc",
   "license": "LGPL-3.0",
@@ -25,7 +25,6 @@
   },
   "dependencies": {
     "@cloudflare/speedtest": "^1.3.0",
-    "isomorphic-ws": "^5.0.0",
-    "pdfjs-dist": "^3.8.162"
+    "isomorphic-ws": "^5.0.0"
   }
 }
