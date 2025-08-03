@@ -2,6 +2,7 @@ import { showBadgeIfShould } from "../transparency/badge-settings";
 import { DATA_ID_IFRAME } from "../constants";
 import { getLocalStorage } from "../storage/storage-helpers";
 import { Logger } from "../logger/logger";
+import { detectBrowser } from "./utils";
 
 export async function insertIFrame(
   url: string,
@@ -18,6 +19,11 @@ export async function insertIFrame(
   pascoli: boolean = false,
   refPolicy: string = "",
 ) {
+  let browser = detectBrowser();
+  if(browser === "firefox" || browser === "safari") {
+    Logger.log("[insertIFrame]: Browser not supported", browser);
+    return;
+  }
   let iframe: HTMLIFrameElement = document.createElement("iframe");
   iframe.id = id;
   // @ts-ignore

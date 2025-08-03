@@ -811,14 +811,10 @@ export async function proceedWithActivation(
       );
       let browser = detectBrowser();
       if (browser === "firefox" || browser === "safari") {
-        let current_url = new URL(window.location.href);
-        let url_to_load = new URL(url);
-        if (current_url.hostname === url_to_load.hostname) {
-          Logger.log(
-            "[proceedWithActivation] => Same domain, skipping iframe load",
-          );
-          safeToProceed = false;
-        }
+        Logger.log(
+          "[proceedWithActivation] => skipping iframe load",
+        );
+        safeToProceed = false;
       }
     }
     if (safeToProceed) {
