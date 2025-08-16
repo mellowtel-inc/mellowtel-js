@@ -2,12 +2,8 @@ import HeaderOperation = chrome.declarativeNetRequest.HeaderOperation;
 import RuleActionType = chrome.declarativeNetRequest.RuleActionType;
 import ResourceType = chrome.declarativeNetRequest.ResourceType;
 import { sendMessageToBackground } from "../utils/messaging-helpers";
-import {
-  RULE_ID_POST_REQUEST,
-  RULE_ID_XFRAME,
-} from "../constants";
+import { RULE_ID_POST_REQUEST } from "../constants";
 import { isInSW } from "../utils/utils";
-
 
 export function disableHeadersForPOST(): Promise<boolean> {
   return new Promise(function (res) {
@@ -61,20 +57,6 @@ export function enableHeadersForPOST(): Promise<boolean> {
     });
     res(true);
   });
-}
-
-export function getRuleIdFromHostname(hostname: string): number {
-  // Disabled because a hostname can redirect to another hostname.
-  // We need to disable the headers for the redirected hostname too.
-  // TODO: Find a way to "map out" the redirects and disable the headers for all of them.
-  /*
-  let hashNumber = 0;
-  for (let i = 0; i < hostname.length; i++) {
-    hashNumber += hostname.charCodeAt(i);
-  }
-  return hashNumber;
-  */
-  return RULE_ID_XFRAME;
 }
 
 export function shouldDelegateDNR(): Promise<boolean> {

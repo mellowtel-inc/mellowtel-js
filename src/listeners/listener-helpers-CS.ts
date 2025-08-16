@@ -392,7 +392,7 @@ async function processCrawl(
       setTimeout(() => {
         //initCrawlHelper(event, numTries + 1);
       }, 2000);
-    } else {      
+    } else {
       saveCrawlModule.saveCrawl(
         recordID,
         doc_string,
