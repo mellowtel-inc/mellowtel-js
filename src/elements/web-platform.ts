@@ -195,6 +195,9 @@ export async function setUpExternalMessageListeners() {
             let requestsCount: number = (
               await RateLimiter.checkRateLimit(false)
             ).requestsCount;
+            // `configuration_key` here may hold either a legacy configuration
+            // key or a new integration id (prefixed "intgr-"). Integration ids
+            // use "-" internally, so split-on-"_" extracts both cleanly.
             let configuration_key: string = (await getIdentifier()).split(
               "_",
             )[1];
