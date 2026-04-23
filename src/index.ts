@@ -35,6 +35,11 @@ import { setLocalStorage } from "./storage/storage-helpers";
 import { cleaunUpRules } from "./dnr/dnr-helpers";
 
 export default class M {
+  // `publishableKey` accepts two formats during the migration window:
+  //   - Legacy configuration key (no prefix, e.g. "abc123"). Deprecated.
+  //   - New integration id, prefixed with "intgr-" (e.g. "intgr-abc123"). Preferred.
+  // Both are treated identically by the SDK; the prefix is only used to detect
+  // the legacy form and emit a deprecation warning.
   private publishableKey: string;
   private options?: any;
   private disableLogs: boolean = true;
@@ -60,6 +65,17 @@ export default class M {
       this.publishableKey === ""
     ) {
       throw new Error("publishableKey is undefined, null, or empty");
+    }
+    // Deprecation: legacy configuration keys lack the "intgr-" prefix.
+    // Warn developers to migrate. Use console.warn directly so the notice
+    // surfaces even when `disableLogs: true` is set.
+    if (!this.publishableKey.startsWith("intgr-")) {
+      console.warn(
+        "[mellowtel] You are using a legacy configuration key. " +
+          "Please migrate to an integration id (prefixed with 'intgr-')" +
+          "Configuration keys will be deprecated soon. " +
+          "See migration guide: https://docs.mellowtel.com/migrations/integration-id",
+      );
     }
     await checkRequiredPermissions(false);
     await purgeOnStartup();

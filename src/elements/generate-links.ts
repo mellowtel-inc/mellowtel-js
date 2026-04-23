@@ -28,6 +28,14 @@ const BASE_LINK_FEEDBACK: string = BASE_DOMAIN + "uninstall-feedback/";
 const optInOpenedKey: string = "mellowtelOptInOpened";
 const updateOpenedKey: string = "mUpdateOpened";
 
+// The `configuration_key` variable and the `configuration_key=` query param
+// below are kept for backward compatibility. The value
+// extracted by `deviceId.split("_")[1]` may be either a legacy configuration
+// key or a new integration id (prefixed "intgr-"). Integration ids contain
+// "-" rather than "_", so the existing split-on-underscore extraction works
+// for both formats. Rename the variable and query param only once the backend
+// accepts `integration_id=`.
+
 async function setAlreadyOpened(
   optInOrUpdate: string = "optIn",
 ): Promise<boolean> {

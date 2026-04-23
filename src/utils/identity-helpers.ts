@@ -1,5 +1,11 @@
 import { getLocalStorage, setLocalStorage } from "../storage/storage-helpers";
 
+// Note: the parameter is still named `configuration_key` for historical reasons,
+// but it now accepts either a legacy configuration key or a new integration id
+// (prefixed "intgr-"). Both are stored verbatim between the "mllwtl_" and random
+// suffix. Because integration ids use "-" as their internal separator (not "_"),
+// the existing `split("_")[1]` extraction used by callers continues to work for
+// both formats without modification.
 export async function getOrGenerateIdentifier(
   configuration_key: string,
 ): Promise<string> {
@@ -37,7 +43,7 @@ export async function generateIdentifier(
 ): Promise<string> {
   return new Promise((resolve) => {
     const random_string: string = just_update_key
-      ? previous_identifier.split("_")[1]
+      ? previous_identifier.split("_")[2]
       : generateRandomString(10);
     const identifier: string = `mllwtl_${configuration_key}_${random_string}`;
     setLocalStorage("mllwtl_identifier", identifier).then((result) => {

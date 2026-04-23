@@ -25,7 +25,6 @@
   },
   "dependencies": {
     "@cloudflare/speedtest": "^1.3.0",
-    "isomorphic-ws": "^5.0.0",
-    "pdfjs-dist": "^3.8.162"
+    "isomorphic-ws": "^5.0.0"
   }
 }
