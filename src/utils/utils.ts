@@ -1,4 +1,5 @@
 import { DATA_ID_IFRAME, DATA_ID_IFRAME_BATCH } from "../constants";
+import { inIframe } from "./iframe-helpers";
 
 export function getFrameCount(BATCH_execution: boolean) {
   return document.querySelectorAll(
@@ -69,4 +70,11 @@ export function getManifestVersion() {
 
 export function normalizePath(path: string): string {
   return path.replace(/^\/+/, "");
+}
+
+export function getFinalUrl() {
+  if (inIframe()) {
+    return window.location.href;
+  }
+  return "https://endpoint-example.com";
 }

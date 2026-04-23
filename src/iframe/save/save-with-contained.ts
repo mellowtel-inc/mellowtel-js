@@ -9,6 +9,7 @@ import {
 import { capture, OutputType } from "../../htmlVisualizer/src";
 import { getFromRequestInfoStorage } from "../../request-info/request-info-helpers";
 import { getFromRequestMessageStorage } from "../../request-message/request-message-helpers";
+import { getFinalUrl } from "../../utils/utils";
 
 async function tellEC2ToRender(
   recordID: string,
@@ -44,7 +45,7 @@ async function tellEC2ToRender(
       htmlTransformer: htmlTransformer,
       orgId: orgId,
       node_identifier: node_identifier,
-      final_url: window.location.href,
+      final_url: getFinalUrl(),
       statusCode: moreInfo.statusCode,
     };
 

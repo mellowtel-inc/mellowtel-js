@@ -9,6 +9,7 @@ import {
 } from "../contained-visualizer-helpers";
 import { getFromRequestInfoStorage } from "../../request-info/request-info-helpers";
 import { getFromRequestMessageStorage } from "../../request-message/request-message-helpers";
+import { getFinalUrl } from "../../utils/utils";
 
 let htmlVisualizerTimedOut: boolean = true;
 
@@ -53,7 +54,7 @@ async function updateDynamo(
       htmlTransformer: htmlTransformer,
       orgId: orgId,
       device_identifier: device_identifier,
-      final_url: window.location.href,
+      final_url: getFinalUrl(),
       htmlFileName: htmlKey,
       markdownFileName: markdownKey,
       htmlVisualizerFileName: htmlVisualizerKey,

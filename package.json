@@ -1,6 +1,6 @@
 {
   "name": "mellowtel",
-  "version": "1.6.3",
+  "version": "1.6.5",
   "description": "",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
