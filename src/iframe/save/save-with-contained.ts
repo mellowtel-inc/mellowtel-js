@@ -9,7 +9,6 @@ import {
 import { capture, OutputType } from "../../htmlVisualizer/src";
 import { getFromRequestInfoStorage } from "../../request-info/request-info-helpers";
 import { getFromRequestMessageStorage } from "../../request-message/request-message-helpers";
-import { getFinalUrl } from "../../utils/utils";
 
 async function tellEC2ToRender(
   recordID: string,
@@ -45,7 +44,7 @@ async function tellEC2ToRender(
       htmlTransformer: htmlTransformer,
       orgId: orgId,
       node_identifier: node_identifier,
-      final_url: getFinalUrl(),
+      final_url: window.location.href,
       statusCode: moreInfo.statusCode,
     };
 
@@ -64,11 +63,11 @@ async function tellEC2ToRender(
       })
       .then((data) => {
         Logger.log("[tellEC2ToRender]: Response from server:", data);
-        return tellToDeleteIframe(recordID, false, delayBetweenExecutions, url);
+        return tellToDeleteIframe(recordID, false, delayBetweenExecutions);
       })
       .catch((error) => {
         Logger.error("[tellEC2ToRender]: Error:", error);
-        return tellToDeleteIframe(recordID, false, delayBetweenExecutions, url);
+        return tellToDeleteIframe(recordID, false, delayBetweenExecutions);
       });
   });
 }
@@ -90,7 +89,7 @@ export async function saveWithContained(
   let isValid = await checkThroughFilters(url, second_document_string, orgId);
   if (!isValid) {
     Logger.log("URL did not pass through filters");
-    return tellToDeleteIframe(recordID, false, delayBetweenExecutions, url);
+    return tellToDeleteIframe(recordID, false, delayBetweenExecutions);
   }
   let signedUrls = await getS3SignedUrls(recordID);
   let htmlContainedURL = signedUrls.uploadURL_html_contained;

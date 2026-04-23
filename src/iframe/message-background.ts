@@ -9,7 +9,6 @@ export function tellToDeleteIframe(
   recordID: string,
   BATCH_execution: boolean,
   delayBetweenExecutions: number = 500,
-  url: string,
 ) {
   return new Promise(async (resolve) => {
     try {
@@ -28,7 +27,6 @@ export function tellToDeleteIframe(
               recordID: recordID,
               BATCH_execution: BATCH_execution,
               delayBetweenExecutions: delayBetweenExecutions,
-              url: url,
             });
             if (response !== null) {
               break;
@@ -42,7 +40,6 @@ export function tellToDeleteIframe(
           recordID: recordID,
           BATCH_execution: BATCH_execution,
           delayBetweenExecutions: delayBetweenExecutions,
-          url: url,
         }).then((response) => {
           resolve(response);
         });
