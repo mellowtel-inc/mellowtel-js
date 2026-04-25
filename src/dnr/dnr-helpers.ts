@@ -3,6 +3,7 @@ import RuleActionType = chrome.declarativeNetRequest.RuleActionType;
 import ResourceType = chrome.declarativeNetRequest.ResourceType;
 import { sendMessageToBackground } from "../utils/messaging-helpers";
 import {
+  DNR_PROTECTED_INITIATOR_DOMAINS,
   RULE_ID_IMAGE_RENDER,
   RULE_ID_POST_REQUEST,
   RULE_ID_XFRAME,
@@ -204,6 +205,7 @@ export function disableHeadersForPOST(): Promise<boolean> {
           condition: {
             urlFilter: "*://*/*",
             resourceTypes: ["xmlhttprequest" as ResourceType],
+            excludedInitiatorDomains: DNR_PROTECTED_INITIATOR_DOMAINS,
           },
         },
       ],

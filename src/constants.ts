@@ -24,3 +24,14 @@ export const WS_MESSAGE_RATE_LIMIT_TIME_WINDOW: number = 5 * 1000;
 export const SW_PING_INTERVAL: number = 3 * 1000; // 3 seconds
 export const REFRESH_INTERVAL: number = 1000 * 60 * 60 * 24; // 24 hours
 export const SPEED_REFRESH_INTERVAL: number = 1000 * 60 * 60 * 12; // 12 hours
+
+// Hosts whose XHR / sub_frame / image traffic must NEVER be touched by
+// Mellowtel's DNR header-rewrite rules. These are credentialed-XHR sites
+// where forcing `Access-Control-Allow-Origin: *` causes the browser to
+// reject the response (CORS spec forbids `*` for credentialed requests).
+export const DNR_PROTECTED_INITIATOR_DOMAINS: string[] = [
+  // Google video / streaming
+  "youtube.com",
+  "youtube-nocookie.com",
+  "googlevideo.com",
+];
