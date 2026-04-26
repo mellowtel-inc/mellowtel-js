@@ -66,7 +66,6 @@ export async function setUpContentScriptListeners() {
             recordID,
             request.BATCH_execution,
             request.delayBetweenExecutions,
-            request.url,
           ).then(async () => {
             if (dataId === DATA_ID_IFRAME) {
               await hideBadgeIfShould();
@@ -231,7 +230,6 @@ export async function setUpContentScriptListeners() {
             request.recordID,
             request.BATCH_execution,
             request.delayBetweenExecutions,
-            request.url,
           ).then(() => {
             sendResponse("success");
           });

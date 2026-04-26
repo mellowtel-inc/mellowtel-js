@@ -808,7 +808,6 @@ export async function proceedWithActivation(
         parseInt(eventData.waitBeforeScraping),
         BATCH_execution,
         delayBetweenExecutions,
-        url,
       );
       let browser = detectBrowser();
       if (browser === "firefox" || browser === "safari") {

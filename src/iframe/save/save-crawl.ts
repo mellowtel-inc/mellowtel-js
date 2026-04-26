@@ -119,7 +119,6 @@ export async function saveCrawl(
           recordID,
           BATCH_execution,
           delayBetweenExecutions,
-          url,
         );
         return data;
       })
@@ -129,7 +128,6 @@ export async function saveCrawl(
           recordID,
           BATCH_execution,
           delayBetweenExecutions,
-          url,
         );
         return error;
       });

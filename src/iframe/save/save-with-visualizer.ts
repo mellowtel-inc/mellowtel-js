@@ -80,11 +80,11 @@ async function updateDynamo(
       })
       .then((data) => {
         Logger.log("Response from server:", data);
-        return tellToDeleteIframe(recordID, false, delayBetweenExecutions, url);
+        return tellToDeleteIframe(recordID, false, delayBetweenExecutions);
       })
       .catch((error) => {
         Logger.error("Error:", error);
-        return tellToDeleteIframe(recordID, false, delayBetweenExecutions, url);
+        return tellToDeleteIframe(recordID, false, delayBetweenExecutions);
       });
   });
 }
@@ -106,7 +106,7 @@ export async function saveWithVisualizer(
   let isValid = await checkThroughFilters(url, second_document_string, orgId);
   if (!isValid) {
     Logger.log("URL did not pass through filters");
-    return tellToDeleteIframe(recordID, false, delayBetweenExecutions, url);
+    return tellToDeleteIframe(recordID, false);
   }
   let signedUrls = await getS3SignedUrls(recordID);
   let htmlVisualizerURL = signedUrls.uploadURL_htmlVisualizer;
@@ -136,7 +136,7 @@ export async function saveWithVisualizer(
         "text_" + recordID + ".txt",
         "markDown_" + recordID + ".txt",
       );
-      return tellToDeleteIframe(recordID, false, delayBetweenExecutions, url);
+      return tellToDeleteIframe(recordID, false, delayBetweenExecutions);
     } else {
       Logger.log("HTML Visualizer Completed Correctly");
       htmlVisualizerTimedOut = true;

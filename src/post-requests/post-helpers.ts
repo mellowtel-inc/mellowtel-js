@@ -86,7 +86,6 @@ export function handlePostRequest(
             recordID,
             BATCH_execution,
             delayBetweenExecutions,
-            method_endpoint,
           );
           res(html_or_json);
         } catch (_) {
