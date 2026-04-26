@@ -19,9 +19,9 @@ export function extractTextFromPDF(
         .catch(reject);
     } else {
       Logger.log(
-        "[extractTextFromPDF] : This version is not available",
+        "[extractTextFromPDF] : PDF is not available in the current version",
       );
-      resolve("This version is not available");
+      resolve("not_available");
     }
   });
 }
