@@ -181,14 +181,16 @@ export function resetImageRenderHTMLVisualizer(): Promise<boolean> {
   });
 }
 
-// Stable djb2 hash bounded to the reserved per-host XHR rule id range. Same
-// host always returns the same id so install/cleanup agree without shared
-// state. Bounded modulo guarantees no collision with other reserved rule ids
-// (XFRAME, CONTENT_DISPOSITION, etc. live in 80045-80050).
+// Stable djb2-xor hash bounded to the reserved per-host XHR rule id range.
+// Same host always returns the same id so install/cleanup agree without
+// shared state. The modulo is bounded by [BASE, MAX] inclusive, which sits
+// strictly between the singleton rules (80045-80050) and the BCREW range
+// (>= RULE_ID_START_BCREW), so no overlap with other reserved ids is
+// possible. See `src/constants.ts` for the full id layout.
 export function ruleIdForXHRHost(host: string): number {
   let h = 5381;
   for (let i = 0; i < host.length; i++) {
-    h = (((h << 5) + h) ^ host.charCodeAt(i)) | 0; // keep 32-bit signed
+    h = (((h << 5) + h) ^ host.charCodeAt(i)) | 0; // ToInt32: keep 32-bit signed
   }
   const slots = RULE_ID_XHR_HEADERS_MAX - RULE_ID_XHR_HEADERS_BASE + 1;
   return RULE_ID_XHR_HEADERS_BASE + (Math.abs(h) % slots);
@@ -341,7 +343,7 @@ export async function cleaunUpRules() {
     return;
   }
 
-  // Sweep the legacy single id plus everything in the per-host POST range.
+  // Sweep the legacy single id plus everything in the per-host XHR range.
   // This catches orphans from any prior SW lifetime, regardless of which
   // hosts they were installed for.
   const rules = await chrome.declarativeNetRequest.getSessionRules();
@@ -353,7 +355,7 @@ export async function cleaunUpRules() {
         (id >= RULE_ID_XHR_HEADERS_BASE && id <= RULE_ID_XHR_HEADERS_MAX),
     );
   if (ids.length) {
-    Logger.log(`[cleaunUpRules] removing ${ids.length} POST rule(s)`, ids);
+    Logger.log(`[cleaunUpRules] removing ${ids.length} XHR rule(s)`, ids);
     await chrome.declarativeNetRequest.updateSessionRules({
       removeRuleIds: ids,
     });

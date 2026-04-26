@@ -10,15 +10,21 @@ export const DATA_ID_IFRAME: string = "data-mllwtl-frame-crwl-ml";
 export const DATA_ID_IFRAME_BATCH: string = "data-mllwtl-frame-batch-crwl-ml";
 export const DATA_ID_STRING: string = "data-mllwtl-frame";
 export const CEREAL_FRAME_ID: string = "mllwtl-cereal-frame-id";
+// DNR session-rule id layout. Keep new ranges from overlapping these:
+//   80045 .. 80050  - singleton rules below
+//   81000 .. 180999 - XHR per-host range (RULE_ID_XHR_HEADERS_*) - 100k slots
+//   221022 .. 1221021 - BCREW jars (RULE_ID_START_BCREW + hash % 1_000_000)
+// Birthday-collision probability for the XHR range at n concurrent hosts is
+// ~ 1 - exp(-n*(n-1) / (2 * 100000)): ~0.045% at n=10, ~0.28% at n=24.
 export const RULE_ID_XFRAME: number = 80045;
 export const RULE_ID_CONTENT_DISPOSITION: number = 80046;
 export const RULE_ID_CONTENT_TYPE: number = 80047;
 export const RULE_ID_VALUE_TO_MODIFY_CONTENT_TYPE_TO: number = 80048;
 export const RULE_ID_POST_REQUEST: number = 80049;
 export const RULE_ID_IMAGE_RENDER: number = 80050;
-export const RULE_ID_START_BCREW: number = 221022;
 export const RULE_ID_XHR_HEADERS_BASE: number = 81000;
-export const RULE_ID_XHR_HEADERS_MAX: number = 81999;
+export const RULE_ID_XHR_HEADERS_MAX: number = 180999;
+export const RULE_ID_START_BCREW: number = 221022;
 export let MAX_DAILY_RATE: number = 27502;
 export const BADGE_COLOR: string = "#4CAF50";
 export const WS_MESSAGE_RATE_LIMIT_MAX_REQUESTS: number = 7;

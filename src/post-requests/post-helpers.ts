@@ -171,7 +171,7 @@ export async function saveJSON(
       Logger.log("[saveJSON] : Request options => ");
       Logger.log(requestOptions);
       // DNR cleanup is owned by the outer handlePost/handleGet try/finally.
-      // Do not call enableHeadersForPOST here: this fetch is fire-and-forget
+      // Do not call enableHeadersForXHR here: this fetch is fire-and-forget
       // and we no longer have a URL to derive the per-host rule id from.
       fetch(targetUrl, requestOptions)
         .then(async (response) => {
@@ -182,12 +182,15 @@ export async function saveJSON(
         })
         .then((data) => {
           Logger.log("[saveJSON]: Response from server:", data);
+          res(data);
         })
         .catch((error) => {
           Logger.log("[saveJSON] : Error:", error);
+          res(error);
         });
     } catch (e) {
       Logger.error("[saveJSON] : Error:", e);
+      res(e);
     }
   });
 }
