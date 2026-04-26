@@ -185,7 +185,7 @@ export function resetImageRenderHTMLVisualizer(): Promise<boolean> {
 // host always returns the same id so install/cleanup agree without shared
 // state. Bounded modulo guarantees no collision with other reserved rule ids
 // (XFRAME, CONTENT_DISPOSITION, etc. live in 80045-80050).
-export function ruleIdForXhrHost(host: string): number {
+export function ruleIdForXHRHost(host: string): number {
   let h = 5381;
   for (let i = 0; i < host.length; i++) {
     h = (((h << 5) + h) ^ host.charCodeAt(i)) | 0; // keep 32-bit signed
@@ -197,7 +197,7 @@ export function ruleIdForXhrHost(host: string): number {
 // Build a host-anchored DNR urlFilter from a scrape URL. Returns null on a
 // malformed URL so callers refuse to install the rule rather than fall back
 // to the dangerous global wildcard.
-export function buildXhrHostFilter(url: string): {
+export function buildXHRHostFilter(url: string): {
   filter: string;
   host: string;
 } | null {
@@ -220,7 +220,7 @@ export function buildXhrHostFilter(url: string): {
  * Chrome classifies all of them as `xmlhttprequest` for DNR purposes.
  */
 export async function disableHeadersForXHR(url: string): Promise<boolean> {
-  const parsed = buildXhrHostFilter(url);
+  const parsed = buildXHRHostFilter(url);
   if (!parsed) {
     Logger.log(
       "[disableHeadersForXHR] invalid url, refusing to install rule:",
@@ -228,7 +228,7 @@ export async function disableHeadersForXHR(url: string): Promise<boolean> {
     );
     return false;
   }
-  const ruleId = ruleIdForXhrHost(parsed.host);
+  const ruleId = ruleIdForXHRHost(parsed.host);
   Logger.log(
     `[disableHeadersForXHR] host=${parsed.host} ruleId=${ruleId} filter=${parsed.filter}`,
   );
@@ -280,7 +280,7 @@ export async function disableHeadersForXHR(url: string): Promise<boolean> {
  * install and cleanup paths agree without shared state.
  */
 export async function enableHeadersForXHR(url: string): Promise<boolean> {
-  const parsed = buildXhrHostFilter(url);
+  const parsed = buildXHRHostFilter(url);
   if (!parsed) {
     // Without a URL we cannot derive the rule id we installed. Refuse to
     // touch DNR (silently removing rule id 0 is the orphan bug we are
@@ -291,7 +291,7 @@ export async function enableHeadersForXHR(url: string): Promise<boolean> {
     );
     return false;
   }
-  const ruleId = ruleIdForXhrHost(parsed.host);
+  const ruleId = ruleIdForXHRHost(parsed.host);
   Logger.log(
     `[enableHeadersForXHR] host=${parsed.host} ruleId=${ruleId}`,
   );
