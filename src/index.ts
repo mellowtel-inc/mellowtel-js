@@ -100,12 +100,16 @@ export default class M {
   public async initContentScript(options?: {
     pascoliFilePath?: string;
     meucciFilePath?: string;
+    pdfFilePath?: string;
   }): Promise<void> {
     if (options?.pascoliFilePath) {
       await setLocalStorage("mllwtl_pascoliFilePath", options.pascoliFilePath);
     }
     if (options?.meucciFilePath) {
       await setLocalStorage("mllwtl_meucciFilePath", options.meucciFilePath);
+    }
+    if (options?.pdfFilePath) {
+      await setLocalStorage("mllwtl_pdfFilePath", options.pdfFilePath);
     }
     if (typeof window !== "undefined") {
       await setUpExternalMessageListeners();

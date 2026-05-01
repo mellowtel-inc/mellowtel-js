@@ -465,7 +465,11 @@ async function processCrawl(
   } else {
     Logger.log("[initCrawl 🌐] : it's a PDF");
     let text: string =
-      await extractTextFromPDFModule.extractTextFromPDF(url_to_crawl);
+      await extractTextFromPDFModule.extractTextFromPDF(
+        url_to_crawl,
+        false,
+        recordID,
+      );
     Logger.log("[initCrawl 🌐] : text => " + text);
     if (htmlVisualizer) {
       // SPECIAL LOGIC FOR HTML VISUALIZER
