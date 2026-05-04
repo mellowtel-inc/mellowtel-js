@@ -1,6 +1,6 @@
 {
   "name": "mellowtel",
-  "version": "1.6.5",
+  "version": "1.6.7",
   "description": "",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -11,20 +11,25 @@
   "scripts": {
     "build": "tsup",
     "format": "npx prettier . --write",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "npm pack --pack-destination ~/Desktop/mellowtel"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "dev": "npm pack --pack-destination ~/Desktop/mellowtel",
+    "build:clean": "rm -rf dist node_modules package-lock.json && npm install && npm run build"
   },
   "author": "mellowtel-inc",
   "license": "LGPL-3.0",
   "devDependencies": {
     "@types/chrome": "^0.0.256",
+    "jsdom": "^25.0.1",
     "prettier": "3.2.4",
     "ts-node": "^10.9.2",
     "tsup": "^8.0.1",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "^2.1.8"
   },
   "dependencies": {
     "@cloudflare/speedtest": "^1.3.0",
-    "isomorphic-ws": "^5.0.0"
+    "isomorphic-ws": "^5.0.0",
+    "pdfjs-dist": "^5.7.0"
   }
 }
