@@ -34,10 +34,14 @@ import {
   showBadge,
 } from "../transparency/badge-settings";
 import { handleGetRequest } from "../get-requests/get-helpers";
-import { startConnectionWs } from "../content-script/websocket";
+import {
+  startConnectionWs,
+  disconnectWebSocket,
+} from "../content-script/websocket";
 import { Logger } from "../logger/logger";
 import { cerealMain } from "../cereal/cereal-index";
 import { startPing, stopPing } from "../background-script/keep-ping";
+import { isStarted } from "../utils/start-stop-helpers";
 import { createJar, removeJarRulesForCookies } from "../bcrew-two/create-jar";
 import { cleaunUpRules } from "../dnr/dnr-helpers";
 import { saveMeucciResult } from "../meucci/meucci-save";
@@ -47,15 +51,21 @@ export async function setUpBackgroundListeners() {
   const startWebsocketMessageQueue: { identifier: string }[] = [];
 
   // Function to process messages from the queue
-  function processWebsocketQueue() {
+  async function processWebsocketQueue() {
     if (startWebsocketMessageQueue.length > 0) {
-      const message = startWebsocketMessageQueue.shift();
-      if (message) {
-        Logger.log("Processing message from queue:", message);
-        Logger.log("Content script requested to start websocket");
-        // Logger.log(document.getElementById("webSocketConnected"));
-        Logger.log("####################################");
-        startConnectionWs(message.identifier);
+      if (!(await isStarted())) {
+        // Device is stopped / opted out: drop any pending start requests so a
+        // queued request can't revive the connection after opt-out.
+        startWebsocketMessageQueue.length = 0;
+      } else {
+        const message = startWebsocketMessageQueue.shift();
+        if (message) {
+          Logger.log("Processing message from queue:", message);
+          Logger.log("Content script requested to start websocket");
+          // Logger.log(document.getElementById("webSocketConnected"));
+          Logger.log("####################################");
+          startConnectionWs(message.identifier);
+        }
       }
     }
     setTimeout(processWebsocketQueue, 7000); // Process next message after 7 seconds
@@ -295,6 +305,10 @@ export async function setUpBackgroundListeners() {
       if (request.intent === "startWebsocket") {
         startWebsocketMessageQueue.push({ identifier: request.identifier });
         sendResponse(true);
+      }
+      if (request.intent === "stopWebsocket") {
+        disconnectWebSocket().then(() => sendResponse(true));
+        return true;
       }
       if (request.intent === "openFeedbackLink") {
         generateAndOpenFeedbackLink().then((link) => {

@@ -8,6 +8,7 @@ import { setLocalStorage } from "../storage/storage-helpers";
 import { getOptInStatus, optOut } from "./opt-in-out-helpers";
 import { Logger } from "../logger/logger";
 import { startPing, stopPing } from "../background-script/keep-ping";
+import { disconnectWebSocket } from "../content-script/websocket";
 
 export function start(metadata_id?: string | undefined): Promise<boolean> {
   return new Promise(async (resolve) => {
@@ -36,9 +37,11 @@ export function start(metadata_id?: string | undefined): Promise<boolean> {
 export function stop(): Promise<boolean> {
   return new Promise(async (resolve) => {
     await stopPing();
-    setLocalStorage("mStatus", "stop").then(() => {
-      resolve(true);
-    });
+    // Set status to "stop" before closing so the socket's onclose handler
+    // (which reconnects while started) sees the device as stopped.
+    await setLocalStorage("mStatus", "stop");
+    await disconnectWebSocket();
+    resolve(true);
   });
 }
 

@@ -43,6 +43,9 @@ const RETRY_DELAYS: number[] = [
 let is_websocket_connected: boolean = false;
 let retryAttempt: number = 0;
 let retryTimeout: any = null;
+// Reference to the live socket so it can be closed on opt-out / stop.
+// Only meaningful in the service worker, where the socket is actually opened.
+let currentWebSocket: WebSocket | null = null;
 
 let wsMessageTimestamps: number[] = [];
 
@@ -183,7 +186,44 @@ async function retryApprovalRequest(
   }
 }
 
+export async function disconnectWebSocket(): Promise<void> {
+  // Cancel any pending reconnect so a stopped/opted-out device stays disconnected.
+  if (retryTimeout) {
+    clearTimeout(retryTimeout);
+    retryTimeout = null;
+  }
+  retryAttempt = 0;
+  retryAttemptInProgress = false;
+
+  const isInServiceWorker: boolean = await isInSW();
+  if (!isInServiceWorker) {
+    // The live socket is owned by the service worker; ask it to close.
+    await sendMessageToBackground({ intent: "stopWebsocket" });
+    return;
+  }
+
+  if (currentWebSocket !== null) {
+    Logger.log("[🌐]: Disconnect requested, closing websocket connection...");
+    try {
+      currentWebSocket.close();
+    } catch (error) {
+      Logger.log("[🌐]: Error closing websocket:", error);
+    }
+    currentWebSocket = null;
+  }
+  is_websocket_connected = false;
+}
+
 export async function startConnectionWs(identifier: string): WebSocket {
+  // Respect opt-out / stop: never (re)connect when the device is stopped.
+  // This backstops the queue processor and any other caller so a stale start
+  // request cannot revive the connection after opt-out.
+  if (!(await isStarted())) {
+    Logger.log(
+      `[🌐]: Device is stopped/opted out, not connecting to websocket`,
+    );
+    return;
+  }
   if (retryAttemptInProgress) {
     Logger.log(
       `[🌐]: Retry attempt already in progress, not starting new connection`,
@@ -296,6 +336,7 @@ export async function startConnectionWs(identifier: string): WebSocket {
         const ws = new WebSocket(
           `${ws_url}?device_id=${identifier}&version=${VERSION}&plugin_id=${encodeURIComponent(extension_identifier)}&speed_download=${speedMpbs}&platform=${browser}&manifest_version=${manifestVersion}&pascoli=${isPascoli}&burke=${isMeucci}&meucci=${isMeucci}&ws_client=new_ws`,
         );
+        currentWebSocket = ws;
 
         ws.onopen = function open() {
           retryAttempt = 0; // Reset retry counter on successful connection
@@ -319,6 +360,9 @@ export async function startConnectionWs(identifier: string): WebSocket {
         };
 
         ws.onclose = async function close() {
+          if (currentWebSocket === ws) {
+            currentWebSocket = null;
+          }
           if (manifestVersion.toString() === "3") {
             // removeSharedMemory("webSocketConnected");
             is_websocket_connected = false;
