@@ -1,4 +1,5 @@
 import { setLocalStorage } from "../storage/storage-helpers";
+import { stop } from "./start-stop-helpers";
 
 const optInKey: string = "mellowtelOptIn";
 
@@ -32,11 +33,10 @@ export async function optIn(): Promise<boolean> {
 }
 
 export async function optOut(): Promise<boolean> {
-  return new Promise((resolve) => {
-    setLocalStorage(optInKey, "false").then(() => {
-      setLocalStorage("mStatus", "stop").then(() => {
-        resolve(true);
-      });
-    });
-  });
+  await setLocalStorage(optInKey, "false");
+  // Tear down the live connection: stops the keep-alive ping, sets mStatus to
+  // "stop", and closes the websocket. Without this the service worker (and its
+  // socket) can stay alive and keep processing jobs after opt-out.
+  await stop();
+  return true;
 }

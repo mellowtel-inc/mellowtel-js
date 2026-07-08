@@ -49,19 +49,18 @@ export function detectBrowser() {
 }
 
 export function isInSW(): Promise<boolean> {
-  return new Promise((resolve) => {
-    try {
-      chrome.declarativeNetRequest.getSessionRules((rules) => {
-        if (chrome.runtime.lastError) {
-          resolve(false);
-        } else {
-          resolve(true);
-        }
-      });
-    } catch (error) {
-      resolve(false);
-    }
-  });
+  // Detect the MV3 service worker by its global scope. The service worker has
+  // no `window` (popup, content scripts and offscreen documents all do) and is
+  // an instance of ServiceWorkerGlobalScope. Note: do NOT probe for an API like
+  // declarativeNetRequest here, as extension pages (popup, options, offscreen)
+  // share the same permissions and would be misdetected as the service worker.
+  const g: any = typeof self !== "undefined" ? self : undefined;
+  return Promise.resolve(
+    typeof window === "undefined" &&
+      g !== undefined &&
+      typeof g.ServiceWorkerGlobalScope !== "undefined" &&
+      g instanceof g.ServiceWorkerGlobalScope,
+  );
 }
 
 export function getManifestVersion() {
