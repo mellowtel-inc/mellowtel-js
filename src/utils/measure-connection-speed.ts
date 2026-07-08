@@ -86,7 +86,7 @@ export function MeasureConnectionSpeed(): Promise<number> {
   });
 }
 
-const SPEED_TEST_DOWNLOAD_BYTES = 10e6; // 10 MB
+const SPEED_TEST_DOWNLOAD_BYTES = 5e6; // 5MB
 const SPEED_TEST_TIMEOUT_MS = 10000; // 10 s — abort so a slow link can't hang
 
 // Window-free download speed measurement for contexts without the DOM (e.g. the
