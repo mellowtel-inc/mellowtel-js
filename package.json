@@ -16,6 +16,14 @@
     "dev": "npm pack --pack-destination ~/Desktop/mellowtel",
     "build:clean": "rm -rf dist node_modules package-lock.json && npm install && npm run build"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mellowtel-inc/mellowtel-js.git"
+  },
+  "homepage": "https://github.com/mellowtel-inc/mellowtel-js#readme",
+  "bugs": {
+    "url": "https://github.com/mellowtel-inc/mellowtel-js/issues"
+  },
   "author": "mellowtel-inc",
   "license": "LGPL-3.0",
   "devDependencies": {
