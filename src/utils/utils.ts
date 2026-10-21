@@ -55,12 +55,31 @@ export function isInSW(): Promise<boolean> {
   // declarativeNetRequest here, as extension pages (popup, options, offscreen)
   // share the same permissions and would be misdetected as the service worker.
   const g: any = typeof self !== "undefined" ? self : undefined;
-  return Promise.resolve(
+  const inServiceWorker: boolean =
     typeof window === "undefined" &&
-      g !== undefined &&
-      typeof g.ServiceWorkerGlobalScope !== "undefined" &&
-      g instanceof g.ServiceWorkerGlobalScope,
-  );
+    g !== undefined &&
+    typeof g.ServiceWorkerGlobalScope !== "undefined" &&
+    g instanceof g.ServiceWorkerGlobalScope;
+
+  return new Promise((resolve) => {
+    if (inServiceWorker) {
+      resolve(true);
+      return;
+    }
+    // Firefox has no extension service worker: its background page / event
+    // page has a `window`, so detect it explicitly. Firefox only.
+    let browser = detectBrowser();
+    if (browser === "firefox" && typeof window !== "undefined") {
+      try {
+        // @ts-ignore
+        resolve(chrome.extension.getBackgroundPage() === window);
+      } catch (error) {
+        resolve(false);
+      }
+      return;
+    }
+    resolve(false);
+  });
 }
 
 export function getManifestVersion() {
