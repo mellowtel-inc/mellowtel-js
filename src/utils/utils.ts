@@ -68,8 +68,7 @@ export function isInSW(): Promise<boolean> {
     }
     // Firefox has no extension service worker: its background page / event
     // page has a `window`, so detect it explicitly. Firefox only.
-    let browser = detectBrowser();
-    if (browser === "firefox" && typeof window !== "undefined") {
+    if (typeof window !== "undefined" && detectBrowser() === "firefox") {
       try {
         // @ts-ignore
         resolve(chrome.extension.getBackgroundPage() === window);

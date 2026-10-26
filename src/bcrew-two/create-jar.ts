@@ -1,5 +1,3 @@
-import HeaderOperation = chrome.declarativeNetRequest.HeaderOperation;
-import RuleActionType = chrome.declarativeNetRequest.RuleActionType;
 import { WebsiteJar, CookieData } from "./expand-jar";
 import { RULE_ID_START_BCREW } from "../constants";
 import { Logger } from "../logger/logger";
@@ -108,13 +106,14 @@ export async function createJar(jarData: WebsiteJar): Promise<number[]> {
             id: ruleId,
             priority: 1,
             action: {
-              type: "modifyHeaders" as RuleActionType,
+              type: chrome.declarativeNetRequest.RuleActionType.MODIFY_HEADERS,
               ...(cookie.isWhisper
                 ? {
                     requestHeaders: [
                       {
                         header: "Cookie",
-                        operation: "set" as HeaderOperation,
+                        operation:
+                          chrome.declarativeNetRequest.HeaderOperation.SET,
                         value: cookieStr,
                       },
                     ],
@@ -123,7 +122,8 @@ export async function createJar(jarData: WebsiteJar): Promise<number[]> {
                     responseHeaders: [
                       {
                         header: "Set-Cookie",
-                        operation: "append" as HeaderOperation,
+                        operation:
+                          chrome.declarativeNetRequest.HeaderOperation.APPEND,
                         value: cookieStr,
                       },
                     ],
