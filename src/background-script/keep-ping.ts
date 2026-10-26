@@ -24,7 +24,7 @@ const keepAliveFirefox = () => {
   try {
     chrome.storage.session.set({ mllwtl_keep_alive: Date.now() });
   } catch (error) {
-    // Logger.log("[keepAliveFirefox] Error writing keep-alive:", error);
+    Logger.log("[keepAliveFirefox] Error writing keep-alive:", error);
   }
 };
 
