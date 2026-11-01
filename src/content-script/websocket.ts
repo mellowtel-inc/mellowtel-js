@@ -432,6 +432,15 @@ export async function startConnectionWs(identifier: string): WebSocket {
               return;
             }
 
+            // Skip before the rate limit so skipped jobs don't use up its slots
+            if (
+              detectBrowser() === "firefox" &&
+              !isFetchOnlyJob(data, data.type_event === "batch")
+            ) {
+              Logger.log(`[🌐]: Firefox: skipping job that is not fetch-based`);
+              return;
+            }
+
             if (!checkWebSocketMessageRateLimit()) {
               Logger.log(
                 `[🌐]: Local WebSocket Rate limit exceeded, ignoring message...`,
@@ -476,14 +485,6 @@ export async function startConnectionWs(identifier: string): WebSocket {
                   data.delay_between_executions,
                 );
               }
-            }
-
-            if (
-              detectBrowser() === "firefox" &&
-              !isFetchOnlyJob(data, BATCH_execution)
-            ) {
-              Logger.log(`[🌐]: Firefox: skipping job that is not fetch-based`);
-              return;
             }
 
             let { shouldContinue, isLastCount } =
