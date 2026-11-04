@@ -30,5 +30,6 @@ export const BADGE_COLOR: string = "#4CAF50";
 export const WS_MESSAGE_RATE_LIMIT_MAX_REQUESTS: number = 7;
 export const WS_MESSAGE_RATE_LIMIT_TIME_WINDOW: number = 5 * 1000;
 export const SW_PING_INTERVAL: number = 3 * 1000; // 3 seconds
+export const FIREFOX_PING_INTERVAL: number = 20 * 1000; // 20 seconds (Firefox idle timeout is 30s)
 export const REFRESH_INTERVAL: number = 1000 * 60 * 60 * 24; // 24 hours
 export const SPEED_REFRESH_INTERVAL: number = 1000 * 60 * 60 * 12; // 12 hours

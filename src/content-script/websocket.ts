@@ -83,6 +83,21 @@ const APPROVAL_RETRY_DELAYS: number[] = [
 const APPROVAL_CHECK_INTERVAL = 30 * 60 * 1000; // 30 minutes
 const APPROVAL_API_URL = "https://api.mellow.tel/approval";
 
+// Firefox does not support credentialless iframes, so only fetch-based jobs
+// (method GET or POST) are run there. A batch runs only if every job in it
+// is fetch-based.
+function isFetchOnlyJob(data: any, BATCH_execution: boolean): boolean {
+  const isFetch = (job: any): boolean =>
+    !!job && (job.method === "GET" || job.method === "POST");
+  if (!BATCH_execution) return isFetch(data);
+  try {
+    const jobs = JSON.parse(data.batch_array);
+    return Array.isArray(jobs) && jobs.length > 0 && jobs.every(isFetch);
+  } catch (error) {
+    return false;
+  }
+}
+
 interface ApprovalCacheData {
   timestamp: number;
   isApproved: boolean;
@@ -414,6 +429,15 @@ export async function startConnectionWs(identifier: string): WebSocket {
             ) {
               Logger.log(`[🌐]: Refreshing cereal frame...`);
               await refreshCereal();
+              return;
+            }
+
+            // Skip before the rate limit so skipped jobs don't use up its slots
+            if (
+              detectBrowser() === "firefox" &&
+              !isFetchOnlyJob(data, data.type_event === "batch")
+            ) {
+              Logger.log(`[🌐]: Firefox: skipping job that is not fetch-based`);
               return;
             }
 
